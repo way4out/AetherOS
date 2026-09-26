@@ -9,7 +9,7 @@ GAME_SUBTITLE1 := DSi AetherOS 8.4
 GAME_SUBTITLE2 := Quantum Systems
 include $(DEVKITARM)/ds_rules
 
-TARGET := AetherMod8.3
+TARGET := AetherMod8.4
 BUILD := build
 SOURCES := source
 INCLUDES := include
