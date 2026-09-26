@@ -15,7 +15,7 @@
 
 #define APP_COUNT 16
 #define AETHERMOD_MAJOR 7
-#define AETHERMOD_PASS 4
+#define AETHERMOD_PASS 5
 #define AETHERMOD_TOTAL_PASSES 5
 #define NOTE_COUNT 8
 #define CODEX_PATH "data/AetherMod/codex.txt"
@@ -58,6 +58,10 @@ static int keyRepeatFrames=0, lastKeys=0, eventBurst=0, frameBudgetFaults=0;
 static int recoveryCount=0, validationFaults=0, moduleGuardFaults=0;
 static int resetHoldFrames=0, resetConfirm=0, resetCursor=0, resetNotice=0;
 static int soundId=-1;
+static int touchFocus=0, touchAction=0, moduleTicks[APP_COUNT]={0};
+static u32 uptimeFrames=0, touchEvents=0, autosaveCount=0, guardTrips=0;
+static int quantumMeasure=0, quantumShots=0, aiSafetyEvents=0, networkPackets=0;
+static int familyProfile=0, settingsCursor=0, systemCursor=0;
 static int aiCursor=0, aiQuery=0, browserCursor=0, graphMode=0, dawView=0, settingsCursor=0, codexLine=0, animalFeature=0, telemetryPage=0;
 
 static void saveState(void);
@@ -79,6 +83,8 @@ static void defaults(void);
 static void page(const char *title);
 static void ensureDirs(void);
 static void rfLogEvent(const char *kind, int value);
+static long long calcResult(void);
+static void dawStepAdvance(void);
 
 static int storageReady(void){
     FILE *f=fopen("fat:/data/AetherMod/.aether_test","wb");
@@ -112,7 +118,7 @@ static void validateRuntimeState(void){
     if(save.selectionPin>=APP_COUNT) faults++;
     if(mode!=99 && (mode<0 || mode>APP_COUNT)) faults++;
     if(faults){
-        validationFaults+=faults;
+        validationFaults+=faults; guardTrips+=faults;
         canonicalizeSelection();
         if(mode!=99 && (mode<0 || mode>APP_COUNT)){ mode=0; recoveryCount++; }
     }
@@ -189,6 +195,15 @@ static void ensureDirs(void){
 
 static void markDirty(void){ dirtyState=1; }
 
+static long long calcResult(void){
+    long long a=calcA,b=calcB;
+    switch(calcOp%12){case 0:return a+b;case 1:return a-b;case 2:return a*b;case 3:return b?a/b:0;case 4:return b?a%b:0;case 5:return b?(a*100)/b:0;case 6:return a*a;case 7:return a*a*a;case 8:return a>b?a:b;case 9:return a<b?a:b;case 10:return a^b;default:return (a*a+b*b)%1000003;}
+}
+static void dawStepAdvance(void){
+    save.dawStep=(save.dawStep+1)%16;
+    for(int t=0;t<4;t++) if(dawPattern[t][save.dawStep]) tone();
+}
+
 static void serviceInput(u32 keys){
     int changedKeys=(int)keys ^ lastKeys;
     if(changedKeys) inputEvents++;
@@ -202,6 +217,7 @@ static void serviceInput(u32 keys){
 
 static void updateCapabilityHealth(void){
     capabilityScore=100;
+    if(storageReady()) capabilityScore+=0; else capabilityScore-=20;
     if(!isDSiMode()) capabilityScore-=5;
     if(save.wireless) capabilityScore-=0;
     if(save.onlineAI && save.privacy) capabilityScore-=10;
@@ -211,6 +227,11 @@ static void updateCapabilityHealth(void){
 
 
 static void returnHome(void){ lastMode=mode; mode=0; homeScroll=(selectionPin>=8); setSelection(selectionPin); saveState(); }
+
+static void moduleHeartbeat(void){
+    if(mode>=1 && mode<=APP_COUNT) moduleTicks[mode-1]++;
+    uptimeFrames=frameCounter;
+}
 
 
 static void resetToBase(void){
@@ -319,7 +340,7 @@ static void quantum(void){
     int e=(frameCounter/3)%101;
     iprintf("QUANTUM WORKBENCH / LOCAL SIM\n");
     iprintf("COHERENCE %3d%%  PHASE %3lu deg\n",e,(unsigned long)((frameCounter/7)%360));
-    iprintf("Q-LANES 8  STATE %d  MEASURE:%s\n",quantumState,(quantumState&1)?"YES":"NO");
+    iprintf("Q-LANES 8  STATE %d  MEASURE:%s  SHOTS:%d\n",quantumState,quantumMeasure?"YES":"NO",quantumShots);
     iprintf("VECTOR |"); for(int i=0;i<16;i++) iprintf("%c",((i+e/7)%5==0)?'#':'.'); iprintf("|\n");
     iprintf("GRAPH  |"); for(int i=0;i<16;i++){int v=(i*7+e)%16;iprintf("%c",v>10?'*':v>5?'+':'.');} iprintf("|\n");
     iprintf("ALGO superposition / phase / measure\n");
@@ -462,7 +483,7 @@ static void dsp(void){
 }
 
 static void telemetry(void){
-    coreTick++;
+    coreTick++; moduleHeartbeat();
     runDiagnostics();
     page("TELEMETRY");
     iprintf("FRAME       %lu\n",(unsigned long)frameCounter);
@@ -480,11 +501,14 @@ static void telemetry(void){
     iprintf("CAPABILITY HEALTH %d%%  GATE:%s\n",capabilityScore,gatewayState?"ARMED":"GUARDED");
     iprintf("INPUT EVENTS %lu  REPEAT:%d\n",(unsigned long)inputEvents,keyRepeatFrames);
     iprintf("RESOURCE FAULTS %d\n",resourceFaults);
-    iprintf("PAGE %d/2  PRESS A TO CYCLE\n",telemetryPage+1);
+    iprintf("PAGE %d/3  PRESS A TO CYCLE\n",telemetryPage+1);
     if(telemetryPage){
+        iprintf("UPTIME %lu  TOUCH EVENTS %lu  AUTOSAVES %lu\n",(unsigned long)uptimeFrames,(unsigned long)touchEvents,(unsigned long)autosaveCount);
+        iprintf("GUARD TRIPS %lu  MODULE TICKS %lu\n",(unsigned long)guardTrips,(unsigned long)moduleTicks[selectionPin]);
         iprintf("GATEWAYS: RF=%s TINYSA=%s NET=%s AI=%s\n",gatewayState?"ARM":"SAFE",saRunning?"SWEEP":"IDLE",save.browser?"READY":"OFF",save.ai?"READY":"OFF");
         iprintf("FRAME BUDGET %d  INPUT BURSTS %d\n",frameBudgetFaults,eventBurst);
         iprintf("SAVE CHECKSUM %s  LAST SAVE %lu\n",saveIntegrity()?"OK":"BAD",(unsigned long)lastSaveFrame);
+        if(telemetryPage>1) iprintf("QSHOTS %d  AIMODE %d  NETPKT %d  SAFETY %d\n",quantumShots,aiCursor,networkPackets,aiSafetyEvents);
     }
     footer("A PAGE  B HOME");
 }
@@ -509,7 +533,7 @@ static void network(void){
     iprintf("LOCAL LINK / HTTP CLIENT SHELL READY\n");
     iprintf("BROWSER %s  DNS/HTTP EXTERNAL GATE\n",save.browser?"ENABLED":"DISABLED");
     iprintf("5G SAT BT SDR QPU: EXTERNAL GATEWAYS\n");
-    iprintf("RX QUEUE 16  TX QUEUE 8  CRC32 FRAMING\n");
+    iprintf("RX QUEUE 16  TX QUEUE 8  CRC32 FRAMING  PKTS %d\n",networkPackets);
     iprintf("URL SLOT %d  SAFE WEB MODE %s\n",browserCursor,save.browser?"ON":"OFF");
     iprintf("HTTP GET / TEXT / METADATA / SAFE LINKS\n");
     iprintf("No credential capture or radio disruption.\n");
@@ -519,6 +543,7 @@ static void network(void){
 static void aiSafety(void){
     page("AI SAFETY / CONTROL");
     iprintf("LOCAL AI       %s\n",save.ai?"ON":"OFF");
+    iprintf("SAFETY EVENTS  %d  PROFILE %s\n",aiSafetyEvents,save.privacy?"PRIVATE":"OPEN");
     iprintf("ONLINE AI      %s\n",save.onlineAI?"ON":"OFF");
     iprintf("PRIVACY        %s\n",save.privacy?"LOCK":"OPEN");
     iprintf("NSFW FILTER    %s\n",save.nsfw?"ON":"OFF");
@@ -529,6 +554,7 @@ static void aiSafety(void){
 
 static void family(void){
     page("FAMILY / SAFETY");
+    iprintf("PROFILE %d  CONTROL LAYER ACTIVE\n",familyProfile);
     iprintf("PARENTAL      %s\n",save.parental?"STRICT":"OPEN");
     iprintf("NSFW          %s\n",save.nsfw?"BLOCK":"ALLOW");
     iprintf("UNSAFE        %s\n",save.unsafe?"BLOCK":"ALLOW");
@@ -540,19 +566,21 @@ static void family(void){
 }
 
 static void systemPage(void){
-    selfTestRun=(frameCounter&15)==0;page("SYSTEM / SERVICE");
+    selfTestRun=(frameCounter&15)==0; moduleHeartbeat(); page("SYSTEM / SERVICE");
     iprintf("AETHERMOD 7.0 APEX  DSi ARM9\n");
     iprintf("SELFTEST %s SAFE %s DIRTY %s\n",selfTestRun?"RUN":"READY",safeMode?"ON":"OFF",dirtyState?"YES":"NO");
     iprintf("BRIGHT %u/4 THEME %s LANG %s\n",save.brightness,save.theme?"AETHER":"CLASSIC",langName());
     iprintf("SOUND %s AI %s WIFI %s BROWSER %s\n",save.sound?"ON":"OFF",save.ai?"ON":"OFF",save.wireless?"ON":"OFF",save.browser?"ON":"OFF");
     iprintf("SAVE V4 STORAGE %s CAP %d%%\n",diagnosticsPass?"HEALTHY":"CHECK",capabilityScore);
-    iprintf("SELECT = safe-mode emergency control\n");
+    iprintf("SERVICE: RESET / SAVE / SAFE / DIAGNOSTICS\n");
+    iprintf("GUARD %lu  ERR %lu  FRAMEFAULT %d\n",(unsigned long)guardTrips,(unsigned long)sessionErrors,frameBudgetFaults);
     footer("UP/DOWN BRIGHT  A THEME  X SOUND  B HOME");
 }
 
 static void generalSettings(void){
     page("GENERAL SETTINGS");
-    iprintf("DSi CONTROL CENTER\n");
+    iprintf("DSi CONTROL CENTER / MASTER SETTINGS\n");
+    iprintf("SETTING %d  UNIVERSAL TOUCH %s\n",settingsCursor,touchFocus?"FOCUS":"AUTO");
     iprintf("BRIGHT %u/4  SOUND %s  THEME %s\n",save.brightness,save.sound?"ON":"OFF",save.theme?"AETHER":"CLASSIC");
     iprintf("AI %s  ONLINE %s  PRIVACY %s\n",save.ai?"ON":"OFF",save.onlineAI?"ON":"OFF",save.privacy?"LOCK":"OPEN");
     iprintf("BROWSER %s  DOWNLOADS %s\n",save.browser?"ON":"OFF",save.downloads?"ON":"OFF");
@@ -617,7 +645,7 @@ static void input(void){
     }
     if(d&KEY_SELECT){safeMode=!safeMode;if(safeMode){save.onlineAI=0;save.wireless=0;save.downloads=0;gatewayState=0;mode=0;}saveState();changed=1;}
     if(d&KEY_TOUCH){
-        touchPosition t; touchRead(&t);
+        touchPosition t; touchRead(&t); touchEvents++; touchFocus=1;
         if(mode==0){
             /* Home touch uses two 8-item pages so all 16 modules are reachable. */
             int row=((int)t.py-48)/12;
@@ -647,7 +675,7 @@ static void input(void){
         if(d&KEY_X){setSelection(1);homeScroll=0;mode=1;save.launches++;saveState();changed=1;}
         if(d&KEY_Y){setSelection(9);homeScroll=1;mode=10;save.launches++;saveState();changed=1;}
     } else if(mode==1){
-        if(d&KEY_B){returnHome();changed=1;} if(d&KEY_A){quantumState=(quantumState+1)%4;frameCounter+=97;changed=1;} if(d&KEY_X){quantumState=(quantumState+1)%4;frameCounter+=1009;changed=1;} if(d&KEY_Y){quantumState=0;changed=1;}
+        if(d&KEY_B){returnHome();changed=1;} if(d&KEY_A){quantumState=(quantumState+1)%4;quantumMeasure^=1;quantumShots++;frameCounter+=97;changed=1;} if(d&KEY_X){quantumState=(quantumState+1)%4;frameCounter+=1009;changed=1;} if(d&KEY_Y){quantumState=0;changed=1;}
     } else if(mode==2){
         if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP){codexPage=(codexPage+9)%10;changed=1;} if(d&KEY_DOWN){codexPage=(codexPage+1)%10;changed=1;} if(d&KEY_A){codexSearch^=1;changed=1;} if(d&KEY_X){codexLine=(codexLine+1)%16;changed=1;}
     } else if(mode==3){
@@ -694,11 +722,11 @@ static void input(void){
         if(d&KEY_UP){if(dspGain<8)dspGain++;changed=1;} if(d&KEY_DOWN){if(dspGain>1)dspGain--;changed=1;}
     } else if(mode==9||mode==10){if(d&KEY_B){mode=0;changed=1;} if(mode==9&&d&KEY_A){telemetryPage^=1;changed=1;} if(mode==10&&d&KEY_UP){aiCursor=(aiCursor+5)%6;changed=1;} if(mode==10&&d&KEY_DOWN){aiCursor=(aiCursor+1)%6;changed=1;} if(mode==10&&d&KEY_A){aiQuery++;tone();changed=1;} if(mode==10&&d&KEY_X){save.onlineAI^=1;changed=1;} if(mode==10&&d&KEY_Y){save.privacy^=1;changed=1;}
     } else if(mode==11){
-        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_A){save.wireless^=1;gatewayState=save.wireless;markDirty();changed=1;} if(d&KEY_X){networkSelfTest=1;changed=1;} if(d&KEY_Y){networkSelfTest=0;changed=1;}
+        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_A){save.wireless^=1;gatewayState=save.wireless;networkPackets++;markDirty();changed=1;} if(d&KEY_X){networkSelfTest=1;changed=1;} if(d&KEY_Y){networkSelfTest=0;changed=1;}
     } else if(mode==12){
-        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_A){save.ai^=1;changed=1;} if(d&KEY_X){save.onlineAI^=1;changed=1;} if(d&KEY_Y){save.privacy^=1;changed=1;}
+        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_A){save.ai^=1;aiSafetyEvents++;markDirty();changed=1;} if(d&KEY_X){save.onlineAI^=1;changed=1;} if(d&KEY_Y){save.privacy^=1;changed=1;}
     } else if(mode==13){
-        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_A){save.parental^=1;save.nsfw=save.unsafe=save.unregulated=save.parental;save.downloads=!save.parental;save.browser=!save.parental;saveState();changed=1;} if(d&KEY_X){save.userContent^=1;save.nsfw^=1;saveState();changed=1;} if(d&KEY_Y){save.wireless^=1;save.downloads^=1;saveState();changed=1;}
+        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_A){familyProfile^=1;save.parental^=1;save.nsfw=save.unsafe=save.unregulated=save.parental;save.downloads=!save.parental;save.browser=!save.parental;saveState();changed=1;} if(d&KEY_X){save.userContent^=1;save.nsfw^=1;saveState();changed=1;} if(d&KEY_Y){save.wireless^=1;save.downloads^=1;saveState();changed=1;}
     } else if(mode==14){
         if(d&KEY_B){save.selectionPin=selectionPin;saveState();mode=0;changed=1;} if(d&KEY_UP&&save.brightness<4){save.brightness++;changed=1;} if(d&KEY_DOWN&&save.brightness>0){save.brightness--;changed=1;} if(d&KEY_A){save.theme^=1;saveState();changed=1;} if(d&KEY_X){save.sound^=1;saveState();changed=1;}
     } else if(mode==15){
