@@ -81,7 +81,7 @@ static int releaseGuard=0, routeErrors=0, touchLatency=0, colorCycle=0;
 static int busQuantum=0, busAudio=0, busAnimal=0, busRF=0, busPhone=0, busBot=0;
 static int animFrame=0, animPulse=0, colorTheme=0;
 static int animTopPhase=0, animBottomPhase=0, animSweep=0, animSpark=0;\nstatic int homePageLock=0;
-static int navSoundGate=0, pageTransition=0;
+static int navSoundGate=0, pageTransition=0, touchX=0, touchY=0, touchPressed=0;
 
 static void saveState(void);
 static void markDirty(void);
@@ -241,12 +241,14 @@ static void navigationFeedback(int direction){
     hapticPulse++;
     visualEnergy=(visualEnergy+3)%101;
     navSoundGate=0;
+    /* Navigation is intentionally silent. */
 }
 static void pageTransitionFeedback(void){
     pageTransition=1;
     hapticPulse++;
     visualEnergy=(visualEnergy+9)%101;
     navSoundGate=0;
+    /* Page changes are intentionally silent. */
 }
 static void hwBus(void){ hwTouch=1; hwButtons=(int)keysHeld(); hwMic=1; hwCamera=1; hwLed=1; hwSpeaker=save.sound?1:0; inputRoute=hwTouch+(hwButtons?1:0); sensorRoute=hwMic+hwCamera; mediaRoute=hwSpeaker+phoneLinkState; ledRoute=hwLed+(hotspotState?1:0); if((frameCounter&7)==0){topFrames++;bottomFrames++;} }
 static void releaseBus(void){ releaseGuard=(hwTouch&&hwMic&&hwCamera&&hwLed)?1:0; if(!crossLink) routeErrors++; if(touchEvents) touchLatency=(touchLatency+1)%16; }
@@ -368,7 +370,7 @@ static const char *langName(void){return langs[save.language%10];}
 
 static void topBg(const char *title){
     consoleSelect(&topConsole); consoleClear();
-    iprintf("      A E T H E R M O D  8.0\n");
+    iprintf("      A E T H E R M O D  8.2\n");
     iprintf("  ========================\n");
     iprintf("  %s\n\n",title);
     iprintf("  [%s]  QCORE:%s  AI:%s\n",
@@ -868,13 +870,28 @@ static void input(void){
         }
     }
     if(mode==0){
-        if(nav&KEY_UP){inputEvents++;setSelection(selectionPin-1);homeScroll=selectionPin/8;homePulse=1;navigationFeedback(-1);saveState();changed=1;}
-        if(nav&KEY_DOWN){inputEvents++;setSelection(selectionPin+1);homeScroll=selectionPin/8;homePulse=1;navigationFeedback(1);saveState();changed=1;}
-        if(nav&KEY_LEFT){inputEvents++;homeScroll=(homeScroll+2)%AETHER_HOME_PAGES;setSelection(homeScroll*8);pageTransitionFeedback();saveState();changed=1;}
-        if(nav&KEY_RIGHT){inputEvents++;homeScroll=(homeScroll+1)%AETHER_HOME_PAGES;setSelection(homeScroll*8);pageTransitionFeedback();saveState();changed=1;}
-        if(d&KEY_A){inputEvents++;launchSelection();feedback(1);changed=1;}
-        if(d&KEY_X){setSelection(1);homeScroll=0;homePageLock=0;mode=1;save.launches++;feedback(2);saveState();changed=1;}
-        if(d&KEY_Y){setSelection(9);homeScroll=1;homePageLock=1;mode=10;save.launches++;feedback(2);saveState();changed=1;}
+        /* SINGLE SOURCE OF TRUTH: selectionPin controls cursor and page. */
+        if(nav&KEY_UP){ inputEvents++; setSelection(selectionPin-1); homePulse=1; navigationFeedback(-1); saveState(); changed=1; }
+        if(nav&KEY_DOWN){ inputEvents++; setSelection(selectionPin+1); homePulse=1; navigationFeedback(1); saveState(); changed=1; }
+        if(nav&KEY_LEFT){ inputEvents++; setSelection(((homeScroll+2)%AETHER_HOME_PAGES)*8); pageTransitionFeedback(); saveState(); changed=1; }
+        if(nav&KEY_RIGHT){ inputEvents++; setSelection(((homeScroll+1)%AETHER_HOME_PAGES)*8); pageTransitionFeedback(); saveState(); changed=1; }
+        if(touchPressed){
+            if(touchY>=150){
+                int next=(homeScroll+1)%AETHER_HOME_PAGES;
+                setSelection(next*8);
+                pageTransitionFeedback();
+                saveState(); changed=1;
+            } else if(touchY>=48 && touchY<144){
+                int row=(touchY-48)/12;
+                if(row>=0 && row<8){
+                    int target=homeScroll*8+row;
+                    if(target<APP_COUNT){ setSelection(target); launchSelection(); changed=1; }
+                }
+            }
+        }
+        if(d&KEY_A){ inputEvents++; launchSelection(); feedback(1); changed=1; }
+        if(d&KEY_X){ setSelection(1); mode=1; save.launches++; feedback(2); saveState(); changed=1; }
+        if(d&KEY_Y){ setSelection(9); mode=10; save.launches++; feedback(2); saveState(); changed=1; }
     } else if(mode==1){
         if(d&KEY_B){returnHome();changed=1;} if(d&KEY_A){quantumState=(quantumState+1)%4;quantumMeasure^=1;quantumShots++;frameCounter+=97;changed=1;} if(d&KEY_X){quantumState=(quantumState+1)%4;frameCounter+=1009;changed=1;} if(d&KEY_Y){quantumState=0;changed=1;}
     } else if(mode==2){
