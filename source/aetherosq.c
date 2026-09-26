@@ -917,7 +917,7 @@ static void input(void){
             if(t.py>=55 && t.py<120){ int r=((int)t.py-55)/14; if(r>=0 && r<4){ noteCursor=r; changed=1; } }
             else if(t.py>=120){ ensureDirs(); char np[128]; snprintf(np,sizeof(np),"%sdata/AetherMod/notes.txt",root); FILE *nf=fopen(np,"ab"); if(nf){fprintf(nf,"%s\n",noteText[noteCursor]);fclose(nf);} changed=1; }
         } else if(mode==28){ clock24=!clock24; changed=1; }
-        else if(mode==28){ runDiagnostics(); changed=1; }
+        else if(mode==29){ runDiagnostics(); changed=1; }
         if(changed) draw();
     } else if(mode>=13 && mode<=24){
         if(d&KEY_B){mode=0;changed=1;}
