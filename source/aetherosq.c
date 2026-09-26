@@ -1098,12 +1098,14 @@ static void input(void){
         if(d&KEY_Y){hapticLevel=(hapticLevel+1)%4;changed=1;}
         if(d&KEY_SELECT){crossLink^=1;changed=1;}
     } else if(mode==25){
-        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP&&vaultCount){vaultCursor=(vaultCursor+vaultCount-1)%vaultCount;changed=1;} if(d&KEY_DOWN&&vaultCount){vaultCursor=(vaultCursor+1)%vaultCount;changed=1;} if(d&KEY_X){vaultScan();changed=1;} if(d&KEY_A){vaultScan();changed=1;}
+        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP){eventCursor--;if(eventCursor<0)eventCursor=0;changed=1;} if(d&KEY_DOWN){eventCursor++;if(eventCursor>=eventCount)eventCursor=eventCount?eventCount-1:0;changed=1;} if(d&KEY_X){changed=1;}
     } else if(mode==26){
-        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP){noteCursor=(noteCursor+3)%4;changed=1;} if(d&KEY_DOWN){noteCursor=(noteCursor+1)%4;changed=1;} if(d&KEY_A){ensureDirs(); char np[128]; snprintf(np,sizeof(np),"%sdata/AetherMod/notes.txt",root); FILE *nf=fopen(np,"ab"); if(nf){fprintf(nf,"%s\\n",noteText[noteCursor]);fclose(nf);} changed=1;} 
+        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP&&vaultCount){vaultCursor=(vaultCursor+vaultCount-1)%vaultCount;changed=1;} if(d&KEY_DOWN&&vaultCount){vaultCursor=(vaultCursor+1)%vaultCount;changed=1;} if(d&KEY_X){vaultScan();changed=1;} if(d&KEY_A){vaultScan();changed=1;}
     } else if(mode==27){
-        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_A){clock24=!clock24;changed=1;}
+        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP){noteCursor=(noteCursor+3)%4;changed=1;} if(d&KEY_DOWN){noteCursor=(noteCursor+1)%4;changed=1;} if(d&KEY_A){ensureDirs();char np[128];snprintf(np,sizeof(np),"%sdata/AetherMod/notes.txt",root);FILE *nf=fopen(np,"ab");if(nf){fprintf(nf,"%s\\n",noteText[noteCursor]);fclose(nf);}changed=1;}
     } else if(mode==28){
+        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_A){clock24=!clock24;changed=1;}
+    } else if(mode==29){
         if(d&KEY_B){mode=0;changed=1;} if(d&KEY_A){runDiagnostics();changed=1;} if(d&KEY_X){resetNotice=0;changed=1;}
     } else {if(d&KEY_B){mode=0;changed=1;}}
     if(changed){
