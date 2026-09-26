@@ -13,12 +13,12 @@
  * spectrum analyzer, QPU, satellite modem, or external RF instrument.
  */
 
-#define APP_COUNT 16
-#define AETHERMOD_MAJOR 7
-#define AETHERMOD_PASS 5
-#define AETHERMOD_TOTAL_PASSES 5
+#define APP_COUNT 24
+#define AETHERMOD_MAJOR 8
+#define AETHERMOD_PASS 1
+#define AETHERMOD_TOTAL_PASSES 7
 #define NOTE_COUNT 8
-#define CODEX_PATH "data/AetherMod/codex.txt"
+#define CODEX_PATH "data/AetherMod/codex_full.txt"
 #define ANIMAL_PATH "data/AetherMod/animals.txt"
 
 typedef struct {
@@ -62,6 +62,7 @@ static int touchFocus=0, touchAction=0, moduleTicks[APP_COUNT]={0};
 static u32 uptimeFrames=0, touchEvents=0, autosaveCount=0, guardTrips=0;
 static int quantumMeasure=0, quantumShots=0, aiSafetyEvents=0, networkPackets=0;
 static int familyProfile=0, systemCursor=0;
+static int visualTheme=1, hapticLevel=2, expansionCursor=0, liveRefresh=1, settingsSection=0;
 static int aiCursor=0, aiQuery=0, browserCursor=0, graphMode=0, dawView=0, settingsCursor=0, codexLine=0, animalFeature=0, telemetryPage=0;
 
 static void saveState(void);
@@ -159,7 +160,9 @@ static const char *apps[APP_COUNT]={
     "AETHER HOME","QUANTUM CORE","YHWH CODEX","ANIMAL AI",
     "MARAUDER/RF","TINySA LAB","CALCULATOR","DAW STUDIO",
     "DSP/FFT","TELEMETRY","AI HOME","NETWORK GATEWAY",
-    "AI SAFETY","FAMILY SAFETY","SYSTEM","GENERAL SETTINGS"
+    "MEDIA STUDIO","SENSOR HUB","DATA VAULT","FILE BROWSER",
+    "HAPTIC LAB","ACCESSIBILITY","POWER LAB","CONTROL LAB",
+    "DIAGNOSTICS","AETHER BOT","VISUAL LAB","GENERAL SETTINGS"
 };
 
 static const char *langs[10]={
@@ -293,7 +296,7 @@ static const char *langName(void){return langs[save.language%10];}
 
 static void topBg(const char *title){
     consoleSelect(&topConsole); consoleClear();
-    iprintf("      A E T H E R M O D  7.0\n");
+    iprintf("      A E T H E R M O D  8.0\n");
     iprintf("  ========================\n");
     iprintf("  %s\n\n",title);
     iprintf("  [%s]  QCORE:%s  AI:%s\n",
@@ -315,6 +318,29 @@ static void page(const char *title){
 
 static void footer(const char *s){iprintf("\n%s\n",s);}
 
+static void expansion(void){
+    const char *names[]={"MEDIA STUDIO","SENSOR HUB","DATA VAULT","FILE BROWSER","HAPTIC LAB","ACCESSIBILITY","POWER LAB","CONTROL LAB","DIAGNOSTICS","AETHER BOT","VISUAL LAB"};
+    int ix=mode-13; if(ix<0) ix=0; if(ix>10) ix=10;
+    page(names[ix]);
+    int pulse=(int)((frameCounter/2)%24), meter=(int)((frameCounter/3)%100);
+    iprintf("LIVE WORKSPACE %s  REFRESH %s\\n",liveRefresh?"ON":"OFF",liveRefresh?"LIVE":"PAUSED");
+    iprintf("VISUAL THEME %d  HAPTIC %d/3  CURSOR %d\\n",visualTheme,hapticLevel,expansionCursor);
+    iprintf("SIGNAL |"); for(int i=0;i<24;i++) iprintf("%c",((i+pulse)%7==0)?'#':((i+meter/10)%3==0)?'+':'.'); iprintf("|\\n");
+    iprintf("LEVEL %3d%%  ACTIVITY %3d%%  FRAME %lu\\n",meter,(pulse*7)%101,(unsigned long)frameCounter);
+    if(ix==0) iprintf("4-track media workspace / clip slots / local playback\\n");
+    else if(ix==1) iprintf("MIC / CAMERA / TOUCH sensor routing and live meters\\n");
+    else if(ix==2) iprintf("SD capacity / corpus index / session data integrity\\n");
+    else if(ix==3) iprintf("Local file navigator: data/AetherMod/\\n");
+    else if(ix==4) iprintf("Touch feedback / click tone / response-strength control\\n");
+    else if(ix==5) iprintf("Large-text / contrast / input-assist control surface\\n");
+    else if(ix==6) iprintf("Power state / workload / battery telemetry gateway\\n");
+    else if(ix==7) iprintf("Cross-module routing / universal input focus\\n");
+    else if(ix==8) iprintf("Runtime guards / save integrity / subsystem heartbeat\\n");
+    else if(ix==9) iprintf("Local assistant workspace / commands / module routing\\n");
+    else iprintf("Live graph renderer / palette / visualization diagnostics\\n");
+    footer("UP/DOWN CURSOR  A ACTION  X VISUAL  Y LIVE  L/R HAPTIC  B HOME");
+}
+
 static void home(void){
     /* One authoritative selectionPin drives marker, number, label and launch target. */
     canonicalizeSelection();
@@ -324,7 +350,7 @@ static void home(void){
     consoleSelect(&bottomConsole); consoleClear();
     iprintf("AETHERMOD REVOLUTION IS HERE\n");
     iprintf("------------------------------\n");
-    iprintf("PAGE %d/2  Tap a module or use D-PAD.\n\n",homeScroll+1);
+    iprintf("PAGE %d/3  Tap a module or use D-PAD.\n\n",homeScroll+1);
     int first=homeScroll*8;
     for(int i=0;i<8;i++){
         int n=first+i;
@@ -568,7 +594,7 @@ static void family(void){
 
 static void systemPage(void){
     selfTestRun=(frameCounter&15)==0; moduleHeartbeat(); page("SYSTEM / SERVICE");
-    iprintf("AETHERMOD 7.0 APEX  DSi ARM9\n");
+    iprintf("AETHERMOD 8.0  PASS 1/7  DSi ARM9\n");
     iprintf("SELFTEST %s SAFE %s DIRTY %s\n",selfTestRun?"RUN":"READY",safeMode?"ON":"OFF",dirtyState?"YES":"NO");
     iprintf("BRIGHT %u/4 THEME %s LANG %s\n",save.brightness,save.theme?"AETHER":"CLASSIC",langName());
     iprintf("SOUND %s AI %s WIFI %s BROWSER %s\n",save.sound?"ON":"OFF",save.ai?"ON":"OFF",save.wireless?"ON":"OFF",save.browser?"ON":"OFF");
@@ -606,22 +632,10 @@ static void about(void){
 static void draw(void){
     if(mode==99){resetPage();return;}
     switch(mode){
-      case 0: home(); break;
-      case 1: quantum(); break;
-      case 2: codex(); break;
-      case 3: animal(); break;
-      case 4: rfLab("MARAUDER / RF"); break;
-      case 5: tinysa(); break;
-      case 6: calculator(); break;
-      case 7: daw(); break;
-      case 8: dsp(); break;
-      case 9: telemetry(); break;
-      case 10: aiHome(); break;
-      case 11: network(); break;
-      case 12: aiSafety(); break;
-      case 13: family(); break;
-      case 14: systemPage(); break;
-      default: generalSettings(); break;
+      case 0: home(); break; case 1: quantum(); break; case 2: codex(); break; case 3: animal(); break;
+      case 4: rfLab("MARAUDER / RF"); break; case 5: tinysa(); break; case 6: calculator(); break;
+      case 7: daw(); break; case 8: dsp(); break; case 9: telemetry(); break; case 10: aiHome(); break;
+      case 11: network(); break; case 24: generalSettings(); break; default: expansion(); break;
     }
 }
 
@@ -647,7 +661,29 @@ static void input(void){
     if(d&KEY_SELECT){safeMode=!safeMode;if(safeMode){save.onlineAI=0;save.wireless=0;save.downloads=0;gatewayState=0;mode=0;}saveState();changed=1;}
     if(d&KEY_TOUCH){
         touchPosition t; touchRead(&t); touchEvents++; touchFocus=1;
-        if(mode==0){
+        if(mode>=12){
+        if(d&KEY_B){mode=0;changed=1;}
+        if(mode==24){
+            if(d&KEY_UP){settingsSection=(settingsSection+7)%8;changed=1;}
+            if(d&KEY_DOWN){settingsSection=(settingsSection+1)%8;changed=1;}
+            if(d&KEY_A){switch(settingsSection){
+                case 0: save.ai^=1; break; case 1: save.onlineAI^=1; break; case 2: save.privacy^=1; break;
+                case 3: save.browser^=1; break; case 4: save.downloads^=1; break; case 5: save.wireless^=1; break;
+                case 6: save.sound^=1; break; default: safeMode=!safeMode; break;
+            } saveState(); changed=1;}
+            if(d&KEY_X){visualTheme=(visualTheme+1)%4;changed=1;}
+            if(d&KEY_Y){hapticLevel=(hapticLevel+1)%4;changed=1;}
+        } else {
+            if(d&KEY_UP){expansionCursor=(expansionCursor+7)%8;changed=1;}
+            if(d&KEY_DOWN){expansionCursor=(expansionCursor+1)%8;changed=1;}
+            if(d&KEY_LEFT&&hapticLevel>0){hapticLevel--;changed=1;}
+            if(d&KEY_RIGHT&&hapticLevel<3){hapticLevel++;changed=1;}
+            if(d&KEY_X){visualTheme=(visualTheme+1)%4;changed=1;}
+            if(d&KEY_Y){liveRefresh=!liveRefresh;changed=1;}
+            if(d&KEY_A){expansionCursor=(expansionCursor+1)%8;touchAction++;tone();changed=1;}
+        }
+        if(changed)markDirty();
+    } else if(mode==0){
             /* Home touch uses two 8-item pages so all 16 modules are reachable. */
             int row=((int)t.py-48)/12;
             if(row>=0&&row<8){
