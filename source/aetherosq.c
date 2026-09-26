@@ -4,6 +4,8 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <stdbool.h>
+#include <time.h>
+#include <dirent.h>
 #include "config.h"
 
 /*
@@ -13,11 +15,11 @@
  * spectrum analyzer, QPU, satellite modem, or external RF instrument.
  */
 
-#define APP_COUNT 24
+#define APP_COUNT 28
 #define AETHERMOD_MAJOR 8
-#define AETHERMOD_MINOR 2
+#define AETHERMOD_MINOR 3
 #define AETHERMOD_PASS 1
-#define AETHERMOD_TOTAL_PASSES 2
+#define AETHERMOD_TOTAL_PASSES 15
 #define AETHER_HOME_PAGES 3
 #define NOTE_COUNT 8
 #define CODEX_PATH "data/AetherMod/codex.txt"
@@ -190,7 +192,7 @@ static const char *apps[APP_COUNT]={
     "PHONE LINK",
     "MEDIA STUDIO","SENSOR HUB","DATA VAULT","FILE BROWSER",
     "HAPTIC LAB","ACCESSIBILITY","POWER LAB","CONTROL LAB",
-    "DIAGNOSTICS","AETHER BOT","GENERAL SETTINGS"
+    "DIAGNOSTICS","AETHER BOT","GENERAL SETTINGS","DATA VAULT","NOTES","CLOCK","DIAGNOSTICS"
 };
 
 static const char *langs[10]={
@@ -391,6 +393,46 @@ static void topBg(const char *title){
     iprintf("  HW 2LCD:%d TOUCH:%d MIC:%d CAM:%d SPK:%d LED:%d\n",topFrames>0&&bottomFrames>0,hwTouch,hwMic,hwCamera,hwSpeaker,hwLed);
 }
 
+static void setAetherPalette(void){
+    static const u16 pal[8]={RGB15(31,31,31),RGB15(31,8,8),RGB15(8,31,12),RGB15(31,27,5),RGB15(8,16,31),RGB15(28,8,31),RGB15(5,31,31),RGB15(22,22,27)};
+    for(int i=0;i<8;i++){ BG_PALETTE[15+i*16]=pal[i]; BG_PALETTE_SUB[15+i*16]=pal[i]; }
+    BG_PALETTE[0]=RGB15(1,2,4); BG_PALETTE_SUB[0]=RGB15(1,2,4);
+}
+static void vaultScan(void){
+    vaultCount=0; memset(vaultNames,0,sizeof(vaultNames));
+    DIR *d=opendir("fat:/data/AetherMod"); if(!d && isDSiMode()) d=opendir("sd:/data/AetherMod");
+    if(!d) return; struct dirent *e; while((e=readdir(d)) && vaultCount<12){
+        if(e->d_name[0]=='.') continue; strncpy(vaultNames[vaultCount],e->d_name,47); vaultCount++;
+    } closedir(d); if(vaultCursor>=vaultCount) vaultCursor=0;
+}
+static void vaultPage(void){
+    page("DATA VAULT / SD BROWSER"); vaultScan();
+    iprintf("REAL SD DIRECTORY: data/AetherMod\\n\\n");
+    if(!vaultCount){iprintf("No readable entries found.\\n");}
+    for(int i=0;i<vaultCount;i++) iprintf("%c %02d  %-30s\\n",i==vaultCursor?'>':' ',i+1,vaultNames[i]);
+    iprintf("\\nA = inspect  X = rescan  B = home\\n");
+    if(vaultCount){ char p[128]; snprintf(p,sizeof(p),"fat:/data/AetherMod/%s",vaultNames[vaultCursor]); FILE *f=fopen(p,"rb"); if(f){char buf[81]={0}; size_t n=fread(buf,1,80,f); fclose(f); buf[n]=0; iprintf("\\nPREVIEW: %s\\n",buf);}}
+}
+static void notesPage(void){
+    page("PERSISTENT NOTES");
+    iprintf("SD-BACKED QUICK NOTES\\n\\n");
+    for(int i=0;i<4;i++) iprintf("%c %d  %s\\n",i==noteCursor?'>':' ',i+1,noteText[i]);
+    iprintf("\\nA = append selected note to SD\\nX = refresh  UP/DOWN = select\\n");
+}
+static void clockPage(void){
+    page("CLOCK / SYSTEM TIME"); time_t now=time(NULL); struct tm *tmv=localtime(&now);
+    if(tmv) iprintf("%02d:%02d:%02d\\n\\nDATE %04d-%02d-%02d\\n",tmv->tm_hour,tmv->tm_min,tmv->tm_sec,1900+tmv->tm_year,1+tmv->tm_mon,tmv->tm_mday);
+    else iprintf("RTC TIME UNAVAILABLE\\n");
+    iprintf("FRAME %lu\\nUPTIME %lu FRAMES\\nDSi MODE %s\\n",(unsigned long)frameCounter,(unsigned long)uptimeFrames,isDSiMode()?"YES":"NO");
+    footer("A toggles 12/24 display  B HOME");
+}
+static void diagPage(void){
+    page("DIAGNOSTICS / 8.3 BASELINE"); runDiagnostics();
+    iprintf("STORAGE %s\\nSAVE INTEGRITY %s\\nRUNTIME FAULTS %d\\n",storageReady()?"READY":"FAIL",saveIntegrity()?"PASS":"RECOVER",validationFaults);
+    iprintf("FRAME BUDGET %s\\nINPUT EVENTS %lu\\nGUARD TRIPS %lu\\n",frameBudgetFaults?"CHECK":"PASS",(unsigned long)inputEvents,(unsigned long)guardTrips);
+    iprintf("COLOR PALETTE: ACTIVE\\nAUDIO: HARD-OFF DEFAULT\\nLOCAL DATA: ENABLED\\n");
+    iprintf("\\n15-STEP BASELINE: UI / COLOR / SD / TOOLS / SAFETY / RECOVERY / DATA\\n");
+}
 static void page(const char *title){
     topBg(title);
     consoleSelect(&bottomConsole); consoleClear();
@@ -779,7 +821,7 @@ static void generalSettings(void){
 
 static void about(void){
     page("ABOUT AETHERMOD");
-    iprintf("AETHERMOD 8.2 PASS 1 / 2\n");
+    iprintf("AETHERMOD 8.3 BASELINE / 15-STEP BUILD\n");
     iprintf("ALL-ENCOMPASSING COCKPIT\n\n");
     iprintf("Local-first. Modular. Gateway-ready.\n");
     iprintf("Quantum-inspired computation.\n");
@@ -790,13 +832,14 @@ static void about(void){
 }
 
 static void draw(void){
+    setAetherPalette();
     applyAnimatedColors();
     if(mode==99){resetPage();return;}
     switch(mode){
       case 0: home(); break; case 1: quantum(); break; case 2: codex(); break; case 3: animal(); break;
       case 4: rfLab("MARAUDER / RF"); break; case 5: tinysa(); break; case 6: calculator(); break;
       case 7: daw(); break; case 8: dsp(); break; case 9: telemetry(); break; case 10: aiHome(); break;
-      case 11: network(); break; case 12: aiHome(); break; case 24: generalSettings(); break; default: expansion(); break;
+      case 11: network(); break; case 12: aiHome(); break; case 24: generalSettings(); break; case 25: vaultPage(); break; case 26: notesPage(); break; case 27: clockPage(); break; case 28: diagPage(); break; default: expansion(); break;
     }
 }
 
@@ -960,7 +1003,7 @@ static void input(void){
         if(d&KEY_Y){hotspotPing=hotspotState?38+(int)(frameCounter%20):0;phoneTelemetry=1;changed=1;}
         if(d&KEY_L){phoneType=0;changed=1;} if(d&KEY_R){phoneType=1;changed=1;}
         if(d&KEY_SELECT){phoneCompanion^=1;changed=1;}
-    } else if(mode>=14 && mode<=23){
+    } else if(mode>=14 && mode<=24){
         if(d&KEY_B){mode=0;changed=1;}
         if(d&KEY_UP){expansionCursor=(expansionCursor+11)%12;changed=1;}
         if(d&KEY_DOWN){expansionCursor=(expansionCursor+1)%12;changed=1;}
@@ -994,6 +1037,14 @@ static void input(void){
         if(d&KEY_X){visualTheme=(visualTheme+1)%4;changed=1;}
         if(d&KEY_Y){hapticLevel=(hapticLevel+1)%4;changed=1;}
         if(d&KEY_SELECT){crossLink^=1;changed=1;}
+    } else if(mode==25){
+        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP&&vaultCount){vaultCursor=(vaultCursor+vaultCount-1)%vaultCount;changed=1;} if(d&KEY_DOWN&&vaultCount){vaultCursor=(vaultCursor+1)%vaultCount;changed=1;} if(d&KEY_X){vaultScan();changed=1;} if(d&KEY_A){vaultScan();changed=1;}
+    } else if(mode==26){
+        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP){noteCursor=(noteCursor+3)%4;changed=1;} if(d&KEY_DOWN){noteCursor=(noteCursor+1)%4;changed=1;} if(d&KEY_A){ensureDirs(); FILE *nf=fopen("fat:/data/AetherMod/notes.txt","ab"); if(nf){fprintf(nf,"%s\\n",noteText[noteCursor]);fclose(nf);} changed=1;} 
+    } else if(mode==27){
+        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_A){clock24=!clock24;changed=1;}
+    } else if(mode==28){
+        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_A){runDiagnostics();changed=1;} if(d&KEY_X){resetNotice=0;changed=1;}
     } else {if(d&KEY_B){mode=0;changed=1;}}
     if(changed){
         /* Navigation must never generate a tone; tones are reserved for explicit actions. */
