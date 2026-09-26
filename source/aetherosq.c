@@ -210,7 +210,7 @@ static u32 hash32(const void *ptr,size_t n){
 static void defaults(void){
     memset(&save,0,sizeof(save));
     save.magic=SAVE_MAGIC; save.version=4;
-    save.sound=1; save.intensity=2; save.language=0;
+    save.sound=0; save.intensity=2; save.language=0;
     save.parental=1; save.nsfw=1; save.unsafe=1; save.unregulated=1;
     save.ai=1; save.privacy=1; save.wireless=0; save.downloads=0;
     save.browser=0; save.userContent=1; save.theme=0; save.brightness=3;
@@ -235,7 +235,12 @@ static void dawStepAdvance(void){
     for(int t=0;t<4;t++) if(dawPattern[t][save.dawStep]) tone();
 }
 
-static void feedback(int kind){ hapticPulse++; visualEnergy=(visualEnergy+11+(kind*7))%101; if(save.sound) tone(); }
+static void feedback(int kind){
+    hapticPulse++;
+    visualEnergy=(visualEnergy+11+(kind*7))%101;
+    /* Explicit action feedback only; navigation remains silent. */
+    if(save.sound) tone();
+}
 static void navigationFeedback(int direction){
     (void)direction;
     hapticPulse++;
@@ -262,13 +267,13 @@ static void animateUI(void){
     animSpark=(animSpark+5)&255;
 }
 static void applyAnimatedColors(void){
-    static const char *topColors[6]={"\\x1b[36;1m","\\x1b[36;1m","\\x1b[32;1m","\\x1b[32;1m","\\x1b[33;1m","\\x1b[37;1m"};
-    static const char *botColors[6]={"\\x1b[34;1m","\\x1b[34;1m","\\x1b[35;1m","\\x1b[35;1m","\\x1b[36;1m","\\x1b[37;1m"};
+    static const char *topColors[6]={"\x1b[36;1m","\x1b[36;1m","\x1b[32;1m","\x1b[32;1m","\x1b[33;1m","\x1b[37;1m"};
+    static const char *botColors[6]={"\x1b[34;1m","\x1b[34;1m","\x1b[35;1m","\x1b[35;1m","\x1b[36;1m","\x1b[37;1m"};
     consoleSelect(&topConsole); printf("%s",topColors[(animTopPhase/22)%6]);
     consoleSelect(&bottomConsole); printf("%s",botColors[(animBottomPhase/22)%6]);
 }
 static void liveBus(void){ if(!liveRefresh) return; livePhase=(livePhase+1)%32; visualEnergy=(visualEnergy+2+((frameCounter/4)%7))%101; if(crossLink){busEvents++;busQuantum=(busQuantum+qFidelity+1)%101;busAudio=(busAudio+dspRms+1)%101;busAnimal=(busAnimal+animalConfidence+2)%101;busRF=(busRF+saAvg+3)%101;busPhone=(busPhone+hotspotRssi+1)%101;busBot=(busBot+botEvents+1)%101;} }
-static void drawLiveBars(int seed){int p=(seed+livePhase)%24;iprintf("LIVE |");for(int i=0;i<24;i++)iprintf("%c",i==p?'@':((i+seed+visualEnergy)%5==0?'#':((i+seed)%3==0?'+':'.')));iprintf("| %3d%%\\n",visualEnergy);}
+static void drawLiveBars(int seed){int p=(seed+livePhase)%24;iprintf("LIVE |");for(int i=0;i<24;i++)iprintf("%c",i==p?'@':((i+seed+visualEnergy)%5==0?'#':((i+seed)%3==0?'+':'.')));iprintf("| %3d%%\n",visualEnergy);}
 static void serviceInput(u32 keys){
     int changedKeys=(int)keys ^ lastKeys;
     if(changedKeys) inputEvents++;
@@ -331,13 +336,13 @@ static void resetToBase(void){
 
 static void resetPage(void){
     page("AETHERMOD BASE RESET");
-    iprintf("RESTORE FACTORY / BASE SETTINGS\\n\\n");
-    iprintf("This clears AetherMod settings and runtime state.\\n");
-    iprintf("Installed SD corpus/data files are preserved.\\n\\n");
-    iprintf("%s  YES\\n",resetCursor==0?">":" ");
-    iprintf("%s  NO\\n\\n",resetCursor==1?">":" ");
-    iprintf("SELECT = CONFIRM YES    B = CANCEL\\n");
-    iprintf("START hold detected: 3-second recovery path.\\n");
+    iprintf("RESTORE FACTORY / BASE SETTINGS\n\n");
+    iprintf("This clears AetherMod settings and runtime state.\n");
+    iprintf("Installed SD corpus/data files are preserved.\n\n");
+    iprintf("%s  YES\n",resetCursor==0?">":" ");
+    iprintf("%s  NO\n\n",resetCursor==1?">":" ");
+    iprintf("SELECT = CONFIRM YES    B = CANCEL\n");
+    iprintf("START hold detected: 3-second recovery path.\n");
 }
 
 static void saveState(void){
@@ -370,8 +375,8 @@ static const char *langName(void){return langs[save.language%10];}
 
 static void topBg(const char *title){
     consoleSelect(&topConsole); consoleClear();
-    iprintf("      A E T H E R M O D  8.2\n");
-    iprintf("  ========================\n");
+    iprintf("\x1b[36;1m      A E T H E R M O D  8.2\x1b[37;1m\n");
+    iprintf("\x1b[35;1m  ========================\x1b[37;1m\n");
     iprintf("  %s\n\n",title);
     iprintf("  [%s]  QCORE:%s  AI:%s\n",
         isDSiMode()?"DSi":"DS",save.ai?"ON":"OFF",save.privacy?"LOCAL":"OPEN");
@@ -388,7 +393,7 @@ static void topBg(const char *title){
 static void page(const char *title){
     topBg(title);
     consoleSelect(&bottomConsole); consoleClear();
-    iprintf("AETHERMOD :: %s\n",title);
+    iprintf("\x1b[36;1mAETHERMOD :: %s\x1b[37;1m\n",title);
     iprintf("------------------------------\n");
 }
 
@@ -1001,7 +1006,7 @@ int main(void){
     consoleInit(&topConsole,0,BgType_Text4bpp,BgSize_T_256x256,22,3,true,true);
     consoleInit(&bottomConsole,0,BgType_Text4bpp,BgSize_T_256x256,22,3,false,true);
     consoleSelect(&topConsole); consoleClear(); iprintf("AETHERMOD\nBOOTING DUAL-OS...\n");
-    soundEnable();
+    soundDisable();
     swiWaitForVBlank();
 
     if(!fatInitDefault()){
