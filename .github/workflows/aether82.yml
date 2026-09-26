@@ -1,4 +1,4 @@
-name: AetherOS 8.3 Baseline
+name: AetherOS 8.4 Pass 1/5
 on:
   workflow_dispatch:
   push:
