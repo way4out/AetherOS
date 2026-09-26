@@ -15,9 +15,9 @@ jobs:
           export PATH="$DEVKITARM/bin:$DEVKITPRO/tools/bin:$PATH"
           make clean
           mkdir -p build/include
-          cp source/AetherMod_Pass4_Final.c source/aetherosq.c
-          rm -f source/AetherMod_Pass4.c source/AetherMod_Pass4_Final.c
-          cp include/pass4_prototypes.h build/include/pass4_prototypes.h
+          cp source/AetherMod_FinalPass5_Final.c source/aetherosq.c
+          rm -f source/AetherMod_FinalPass5.c source/AetherMod_FinalPass5_Final.c
+          cp include/finalpass5_prototypes.h build/include/finalpass5_prototypes.h
           sed -i "s/static long long calcResult/long long calcResult/" source/aetherosq.c
           sed -i "s/static void dawStepAdvance/void dawStepAdvance/" source/aetherosq.c
           make
@@ -33,10 +33,10 @@ jobs:
           cp AETHERMOD.md deploy/AETHERMOD.md
           printf '%s\n' 'Copy the apps/AetherMod and data/AetherMod directories to the DSi SD card.' > deploy/INSTALL.txt
           cd deploy
-          zip -r ../AetherMod-7.0-Apex-Pass4-DSi-Full-Rollout.zip .
+          zip -r ../AetherMod-7.0-Apex-FinalPass5-DSi-Full-Rollout.zip .
       - uses: actions/upload-artifact@v4
         with:
-          name: AetherMod-7.0-Apex-Pass4-DSi-Full-Rollout
+          name: AetherMod-7.0-Apex-FinalPass5-DSi-Full-Rollout
           path: |
             AetherMod.nds
-            AetherMod-7.0-Apex-Pass4-DSi-Full-Rollout.zip
+            AetherMod-7.0-Apex-FinalPass5-DSi-Full-Rollout.zip
