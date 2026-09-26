@@ -16,14 +16,14 @@ jobs:
           make clean
           mkdir -p build/include
           make
-          test -f AetherMod.nds
-          file AetherMod.nds || true
-          ls -lh AetherMod.nds
+          test -f AetherMod8.1.nds
+          file AetherMod8.1.nds || true
+          ls -lh AetherMod8.1.nds
       - name: Package complete SD bundle
         run: |
           mkdir -p deploy/apps/AetherMod
           mkdir -p deploy/data/AetherMod
-          cp AetherMod.nds deploy/apps/AetherMod/AetherMod.nds
+          cp AetherMod8.1.nds deploy/apps/AetherMod/AetherMod8.1.nds
           cp -r data/AetherMod/. deploy/data/AetherMod/
           cp AETHERMOD.md deploy/AETHERMOD.md
           printf '%s\n' 'Copy the apps/AetherMod and data/AetherMod directories to the DSi SD card.' > deploy/INSTALL.txt
@@ -33,5 +33,5 @@ jobs:
         with:
           name: AetherMod-8.1-Pass3-DSi-Public
           path: |
-            AetherMod.nds
-            AetherMod-8.0-Pass4-DSi-Full-Rollout.zip
+            AetherMod8.1.nds
+            AetherMod-8.1-Pass3-DSi-Public.zip
