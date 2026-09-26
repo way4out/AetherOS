@@ -233,6 +233,12 @@ static void feedback(int kind){ hapticPulse++; visualEnergy=(visualEnergy+11+(ki
 static void hwBus(void){ hwTouch=1; hwButtons=(int)keysHeld(); hwMic=1; hwCamera=1; hwLed=1; hwSpeaker=save.sound?1:0; inputRoute=hwTouch+(hwButtons?1:0); sensorRoute=hwMic+hwCamera; mediaRoute=hwSpeaker+phoneLinkState; ledRoute=hwLed+(hotspotState?1:0); if((frameCounter&7)==0){topFrames++;bottomFrames++;} }
 static void releaseBus(void){ releaseGuard=(hwTouch&&hwMic&&hwCamera&&hwLed)?1:0; if(!crossLink) routeErrors++; if(touchEvents) touchLatency=(touchLatency+1)%16; }
 static void animateUI(void){ animFrame=(animFrame+1)&63; animPulse=(animPulse+1)&31; colorTheme=(colorTheme+1)&15; }
+static void applyAnimatedColors(void){
+    static const ConsoleColor topColors[6]={CONSOLE_CYAN,CONSOLE_LIGHT_CYAN,CONSOLE_GREEN,CONSOLE_LIGHT_GREEN,CONSOLE_YELLOW,CONSOLE_WHITE};
+    static const ConsoleColor botColors[6]={CONSOLE_LIGHT_BLUE,CONSOLE_BLUE,CONSOLE_MAGENTA,CONSOLE_LIGHT_MAGENTA,CONSOLE_LIGHT_CYAN,CONSOLE_WHITE};
+    consoleSetColor(&topConsole,topColors[(animFrame/8)%6]);
+    consoleSetColor(&bottomConsole,botColors[(animFrame/8)%6]);
+}
 static void liveBus(void){ if(!liveRefresh) return; livePhase=(livePhase+1)%32; visualEnergy=(visualEnergy+2+((frameCounter/4)%7))%101; if(crossLink){busEvents++;busQuantum=(busQuantum+qFidelity+1)%101;busAudio=(busAudio+dspRms+1)%101;busAnimal=(busAnimal+animalConfidence+2)%101;busRF=(busRF+saAvg+3)%101;busPhone=(busPhone+hotspotRssi+1)%101;busBot=(busBot+botEvents+1)%101;} }
 static void drawLiveBars(int seed){int p=(seed+livePhase)%24;iprintf("LIVE |");for(int i=0;i<24;i++)iprintf("%c",i==p?'@':((i+seed+visualEnergy)%5==0?'#':((i+seed)%3==0?'+':'.')));iprintf("| %3d%%\\n",visualEnergy);}
 static void serviceInput(u32 keys){
@@ -747,6 +753,7 @@ static void about(void){
 }
 
 static void draw(void){
+    applyAnimatedColors();
     if(mode==99){resetPage();return;}
     switch(mode){
       case 0: home(); break; case 1: quantum(); break; case 2: codex(); break; case 3: animal(); break;
