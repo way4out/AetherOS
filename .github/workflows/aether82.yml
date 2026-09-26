@@ -15,21 +15,21 @@ jobs:
           make clean
           make
           test -f AetherMod8.4.nds
-          cp AetherMod8.4.nds AetherOS8.3.nds
+          cp AetherMod8.4.nds AetherOS8.4.nds
       - name: Package
         run: |
           mkdir -p deploy/apps/AetherMod deploy/data/AetherMod
           cp AetherMod8.4.nds deploy/apps/AetherMod/AetherMod8.4.nds
-          cp AetherOS8.3.nds deploy/apps/AetherMod/AetherOS8.3.nds
+          cp AetherOS8.4.nds deploy/apps/AetherMod/AetherOS8.4.nds
           cp -r data/AetherMod/. deploy/data/AetherMod/
           cp AETHERMOD.md deploy/AETHERMOD.md
-          printf '%s\n' 'Launch AetherOS8.3.nds from apps/AetherMod.' > deploy/INSTALL.txt
+          printf '%s\n' 'Launch AetherOS8.4.nds from apps/AetherMod.' > deploy/INSTALL.txt
           cd deploy
-          zip -r ../AetherOS8.3-Pass1-DSi-Public.zip .
+          zip -r ../AetherOS8.4-Pass1-DSi-Public.zip .
       - uses: actions/upload-artifact@v4
         with:
-          name: AetherOS8.3-Pass1-DSi-Public
+          name: AetherOS8.4-Pass1-DSi-Public
           path: |
             AetherMod8.4.nds
-            AetherOS8.3.nds
-            AetherOS8.3-Pass1-DSi-Public.zip
+            AetherOS8.4.nds
+            AetherOS8.4-Pass1-DSi-Public.zip
