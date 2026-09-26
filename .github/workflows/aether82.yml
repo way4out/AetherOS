@@ -1,4 +1,4 @@
-name: AetherOS 8.4 Pass 1/5
+name: AetherOS 8.4 Pass 2/5
 on:
   workflow_dispatch:
   push:
@@ -25,11 +25,11 @@ jobs:
           cp AETHERMOD.md deploy/AETHERMOD.md
           printf '%s\n' 'Launch AetherOS8.4.nds from apps/AetherMod.' > deploy/INSTALL.txt
           cd deploy
-          zip -r ../AetherOS8.4-Pass1-DSi-Public.zip .
+          zip -r ../AetherOS8.4-Pass2-DSi-Public.zip .
       - uses: actions/upload-artifact@v4
         with:
-          name: AetherOS8.4-Pass1-DSi-Public
+          name: AetherOS8.4-Pass2-DSi-Public
           path: |
             AetherMod8.4.nds
             AetherOS8.4.nds
-            AetherOS8.4-Pass1-DSi-Public.zip
+            AetherOS8.4-Pass2-DSi-Public.zip
