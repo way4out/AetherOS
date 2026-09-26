@@ -1,19 +1,16 @@
-# AetherMod 8.0 — Pass/Age 1 / 7
+# AetherMod 8.0 — Pass/Age 2 / 7
 
-Pass 1 establishes the seven-pass 8.0 expansion architecture.
+Pass 2 adds **PHONE LINK**, designed around an iPhone 15 first while retaining an Android-capable protocol surface.
 
-- 24 main-page modules across 3 pages of 8.
-- One authoritative selection state for D-pad, touch and launch.
-- Three-second START recovery remains global.
-- Former AI Safety, Family Safety and System home entries are consolidated into General Settings.
-- New working modules: Media Studio, Sensor Hub, Data Vault, File Browser, Haptic Lab, Accessibility, Power Lab, Control Lab, Diagnostics, Aether Bot and Visual Lab.
-- Shared live workspace foundation: refresh state, visual theme, haptic level, cursor/action feedback and live activity meters.
-- Quantum Core remains a deterministic software simulator; no physical QPU is claimed.
-- YHWH Codex now targets data/AetherMod/codex_full.txt for the full SD corpus.
-- Animal AI is moving toward live signal interaction rather than game-style composition.
-- Marauder/RF remains receive/analyze plus authorized test queue only; jamming, deauth and credential capture stay disabled.
-- TinySA remains an external gateway unless compatible hardware is attached.
-- Calculator, DAW and DSP/FFT retain their working engines and gain the shared visual/input foundation for later passes.
-- Telemetry, AI Home, Aether Bot and Network Gateway remain persistent system surfaces and will be upgraded each pass.
+## Phone Link
+- Dedicated home application on the 3-page / 24-slot architecture.
+- Hotspot state, band/profile state, RSSI, TX/RX counters, ping and packet telemetry.
+- iPhone 15 profile is the primary target; Android is retained as a compatible secondary profile.
+- Wi-Fi hotspot is the primary transport because the stock DSi radio is 2.4 GHz 802.11b/g/n-class and cannot directly become a 5G modem.
+- The phone supplies the cellular backhaul; AetherMod treats the phone as the network gateway rather than pretending the DSi itself has 5G.
+- Future passes can add a companion web endpoint for commands, file transfer, telemetry streaming and Aether Bot interaction.
 
-The executable stays compact; large corpora, audio, datasets and logs belong on SD.
+Apple documents that iPhone Personal Hotspot can share cellular connectivity over Wi-Fi, Bluetooth or USB. Nintendo documents that DSi wireless operation is 2.4 GHz and supports WPA/WPA2 modes through the DSi's advanced connection settings. Therefore this build deliberately uses the compatible 2.4 GHz hotspot path rather than claiming unsupported 5 GHz/5G radio capability.
+
+## 8.0 expansion direction
+Phone Link becomes the bridge for later live TinySA telemetry, Codex transfer, Animal AI input/output, Aether Bot control, Network Gateway services and SD file synchronization. No cellular modem is fabricated in software.
