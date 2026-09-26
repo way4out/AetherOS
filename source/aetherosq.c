@@ -15,7 +15,7 @@
 
 #define APP_COUNT 24
 #define AETHERMOD_MAJOR 8
-#define AETHERMOD_PASS 4
+#define AETHERMOD_PASS 5
 #define AETHERMOD_TOTAL_PASSES 7
 #define NOTE_COUNT 8
 #define CODEX_PATH "data/AetherMod/codex.txt"
@@ -72,6 +72,8 @@ static int animalConfidence=0, animalEvents=0, animalOutput=0, animalHistory[8]=
 static int rfSweep=0, rfTrace[24]={0}, saTrace[24]={0}, saPeak=0, saAvg=0;
 static int calcMemory2=0, calcError=0, dspPeakBin=0, dspRms=0, dspFrames=0, dspHistory[8]={0};
 static int phonePairCode=0, phoneBytesTx=0, phoneBytesRx=0, phoneQueue=0, phoneAck=0, netLatency=0, netHealth=0, botEvents=0;
+static int livePhase=0, hapticPulse=0, visualEnergy=0;
+static int busQuantum=0, busAudio=0, busAnimal=0, busRF=0, busPhone=0, busBot=0;
 
 static void saveState(void);
 static void markDirty(void);
@@ -95,6 +97,9 @@ static void rfLogEvent(const char *kind, int value);
 static long long calcResult(void);
 static void dawStepAdvance(void);
 static void tone(void);
+static void feedback(int kind);
+static void liveBus(void);
+static void drawLiveBars(int seed);
 
 static int storageReady(void){
     FILE *f=fopen("fat:/data/AetherMod/.aether_test","wb");
@@ -217,6 +222,9 @@ static void dawStepAdvance(void){
     for(int t=0;t<4;t++) if(dawPattern[t][save.dawStep]) tone();
 }
 
+static void feedback(int kind){ hapticPulse++; visualEnergy=(visualEnergy+11+(kind*7))%101; if(save.sound) tone(); }
+static void liveBus(void){ if(!liveRefresh) return; livePhase=(livePhase+1)%32; visualEnergy=(visualEnergy+2+((frameCounter/4)%7))%101; if(crossLink){busEvents++;busQuantum=(busQuantum+qFidelity+1)%101;busAudio=(busAudio+dspRms+1)%101;busAnimal=(busAnimal+animalConfidence+2)%101;busRF=(busRF+saAvg+3)%101;busPhone=(busPhone+hotspotRssi+1)%101;busBot=(busBot+botEvents+1)%101;} }
+static void drawLiveBars(int seed){int p=(seed+livePhase)%24;iprintf("LIVE |");for(int i=0;i<24;i++)iprintf("%c",i==p?'@':((i+seed+visualEnergy)%5==0?'#':((i+seed)%3==0?'+':'.')));iprintf("| %3d%%\\n",visualEnergy);}
 static void serviceInput(u32 keys){
     int changedKeys=(int)keys ^ lastKeys;
     if(changedKeys) inputEvents++;
@@ -241,7 +249,7 @@ static void updateCapabilityHealth(void){
 
 static void returnHome(void){ lastMode=mode; mode=0; homeScroll=(selectionPin>=8); setSelection(selectionPin); saveState(); }
 
-static void moduleHeartbeat(void){
+static void moduleHeartbeat(void){ liveBus();
     if(mode>=1 && mode<=APP_COUNT) moduleTicks[mode-1]++;
     uptimeFrames=frameCounter;
     if((frameCounter&15)==0){
@@ -328,7 +336,8 @@ static void topBg(const char *title){
         save.wireless?"GATE":"OFF",save.onlineAI?"ON":"LOCAL","READY");
     iprintf("\n  %c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c\n",
       '#','.',':','*','+','.',':','*','+','.',':','*','+','.',':','#');
-    iprintf("  FRAME %lu   BPM %u\n",(unsigned long)frameCounter,save.dawBpm);
+    drawLiveBars((int)(frameCounter/2));
+    iprintf("  FRAME %lu BPM %u  V%d H%d\n",(unsigned long)frameCounter,save.dawBpm,visualTheme,hapticLevel);
     iprintf("  SAFE %s   LANG %s\n",safeMode?"YES":"NO",langName());
 }
 
@@ -449,7 +458,8 @@ static void quantum(void){
     iprintf("FFT BRIDGE READY  QPU %s\n",save.wireless?"GATEWAY":"LOCAL");
     iprintf("Software quantum simulator; no physical QPU claimed.\n");
     iprintf("PHONE BRIDGE %s  TELEMETRY %s\n",phoneLinkState?"READY":"LOCAL",phoneTelemetry?"LIVE":"IDLE");
-    iprintf("FIDELITY %d%%  ENTROPY %d%%  HIST ",qFidelity,qEntropy); for(int i=0;i<8;i++) iprintf("%d ",qHistogram[i]); iprintf("\n");
+    iprintf("FIDELITY %d%%  ENTROPY %d%%  HIST ",qFidelity,qEntropy);
+    drawLiveBars(qEntropy); for(int i=0;i<8;i++) iprintf("%d ",qHistogram[i]); iprintf("\n");
     footer("A RUN  X PHASE  Y MEASURE  B HOME  START HOLD 3s = RESET");
 }
 
@@ -616,6 +626,8 @@ static void telemetry(void){
     iprintf("PASS 4 BUS %d PHONE %d QFID %d ANCONF %d DSPF %d\n",busEvents,phonePackets,qFidelity,animalConfidence,dspFrames);
     iprintf("RF %d SA %d NET %d%%\n",rfSweep,saPeak,netHealth);
     iprintf("PAGE %d/3  PRESS A TO CYCLE\n",telemetryPage+1);
+    iprintf("BUS Q/A/AN/RF/PH/BOT %d/%d/%d/%d/%d/%d\n",busQuantum,busAudio,busAnimal,busRF,busPhone,busBot);
+    drawLiveBars(busEvents);
     if(telemetryPage){
         iprintf("UPTIME %lu  TOUCH EVENTS %lu  AUTOSAVES %lu\n",(unsigned long)uptimeFrames,(unsigned long)touchEvents,(unsigned long)autosaveCount);
         iprintf("GUARD TRIPS %lu  MODULE TICKS %lu\n",(unsigned long)guardTrips,(unsigned long)moduleTicks[selectionPin]);
@@ -754,6 +766,7 @@ static void input(void){
     if(d&KEY_SELECT){safeMode=!safeMode;if(safeMode){save.onlineAI=0;save.wireless=0;save.downloads=0;gatewayState=0;mode=0;}saveState();changed=1;}
     if(d&KEY_TOUCH){
         touchPosition t; touchRead(&t); touchEvents++; touchFocus=1;
+        feedback((t.px/64 + (t.py/64)*4 + mode)%4);
         if(mode>=13 && mode<=24){
         if(d&KEY_B){mode=0;changed=1;}
         if(mode==13){
@@ -907,7 +920,7 @@ static void input(void){
         if(d&KEY_Y){hapticLevel=(hapticLevel+1)%4;changed=1;}
         if(d&KEY_SELECT){crossLink^=1;changed=1;}
     } else {if(d&KEY_B){mode=0;changed=1;}}
-    if(changed)draw();
+    if(changed){ feedback(mode%4); draw(); }
 }
 
 int main(void){
