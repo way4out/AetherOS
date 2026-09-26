@@ -15,7 +15,7 @@
  * spectrum analyzer, QPU, satellite modem, or external RF instrument.
  */
 
-#define APP_COUNT 28
+#define APP_COUNT 29
 #define AETHERMOD_MAJOR 8
 #define AETHERMOD_MINOR 4
 #define AETHERMOD_PASS 2
@@ -199,7 +199,7 @@ static const char *apps[APP_COUNT]={
     "PHONE LINK",
     "MEDIA STUDIO","SENSOR HUB","DATA VAULT","FILE BROWSER",
     "HAPTIC LAB","ACCESSIBILITY","POWER LAB","CONTROL LAB",
-    "DIAGNOSTICS","AETHER BOT","GENERAL SETTINGS","DATA VAULT","NOTES","CLOCK","DIAGNOSTICS"
+    "DIAGNOSTICS","AETHER BOT","GENERAL SETTINGS","EVENT LOG","DATA VAULT","NOTES","CLOCK","DIAGNOSTICS"
 };
 
 static const char *langs[10]={
@@ -877,7 +877,7 @@ static void draw(void){
       case 0: home(); break; case 1: quantum(); break; case 2: codex(); break; case 3: animal(); break;
       case 4: rfLab("MARAUDER / RF"); break; case 5: tinysa(); break; case 6: calculator(); break;
       case 7: daw(); break; case 8: dsp(); break; case 9: telemetry(); break; case 10: aiHome(); break;
-      case 11: network(); break; case 12: aiHome(); break; case 17: fileBrowserPage(); break; case 24: generalSettings(); break; case 25: vaultPage(); break; case 26: notesPage(); break; case 27: clockPage(); break; case 28: diagPage(); break; default: expansion(); break;
+      case 11: network(); break; case 12: aiHome(); break; case 17: fileBrowserPage(); break; case 24: generalSettings(); break; case 25: eventLogPage(); break; case 26: vaultPage(); break; case 27: notesPage(); break; case 28: clockPage(); break; case 29: diagPage(); break; default: expansion(); break;
     }
 }
 
@@ -908,7 +908,7 @@ static void input(void){
             else if(t.py>=55 && t.py<170){ int r=((int)t.py-55)/10; if(r>=0 && r<fileCount){ fileCursor=r; changed=1; } }
             else { fileScan(); changed=1; }
             if(changed) draw();
-        } else if(mode>=25 && mode<=28){
+        } else if(mode>=25 && mode<=29){
         if(t.py<48 || t.py>=192){ mode=0; changed=1; }
         else if(mode==25){
             if(t.py>=55 && t.py<150){ int r=((int)t.py-55)/12; if(r>=0 && r<vaultCount){ vaultCursor=r; changed=1; } }
@@ -916,7 +916,7 @@ static void input(void){
         } else if(mode==26){
             if(t.py>=55 && t.py<120){ int r=((int)t.py-55)/14; if(r>=0 && r<4){ noteCursor=r; changed=1; } }
             else if(t.py>=120){ ensureDirs(); char np[128]; snprintf(np,sizeof(np),"%sdata/AetherMod/notes.txt",root); FILE *nf=fopen(np,"ab"); if(nf){fprintf(nf,"%s\n",noteText[noteCursor]);fclose(nf);} changed=1; }
-        } else if(mode==27){ clock24=!clock24; changed=1; }
+        } else if(mode==28){ clock24=!clock24; changed=1; }
         else if(mode==28){ runDiagnostics(); changed=1; }
         if(changed) draw();
     } else if(mode>=13 && mode<=24){
