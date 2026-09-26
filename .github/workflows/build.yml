@@ -1,4 +1,4 @@
-name: Build AetherMod 8.1 Pass 3 for Nintendo DSi
+name: Build AetherMod 8.2 Pass 1 for Nintendo DSi
 on:
   workflow_dispatch:
   push:
@@ -16,22 +16,22 @@ jobs:
           make clean
           mkdir -p build/include
           make
-          test -f AetherMod8.1.nds
-          file AetherMod8.1.nds || true
-          ls -lh AetherMod8.1.nds
+          test -f AetherMod8.2.nds
+          file AetherMod8.2.nds || true
+          ls -lh AetherMod8.2.nds
       - name: Package complete SD bundle
         run: |
           mkdir -p deploy/apps/AetherMod
           mkdir -p deploy/data/AetherMod
-          cp AetherMod8.1.nds deploy/apps/AetherMod/AetherMod8.1.nds
+          cp AetherMod8.2.nds deploy/apps/AetherMod/AetherMod8.2.nds
           cp -r data/AetherMod/. deploy/data/AetherMod/
           cp AETHERMOD.md deploy/AETHERMOD.md
           printf '%s\n' 'Copy the apps/AetherMod and data/AetherMod directories to the DSi SD card.' > deploy/INSTALL.txt
           cd deploy
-          zip -r ../AetherMod-8.1-Pass3-DSi-Public.zip .
+          zip -r ../AetherMod-8.2-Pass1-DSi-Public.zip .
       - uses: actions/upload-artifact@v4
         with:
-          name: AetherMod-8.1-Pass3-DSi-Public
+          name: AetherMod-8.2-Pass1-DSi-Public
           path: |
-            AetherMod8.1.nds
-            AetherMod-8.1-Pass3-DSi-Public.zip
+            AetherMod8.2.nds
+            AetherMod-8.2-Pass1-DSi-Public.zip
