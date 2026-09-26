@@ -15,7 +15,8 @@ jobs:
           export PATH="$DEVKITARM/bin:$DEVKITPRO/tools/bin:$PATH"
           make clean
           mkdir -p build/include
-          cp source/AetherMod_Pass4.c source/aetherosq.c
+          cp source/AetherMod_Pass4_Final.c source/aetherosq.c
+          rm -f source/AetherMod_Pass4.c source/AetherMod_Pass4_Final.c
           cp include/pass4_prototypes.h build/include/pass4_prototypes.h
           sed -i "s/static long long calcResult/long long calcResult/" source/aetherosq.c
           sed -i "s/static void dawStepAdvance/void dawStepAdvance/" source/aetherosq.c
