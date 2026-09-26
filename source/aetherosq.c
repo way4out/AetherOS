@@ -940,8 +940,6 @@ int main(void){
     videoSetMode(MODE_0_2D); videoSetModeSub(MODE_0_2D); vramDefault();
     consoleInit(&topConsole,0,BgType_Text4bpp,BgSize_T_256x256,22,3,true,true);
     consoleInit(&bottomConsole,0,BgType_Text4bpp,BgSize_T_256x256,22,3,false,true);
-    consoleSetColor(&topConsole, CONSOLE_CYAN);
-    consoleSetColor(&bottomConsole, CONSOLE_LIGHT_CYAN);
     consoleSelect(&topConsole); consoleClear(); iprintf("AETHERMOD\nBOOTING DUAL-OS...\n");
     soundEnable();
     swiWaitForVBlank();
