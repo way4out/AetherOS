@@ -14,6 +14,8 @@ jobs:
         run: |
           export PATH="$DEVKITARM/bin:$DEVKITPRO/tools/bin:$PATH"
           make clean
+          mkdir -p build/include
+          cp include/pass4_prototypes.h build/include/pass4_prototypes.h
           make
           test -f AetherMod.nds
           file AetherMod.nds || true
