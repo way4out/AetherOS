@@ -61,7 +61,7 @@ static int soundId=-1;
 static int touchFocus=0, touchAction=0, moduleTicks[APP_COUNT]={0};
 static u32 uptimeFrames=0, touchEvents=0, autosaveCount=0, guardTrips=0;
 static int quantumMeasure=0, quantumShots=0, aiSafetyEvents=0, networkPackets=0;
-static int familyProfile=0, settingsCursor=0, systemCursor=0;
+static int familyProfile=0, systemCursor=0;
 static int aiCursor=0, aiQuery=0, browserCursor=0, graphMode=0, dawView=0, settingsCursor=0, codexLine=0, animalFeature=0, telemetryPage=0;
 
 static void saveState(void);
@@ -85,6 +85,7 @@ static void ensureDirs(void);
 static void rfLogEvent(const char *kind, int value);
 static long long calcResult(void);
 static void dawStepAdvance(void);
+static void tone(void);
 
 static int storageReady(void){
     FILE *f=fopen("fat:/data/AetherMod/.aether_test","wb");
