@@ -83,7 +83,7 @@ static int releaseGuard=0, routeErrors=0, touchLatency=0, colorCycle=0;
 static int busQuantum=0, busAudio=0, busAnimal=0, busRF=0, busPhone=0, busBot=0;
 static int animFrame=0, animPulse=0, colorTheme=0;
 static int animTopPhase=0, animBottomPhase=0, animSweep=0, animSpark=0;
-static int homePageLock=0;
+static int homePageLock=0, homePage=0;
 static int navSoundGate=0, pageTransition=0, touchX=0, touchY=0, touchPressed=0;
 static int vaultCursor=0, vaultCount=0, noteCursor=0, clock24=1, diagCursor=0, fileCursor=0, fileCount=0, eventCursor=0, eventCount=0;
 static int vaultDirty=1, fileDirty=1, eventDirty=1, drawDecimation=0, lastHardwareFrame=0;
@@ -184,8 +184,18 @@ static int normalizeSelection(int value){
 static void setSelection(int value){
     selectionPin=normalizeSelection(value);
     cursor=selectionPin;
-    homeScroll=selectionPin/8;
+    homePage=selectionPin/8;
+    homeScroll=homePage;
     save.selectionPin=(u16)selectionPin;
+}
+static void setHomePage(int pageIndex){
+    if(pageIndex<0) pageIndex=AETHER_HOME_PAGES-1;
+    if(pageIndex>=AETHER_HOME_PAGES) pageIndex=0;
+    homePage=pageIndex;
+    homeScroll=homePage;
+    int first=homePage*8;
+    if(first>=APP_COUNT) first=APP_COUNT-1;
+    setSelection(first);
 }
 
 static void launchSelection(void){
@@ -336,7 +346,7 @@ static void moduleHeartbeat(void){ hwBus(); liveBus(); releaseBus(); colorCycle=
 
 static void resetToBase(void){
     defaults();
-    selectionPin=0; cursor=0; homeScroll=0; homePulse=0;
+    selectionPin=0; cursor=0; homePage=0; homeScroll=0; homePulse=0;
     mode=0; safeMode=0; gatewayState=0; dirtyState=0;
     codexPage=0; codexSearch=0; codexLine=0; animalPage=0; animalFeature=0; animalAnalyzing=0; rfWarnIndex=0; rfPushQueue=0; rfAuthGate=0; rfLogCount=0; saView=0; saTraceHold=0; saInputSource=0;
     calculatorCursor=0; calcA=17; calcB=9; calcOp=0; calcInput=0; calcSign=1; calcMemory=0; calcTouchKey=0; dawTrack=0; dawTrackMute=0; dawPlaying=0; dawView=0; dawOctave=4; dawSwing=0; dawFx=0;
@@ -564,9 +574,9 @@ static void expansion(void){
 
 static void home(void){
     canonicalizeSelection();
-    homeScroll=selectionPin/8;
-    if(homeScroll<0) homeScroll=0;
-    if(homeScroll>=AETHER_HOME_PAGES) homeScroll=AETHER_HOME_PAGES-1;
+    if(homePage<0) homePage=0;
+    if(homePage>=AETHER_HOME_PAGES) homePage=AETHER_HOME_PAGES-1;
+    homeScroll=homePage;
     runDiagnostics();
     updateCapabilityHealth();
     topBg("DUAL-OS COCKPIT");
@@ -969,8 +979,7 @@ static void input(void){
                 if(r<APP_COUNT){setSelection(r);launchSelection();changed=1;}
             }
             else if(t.py>=150){
-                homeScroll=(homeScroll+1)%AETHER_HOME_PAGES;
-                setSelection(homeScroll*8);
+                setHomePage(homePage+1);
                 pageTransitionFeedback();
                 saveState();changed=1;
             }
@@ -991,12 +1000,12 @@ static void input(void){
         /* SINGLE SOURCE OF TRUTH: selectionPin controls cursor and page. */
         if(nav&KEY_UP){ inputEvents++; setSelection(selectionPin-1); homePulse=1; navigationFeedback(-1); saveState(); changed=1; }
         if(nav&KEY_DOWN){ inputEvents++; setSelection(selectionPin+1); homePulse=1; navigationFeedback(1); saveState(); changed=1; }
-        if(nav&KEY_LEFT){ inputEvents++; setSelection(((homeScroll+2)%AETHER_HOME_PAGES)*8); pageTransitionFeedback(); saveState(); changed=1; }
-        if(nav&KEY_RIGHT){ inputEvents++; setSelection(((homeScroll+1)%AETHER_HOME_PAGES)*8); pageTransitionFeedback(); saveState(); changed=1; }
+        if(nav&KEY_LEFT){ inputEvents++; setHomePage(homePage-1); pageTransitionFeedback(); saveState(); changed=1; }
+        if(nav&KEY_RIGHT){ inputEvents++; setHomePage(homePage+1); pageTransitionFeedback(); saveState(); changed=1; }
         if(touchPressed){
             if(touchY>=150){
-                int next=(homeScroll+1)%AETHER_HOME_PAGES;
-                setSelection(next*8);
+                int next=(homePage+1)%AETHER_HOME_PAGES;
+                setHomePage(next);
                 pageTransitionFeedback();
                 saveState(); changed=1;
             } else if(touchY>=48 && touchY<144){
