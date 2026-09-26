@@ -18,7 +18,7 @@
 #define AETHERMOD_PASS 1
 #define AETHERMOD_TOTAL_PASSES 7
 #define NOTE_COUNT 8
-#define CODEX_PATH "data/AetherMod/codex_full.txt"
+#define CODEX_PATH "data/AetherMod/codex.txt"
 #define ANIMAL_PATH "data/AetherMod/animals.txt"
 
 typedef struct {
