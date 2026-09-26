@@ -17,9 +17,9 @@
 
 #define APP_COUNT 28
 #define AETHERMOD_MAJOR 8
-#define AETHERMOD_MINOR 3
+#define AETHERMOD_MINOR 4
 #define AETHERMOD_PASS 1
-#define AETHERMOD_TOTAL_PASSES 15
+#define AETHERMOD_TOTAL_PASSES 5
 #define AETHER_HOME_PAGES 4
 #define NOTE_COUNT 8
 #define CODEX_PATH "data/AetherMod/codex.txt"
@@ -87,8 +87,8 @@ static int homePageLock=0;
 static int navSoundGate=0, pageTransition=0, touchX=0, touchY=0, touchPressed=0;
 static int vaultCursor=0, vaultCount=0, noteCursor=0, clock24=1, diagCursor=0;
 static char vaultNames[12][48];
-static const char noteText[4][64]={"Rescue / build priorities","DSi local-first workspace","AetherOS 8.3 baseline","User notes preserved on SD"};
-static const u32 aetherLut[1024]={0x13579BDFu,0x2468ACE0u,0x10203040u,0x55667788u};
+static const char noteText[4][64]={"Rescue / build priorities","DSi local-first workspace","AetherOS 8.4 pass 1/5","User notes preserved on SD"};
+static const u32 aetherLut[1024]={0};
 
 static void saveState(void);
 static void markDirty(void);
@@ -412,31 +412,31 @@ static void vaultScan(void){
 }
 static void vaultPage(void){
     page("DATA VAULT / SD BROWSER"); vaultScan();
-    iprintf("REAL SD DIRECTORY: data/AetherMod\\n\\n");
-    if(!vaultCount){iprintf("No readable entries found.\\n");}
+    iprintf("REAL SD DIRECTORY: data/AetherMod\n\n");
+    if(!vaultCount){iprintf("No readable entries found.\n");}
     for(int i=0;i<vaultCount;i++) iprintf("%c %02d  %-30s\\n",i==vaultCursor?'>':' ',i+1,vaultNames[i]);
-    iprintf("\\nA = inspect  X = rescan  B = home\\n");
-    if(vaultCount){ char p[128]; snprintf(p,sizeof(p),"%sdata/AetherMod/%s",root,vaultNames[vaultCursor]); FILE *f=fopen(p,"rb"); if(f){char buf[81]={0}; size_t n=fread(buf,1,80,f); fclose(f); buf[n]=0; iprintf("\\nPREVIEW: %s\\n",buf);}}
+    iprintf("\nA = inspect  X = rescan  B = home\n");
+    if(vaultCount){ char p[128]; snprintf(p,sizeof(p),"%sdata/AetherMod/%s",root,vaultNames[vaultCursor]); FILE *f=fopen(p,"rb"); if(f){char buf[81]={0}; size_t n=fread(buf,1,80,f); fclose(f); buf[n]=0; iprintf("\nPREVIEW: %s\n",buf);}}
 }
 static void notesPage(void){
     page("PERSISTENT NOTES");
-    iprintf("SD-BACKED QUICK NOTES\\n\\n");
+    iprintf("SD-BACKED QUICK NOTES\n\n");
     for(int i=0;i<4;i++) iprintf("%c %d  %s\\n",i==noteCursor?'>':' ',i+1,noteText[i]);
-    iprintf("\\nA = append selected note to SD\\nX = refresh  UP/DOWN = select\\n");
+    iprintf("\nA = append selected note to SD\nX = refresh  UP/DOWN = select\n");
 }
 static void clockPage(void){
     page("CLOCK / SYSTEM TIME"); time_t now=time(NULL); struct tm *tmv=localtime(&now);
-    if(tmv) iprintf("%02d:%02d:%02d\\n\\nDATE %04d-%02d-%02d\\n",tmv->tm_hour,tmv->tm_min,tmv->tm_sec,1900+tmv->tm_year,1+tmv->tm_mon,tmv->tm_mday);
+    if(tmv){ int hh=tmv->tm_hour; if(!clock24){ hh%=12; if(hh==0) hh=12; } iprintf("%02d:%02d:%02d %s\n\nDATE %04d-%02d-%02d\n",hh,tmv->tm_min,tmv->tm_sec,clock24?"":"12H",1900+tmv->tm_year,1+tmv->tm_mon,tmv->tm_mday); }
     else iprintf("RTC TIME UNAVAILABLE\\n");
     iprintf("FRAME %lu\\nUPTIME %lu FRAMES\\nDSi MODE %s\\n",(unsigned long)frameCounter,(unsigned long)uptimeFrames,isDSiMode()?"YES":"NO");
     footer("A toggles 12/24 display  B HOME");
 }
 static void diagPage(void){
-    page("DIAGNOSTICS / 8.3 BASELINE"); runDiagnostics();
+    page("DIAGNOSTICS / 8.4 PASS 1/5"); runDiagnostics();
     iprintf("STORAGE %s\\nSAVE INTEGRITY %s\\nRUNTIME FAULTS %d\\n",storageReady()?"READY":"FAIL",saveIntegrity()?"PASS":"RECOVER",validationFaults);
     iprintf("FRAME BUDGET %s\\nINPUT EVENTS %lu\\nGUARD TRIPS %lu\\n",frameBudgetFaults?"CHECK":"PASS",(unsigned long)inputEvents,(unsigned long)guardTrips);
     iprintf("COLOR PALETTE: ACTIVE\\nAUDIO: HARD-OFF DEFAULT\\nLOCAL DATA: ENABLED\\n");
-    iprintf("\\n15-STEP BASELINE: UI / COLOR / SD / TOOLS / SAFETY / RECOVERY / DATA\\n");
+    iprintf("\\n5-PASS BUILD BASELINE: UI / COLOR / SD / TOOLS / SAFETY / RECOVERY / DATA\\n");
 }
 static void page(const char *title){
     topBg(title);
@@ -530,7 +530,7 @@ static void home(void){
     updateCapabilityHealth();
     topBg("DUAL-OS COCKPIT");
     consoleSelect(&bottomConsole); consoleClear();
-    iprintf("AETHERMOD 8.2 / IMMERSIVE COCKPIT\n");
+    iprintf("AETHERMOD 8.4 / IMMERSIVE COCKPIT\n");
     iprintf("------------------------------\n");
     iprintf("PAGE %d/3   MODULES %02d-%02d   %s\n\n",
         homeScroll+1,homeScroll*8+1,homeScroll*8+8,
@@ -802,7 +802,7 @@ static void family(void){
 
 static void systemPage(void){
     selfTestRun=(frameCounter&15)==0; moduleHeartbeat(); page("SYSTEM / SERVICE");
-    iprintf("AETHERMOD 8.2  PASS 1/2  DSi ARM9\n");
+    iprintf("AETHERMOD 8.4  PASS 1/2  DSi ARM9\n");
     iprintf("SELFTEST %s SAFE %s DIRTY %s\n",selfTestRun?"RUN":"READY",safeMode?"ON":"OFF",dirtyState?"YES":"NO");
     iprintf("BRIGHT %u/4 THEME %s LANG %s\n",save.brightness,save.theme?"AETHER":"CLASSIC",langName());
     iprintf("SOUND %s AI %s WIFI %s BROWSER %s\n",save.sound?"ON":"OFF",save.ai?"ON":"OFF",save.wireless?"ON":"OFF",save.browser?"ON":"OFF");
@@ -826,7 +826,7 @@ static void generalSettings(void){
 
 static void about(void){
     page("ABOUT AETHERMOD");
-    iprintf("AETHERMOD 8.3 BASELINE / 15-STEP BUILD\n");
+    iprintf("AETHERMOD 8.4 PASS 1/5 / 15-STEP BUILD\n");
     iprintf("ALL-ENCOMPASSING COCKPIT\n\n");
     iprintf("Local-first. Modular. Gateway-ready.\n");
     iprintf("Quantum-inspired computation.\n");
@@ -870,7 +870,18 @@ static void input(void){
     if(d&KEY_SELECT){safeMode=!safeMode;if(safeMode){save.onlineAI=0;save.wireless=0;save.downloads=0;gatewayState=0;mode=0;}saveState();changed=1;}
     if(d&KEY_TOUCH){
         touchPosition t; touchRead(&t); touchEvents++; touchFocus=1;
-        if(mode>=13 && mode<=24){
+        if(mode>=25 && mode<=28){
+        if(t.py<48 || t.py>=192){ mode=0; changed=1; }
+        else if(mode==25){
+            if(t.py>=55 && t.py<150){ int r=((int)t.py-55)/12; if(r>=0 && r<vaultCount){ vaultCursor=r; changed=1; } }
+            else if(t.py>=150){ vaultScan(); changed=1; }
+        } else if(mode==26){
+            if(t.py>=55 && t.py<120){ int r=((int)t.py-55)/14; if(r>=0 && r<4){ noteCursor=r; changed=1; } }
+            else if(t.py>=120){ ensureDirs(); char np[128]; snprintf(np,sizeof(np),"%sdata/AetherMod/notes.txt",root); FILE *nf=fopen(np,"ab"); if(nf){fprintf(nf,"%s\n",noteText[noteCursor]);fclose(nf);} changed=1; }
+        } else if(mode==27){ clock24=!clock24; changed=1; }
+        else if(mode==28){ runDiagnostics(); changed=1; }
+        if(changed) draw();
+    } else if(mode>=13 && mode<=24){
         if(d&KEY_B){mode=0;changed=1;}
         if(mode==13){
             if(d&KEY_A){hotspotState=!hotspotState; hotspotTx+=hotspotState?1:0; hotspotRx+=hotspotState?2:0; hotspotPing=hotspotState?42:0; phonePackets+=hotspotState?3:0; changed=1;}
