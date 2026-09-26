@@ -64,6 +64,8 @@ static int quantumMeasure=0, quantumShots=0, aiSafetyEvents=0, networkPackets=0;
 static int familyProfile=0, systemCursor=0;
 static int visualTheme=1, hapticLevel=2, expansionCursor=0, liveRefresh=1, settingsSection=0;
 static int hotspotState=0, hotspotBand=0, hotspotSecurity=2, hotspotRssi=72, hotspotTx=0, hotspotRx=0, hotspotPing=0, hotspotMode=0, phoneType=0, phonePackets=0;
+static int phoneLinkState=0, phoneSession=0, phoneCompanion=0, phoneFileSync=0, phoneTelemetry=0, phoneRemote=0;
+static int busTicks=0, busEvents=0, codexSync=0, animalLink=0, dspLink=0, rfLink=0, botLink=0;
 static int phoneLinkState=0, phoneSession=0, phoneService=0, phoneLastOp=0, phoneFileSync=0, phoneTelemetry=0, phoneRemote=0, phoneCompanion=0;
 static int busTicks=0, busEvents=0, crossLink=0, codexSync=0, animalLink=0, dspLink=0, rfLink=0, botLink=0;
 static int aiCursor=0, aiQuery=0, browserCursor=0, graphMode=0, dawView=0, settingsCursor=0, codexLine=0, animalFeature=0, telemetryPage=0;
@@ -440,6 +442,7 @@ static void quantum(void){
     iprintf("ALGO superposition / phase / measure\n");
     iprintf("FFT BRIDGE READY  QPU %s\n",save.wireless?"GATEWAY":"LOCAL");
     iprintf("Software quantum simulator; no physical QPU claimed.\n");
+    iprintf("PHONE BRIDGE %s  TELEMETRY %s\n",phoneLinkState?"READY":"LOCAL",phoneTelemetry?"LIVE":"IDLE");
     footer("A RUN  X PHASE  Y MEASURE  B HOME  START HOLD 3s = RESET");
 }
 
@@ -468,6 +471,7 @@ static void codex(void){
         } else iprintf("\nDATA FILE NOT FOUND\n");
     }
     iprintf("YHWH LAYER: יהוה / YHWH / LORD / ADONAI\n");
+    iprintf("CORPUS SYNC %s  PHONE FILE LINK %s\n",codexSync?"READY":"IDLE",phoneFileSync?"READY":"LOCAL");
     footer("UP/DOWN PAGE  A SEARCH  X LINE  L/R CORPUS  B HOME");
 }
 
@@ -481,7 +485,7 @@ static void animal(void){
     iprintf("STATE %s  CONF %02d%%\n",m<3?"CALM":m<6?"ALERT":"SOCIAL",animalAnalyzing?68+(a%25):0);
     iprintf("PLAY |");for(int i=0;i<16;i++)iprintf("%c",((i+m)%5==0)?'O':'.');iprintf("|\n");
     iprintf("TEXT CUE + TONE + VISUAL STATE\n");
-    iprintf("AI GATE %s\n",save.onlineAI?"ONLINE":"LOCAL PROFILE");
+    iprintf("AI GATE %s  PHONE LINK %s\n",save.onlineAI?"ONLINE":"LOCAL PROFILE",animalLink?"READY":"IDLE");
     iprintf("Signal classification; not literal animal speech.\n");
     footer("UP/DOWN SPECIES  A ANALYZE  X FEATURE  Y VOCALIZE  B HOME");
 }
@@ -618,6 +622,7 @@ static void aiHome(void){
     iprintf("BROWSER GATE %s\n",save.browser?"READY":"OFF");
     iprintf("TOOLS: calculator / graph / animal / RF / web\n");
     iprintf("Local responses are deterministic; cloud AI requires gateway.\n");
+    iprintf("PHONE BOT %s  CODEX %s  REMOTE %s\n",botLink?"ACTIVE":"IDLE",codexSync?"SYNC":"LOCAL",phoneRemote?"ARMED":"SAFE");
     footer("UP/DOWN MODE  A RUN  X ONLINE  Y PRIVACY  B HOME");
 }
 
@@ -626,7 +631,8 @@ static void network(void){
     iprintf("WIFI %s  GATE %s  SELFTEST %s\n",save.wireless?"ARMED":"GUARDED",gatewayState?"ARMED":"SAFE",networkSelfTest?"PASS":"READY");
     iprintf("LOCAL LINK / HTTP CLIENT SHELL READY\n");
     iprintf("BROWSER %s  DNS/HTTP EXTERNAL GATE\n",save.browser?"ENABLED":"DISABLED");
-    iprintf("5G SAT BT SDR QPU: EXTERNAL GATEWAYS\n");
+    iprintf("PHONE BACKHAUL %s  DSi WIFI 2.4G\n",hotspotState?"CONNECTED":"READY");
+    iprintf("SAT BT SDR QPU: EXTERNAL GATEWAYS\n");
     iprintf("RX QUEUE 16  TX QUEUE 8  CRC32 FRAMING  PKTS %d\n",networkPackets);
     iprintf("URL SLOT %d  SAFE WEB MODE %s\n",browserCursor,save.browser?"ON":"OFF");
     iprintf("HTTP GET / TEXT / METADATA / SAFE LINKS\n");
