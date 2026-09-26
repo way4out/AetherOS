@@ -18,7 +18,7 @@
 #define APP_COUNT 29
 #define AETHERMOD_MAJOR 8
 #define AETHERMOD_MINOR 4
-#define AETHERMOD_PASS 3
+#define AETHERMOD_PASS 4
 #define AETHERMOD_TOTAL_PASSES 5
 #define AETHER_HOME_PAGES 4
 #define NOTE_COUNT 8
@@ -86,12 +86,13 @@ static int animTopPhase=0, animBottomPhase=0, animSweep=0, animSpark=0;
 static int homePageLock=0;
 static int navSoundGate=0, pageTransition=0, touchX=0, touchY=0, touchPressed=0;
 static int vaultCursor=0, vaultCount=0, noteCursor=0, clock24=1, diagCursor=0, fileCursor=0, fileCount=0, eventCursor=0, eventCount=0;
+static int vaultDirty=1, fileDirty=1, eventDirty=1, drawDecimation=0, lastHardwareFrame=0;
 static int accessScale=1, accessContrast=0, accessScroll=1, controlCount=0, botCursor=0, botResult=0;
 static u8 batteryLevel=0; static int dsiLive=0, touchLiveX=0, touchLiveY=0, touchLiveDown=0;
 static char vaultNames[12][48];
 static char fileNames[16][48];
 static char eventNames[12][48];
-static const char noteText[4][64]={"Rescue / build priorities","DSi local-first workspace","AetherOS 8.4 pass 3/5","User notes preserved on SD"};
+static const char noteText[4][64]={"Rescue / build priorities","DSi local-first workspace","AetherOS 8.4 pass 4/5","User notes preserved on SD"};
 static const u32 aetherLut[1024]={0};
 
 static void saveState(void);
@@ -298,7 +299,7 @@ static void serviceInput(u32 keys){
 
 
 static void fileScan(void);
-static void sampleHardware(void){ dsiLive=isDSiMode()?1:0; batteryLevel=getBatteryLevel(); touchPosition t; touchRead(&t); touchLiveX=t.px; touchLiveY=t.py; touchLiveDown=(keysHeld()&KEY_TOUCH)?1:0; }
+static void sampleHardware(void){ if(lastHardwareFrame==frameCounter) return; dsiLive=isDSiMode()?1:0; batteryLevel=getBatteryLevel(); touchPosition t; touchRead(&t); touchLiveX=t.px; touchLiveY=t.py; touchLiveDown=(keysHeld()&KEY_TOUCH)?1:0; lastHardwareFrame=frameCounter; }
 static void botExecute(void){ switch(botCursor%8){case 0:mode=0;break;case 1:runDiagnostics();mode=29;break;case 2:fileScan();mode=17;break;case 3:mode=25;break;case 4:mode=20;break;case 5:mode=21;break;case 6:mode=19;break;default:mode=22;break;} botResult=botCursor+1;botEvents++; }
 static void updateCapabilityHealth(void){
     capabilityScore=100;
@@ -411,6 +412,7 @@ static void setAetherPalette(void){
     BG_PALETTE[0]=RGB15(1,2,4); BG_PALETTE_SUB[0]=RGB15(1,2,4);
 }
 static void fileScan(void){
+    fileDirty=0;
     fileCount=0; memset(fileNames,0,sizeof(fileNames));
     DIR *d=opendir("fat:/data/AetherMod"); if(!d && isDSiMode()) d=opendir("sd:/data/AetherMod");
     if(!d) return; struct dirent *e;
@@ -419,7 +421,7 @@ static void fileScan(void){
 }
 static void fileBrowserPage(void){
     page("FILE BROWSER / LOCAL-FIRST");
-    fileScan();
+    if(fileDirty) fileScan();
     iprintf("ROOT: data/AetherMod/   ENTRIES:%d\n\n",fileCount);
     for(int i=0;i<fileCount;i++) iprintf("%c %02d %-29s\n",i==fileCursor?'>':' ',i+1,fileNames[i]);
     iprintf("\nA=PREVIEW X=RESCAN B=HOME\n");
@@ -442,6 +444,7 @@ static void eventLogPage(void){
     footer("UP/DOWN SELECT  X REFRESH  B HOME");
 }
 static void vaultScan(void){
+    vaultDirty=0;
     vaultCount=0; memset(vaultNames,0,sizeof(vaultNames));
     DIR *d=opendir("fat:/data/AetherMod"); if(!d && isDSiMode()) d=opendir("sd:/data/AetherMod");
     if(!d) return; struct dirent *e; while((e=readdir(d)) && vaultCount<12){
@@ -449,7 +452,7 @@ static void vaultScan(void){
     } closedir(d); if(vaultCursor>=vaultCount) vaultCursor=0;
 }
 static void vaultPage(void){
-    page("DATA VAULT / SD BROWSER"); vaultScan();
+    page("DATA VAULT / SD BROWSER"); if(vaultDirty) vaultScan();
     iprintf("REAL SD DIRECTORY: data/AetherMod\n\n");
     if(!vaultCount){iprintf("No readable entries found.\n");}
     for(int i=0;i<vaultCount;i++) iprintf("%c %02d  %-30s\\n",i==vaultCursor?'>':' ',i+1,vaultNames[i]);
@@ -470,11 +473,11 @@ static void clockPage(void){
     footer("A toggles 12/24 display  B HOME");
 }
 static void diagPage(void){
-    page("DIAGNOSTICS / 8.4 PASS 1/5"); runDiagnostics();
+    page("DIAGNOSTICS / 8.4 PASS 4/5"); runDiagnostics();
     iprintf("STORAGE %s\\nSAVE INTEGRITY %s\\nRUNTIME FAULTS %d\\n",storageReady()?"READY":"FAIL",saveIntegrity()?"PASS":"RECOVER",validationFaults);
     iprintf("FRAME BUDGET %s\\nINPUT EVENTS %lu\\nGUARD TRIPS %lu\\n",frameBudgetFaults?"CHECK":"PASS",(unsigned long)inputEvents,(unsigned long)guardTrips);
     iprintf("COLOR PALETTE: ACTIVE\\nAUDIO: HARD-OFF DEFAULT\\nLOCAL DATA: ENABLED\\n");
-    iprintf("\\n5-PASS BUILD BASELINE: UI / COLOR / SD / TOOLS / SAFETY / RECOVERY / DATA\\n");
+    iprintf("\\n5-PASS BUILD: UI / COLOR / SD / TOOLS / SAFETY / RECOVERY / DATA / ROUTING\\n");
 }
 static void page(const char *title){
     topBg(title);
@@ -568,10 +571,10 @@ static void home(void){
     updateCapabilityHealth();
     topBg("DUAL-OS COCKPIT");
     consoleSelect(&bottomConsole); consoleClear();
-    iprintf("AETHERMOD 8.4 PASS 2 / IMMERSIVE COCKPIT\n");
+    iprintf("AETHERMOD 8.4 PASS 4 / IMMERSIVE COCKPIT\n");
     iprintf("------------------------------\n");
-    iprintf("PAGE %d/3   MODULES %02d-%02d   %s\n\n",
-        homeScroll+1,homeScroll*8+1,homeScroll*8+8,
+    iprintf("PAGE %d/%d   MODULES %02d-%02d   %s\n\n",
+        homeScroll+1,AETHER_HOME_PAGES,homeScroll*8+1,homeScroll*8+8,
         pageTransition?"PAGE SHIFT":"LIVE");
     int first=homeScroll*8;
     for(int i=0;i<8;i++){
@@ -840,7 +843,7 @@ static void family(void){
 
 static void systemPage(void){
     selfTestRun=(frameCounter&15)==0; moduleHeartbeat(); page("SYSTEM / SERVICE");
-    iprintf("AETHERMOD 8.4  PASS 1/2  DSi ARM9\n");
+    iprintf("AETHERMOD 8.4  PASS 4/5  DSi ARM9\n");
     iprintf("SELFTEST %s SAFE %s DIRTY %s\n",selfTestRun?"RUN":"READY",safeMode?"ON":"OFF",dirtyState?"YES":"NO");
     iprintf("BRIGHT %u/4 THEME %s LANG %s\n",save.brightness,save.theme?"AETHER":"CLASSIC",langName());
     iprintf("SOUND %s AI %s WIFI %s BROWSER %s\n",save.sound?"ON":"OFF",save.ai?"ON":"OFF",save.wireless?"ON":"OFF",save.browser?"ON":"OFF");
@@ -864,7 +867,7 @@ static void generalSettings(void){
 
 static void about(void){
     page("ABOUT AETHERMOD");
-    iprintf("AETHERMOD 8.4 PASS 2/5 / CORE BUILD\n");
+    iprintf("AETHERMOD 8.4 PASS 4/5 / CORE BUILD\n");
     iprintf("ALL-ENCOMPASSING COCKPIT\n\n");
     iprintf("Local-first. Modular. Gateway-ready.\n");
     iprintf("Quantum-inspired computation.\n");
@@ -935,7 +938,7 @@ static void input(void){
             if(d&KEY_B){mode=0;changed=1;}
             if(d&KEY_UP){fileCursor--; if(fileCursor<0)fileCursor=fileCount?fileCount-1:0;changed=1;}
             if(d&KEY_DOWN){fileCursor++; if(fileCursor>=fileCount)fileCursor=0;changed=1;}
-            if(d&KEY_X){fileScan();changed=1;}
+            if(d&KEY_X){fileDirty=1;fileScan();changed=1;}
             if(d&KEY_A){changed=1;}
         } else if(mode==24){
             if(d&KEY_UP){settingsSection=(settingsSection+7)%8;changed=1;}
@@ -1069,7 +1072,7 @@ static void input(void){
         if(d&KEY_Y){hotspotPing=hotspotState?38+(int)(frameCounter%20):0;phoneTelemetry=1;changed=1;}
         if(d&KEY_L){phoneType=0;changed=1;} if(d&KEY_R){phoneType=1;changed=1;}
         if(d&KEY_SELECT){phoneCompanion^=1;changed=1;}
-    } else if(mode>=14 && mode<=23){
+    } else if((mode>=14 && mode<=17) || mode==23){
         if(d&KEY_B){mode=0;changed=1;}
         if(d&KEY_UP){expansionCursor=(expansionCursor+11)%12;changed=1;}
         if(d&KEY_DOWN){expansionCursor=(expansionCursor+1)%12;changed=1;}
@@ -1127,7 +1130,7 @@ static void input(void){
     } else if(mode==25){
         if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP){eventCursor--;if(eventCursor<0)eventCursor=0;changed=1;} if(d&KEY_DOWN){eventCursor++;if(eventCursor>=eventCount)eventCursor=eventCount?eventCount-1:0;changed=1;} if(d&KEY_X){changed=1;}
     } else if(mode==26){
-        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP&&vaultCount){vaultCursor=(vaultCursor+vaultCount-1)%vaultCount;changed=1;} if(d&KEY_DOWN&&vaultCount){vaultCursor=(vaultCursor+1)%vaultCount;changed=1;} if(d&KEY_X){vaultScan();changed=1;} if(d&KEY_A){vaultScan();changed=1;}
+        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP&&vaultCount){vaultCursor=(vaultCursor+vaultCount-1)%vaultCount;changed=1;} if(d&KEY_DOWN&&vaultCount){vaultCursor=(vaultCursor+1)%vaultCount;changed=1;} if(d&KEY_X){vaultDirty=1;vaultScan();changed=1;} if(d&KEY_A){vaultDirty=1;vaultScan();changed=1;}
     } else if(mode==27){
         if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP){noteCursor=(noteCursor+3)%4;changed=1;} if(d&KEY_DOWN){noteCursor=(noteCursor+1)%4;changed=1;} if(d&KEY_A){ensureDirs();char np[128];snprintf(np,sizeof(np),"%sdata/AetherMod/notes.txt",root);FILE *nf=fopen(np,"ab");if(nf){fprintf(nf,"%s\\n",noteText[noteCursor]);fclose(nf);}changed=1;}
     } else if(mode==28){
@@ -1169,7 +1172,7 @@ int main(void){
         input();
         guardModuleState();
         if((frameCounter&31)==0 && dirtyState && !safeMode) saveState();
-        if((frameCounter&3)==0){ if(mode==0) homePulse=0; draw(); }
+        if((frameCounter&3)==0){ if(mode==0) homePulse=0; drawDecimation=(drawDecimation+1)&3; draw(); }
     }
     return 0;
 }
