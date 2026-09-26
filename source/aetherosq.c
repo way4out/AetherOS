@@ -15,7 +15,7 @@
 
 #define APP_COUNT 24
 #define AETHERMOD_MAJOR 8
-#define AETHERMOD_PASS 3
+#define AETHERMOD_PASS 4
 #define AETHERMOD_TOTAL_PASSES 7
 #define NOTE_COUNT 8
 #define CODEX_PATH "data/AetherMod/codex.txt"
@@ -67,6 +67,11 @@ static int hotspotState=0, hotspotBand=0, hotspotSecurity=2, hotspotRssi=72, hot
 static int phoneLinkState=0, phoneSession=0, phoneCompanion=0, phoneFileSync=0, phoneTelemetry=0, phoneRemote=0;
 static int busTicks=0, busEvents=0, crossLink=0, codexSync=0, animalLink=0, dspLink=0, rfLink=0, botLink=0;
 static int aiCursor=0, aiQuery=0, browserCursor=0, graphMode=0, dawView=0, settingsCursor=0, codexLine=0, animalFeature=0, telemetryPage=0;
+static int qEntropy=0, qFidelity=0, qCursor=0, qHistogram[8]={0}, codexHits=0, codexLayer=0;
+static int animalConfidence=0, animalEvents=0, animalOutput=0, animalHistory[8]={0};
+static int rfSweep=0, rfTrace[24]={0}, saTrace[24]={0}, saPeak=0, saAvg=0;
+static int calcMemory2=0, calcError=0, dspPeakBin=0, dspRms=0, dspFrames=0, dspHistory[8]={0};
+static int phonePairCode=0, phoneBytesTx=0, phoneBytesRx=0, phoneQueue=0, phoneAck=0, netLatency=0, netHealth=0, botEvents=0;
 
 static void saveState(void);
 static void markDirty(void);
@@ -361,6 +366,8 @@ static void expansion(void){
             hotspotRssi,hotspotTx,hotspotRx,hotspotPing);
         iprintf("SESSION %d  COMPANION %s  REMOTE %s\n",
             phoneSession,phoneCompanion?"READY":"OFF",phoneRemote?"ARMED":"SAFE");
+        phonePairCode=100000+(int)((frameCounter/30)%899999); phoneBytesTx+=hotspotState?2:0; phoneBytesRx+=hotspotState?3:0; phoneAck=hotspotState?1:0;
+        iprintf("PAIR %06d ACK %s QUEUE %d TX/RX %d/%d\n",phonePairCode,phoneAck?"YES":"NO",phoneQueue,phoneBytesTx,phoneBytesRx);
         iprintf("SYNC FILE %s  TELEMETRY %s  BOT %s\n",
             phoneFileSync?"READY":"IDLE",phoneTelemetry?"LIVE":"IDLE",botLink?"LINKED":"IDLE");
         iprintf("A LINK  X BAND  Y TEST  L/R PROFILE\n");
@@ -405,6 +412,8 @@ static void expansion(void){
             save.wireless?"ARMED":"GUARDED",save.browser?"ON":"OFF");
         iprintf("VISUAL %d  HAPTIC %d  LIVE %s\n",visualTheme,hapticLevel,liveRefresh?"ON":"OFF");
     }
+    dspPeakBin=peak; dspRms=(int)((frameCounter/5)%100); dspHistory[(frameCounter/16)&7]=dspRms;
+    iprintf("RMS %d%% PEAKBIN %d FRAMES %d HIST ",dspRms,dspPeakBin,dspFrames); for(int i=0;i<8;i++)iprintf("%02d ",dspHistory[i]); iprintf("\n");
     footer("UP/DOWN CURSOR  A ACTION  X VISUAL  Y LIVE  L/R HAPTIC  B HOME");
 }
 
@@ -431,6 +440,7 @@ static void home(void){
 
 static void quantum(void){
     page("QUANTUM CORE");
+    qEntropy=(int)((frameCounter/5+qCursor*17)%101); qFidelity=80+(int)((frameCounter/13)%20);
     int e=(frameCounter/3)%101;
     iprintf("QUANTUM WORKBENCH / LOCAL SIM\n");
     iprintf("COHERENCE %3d%%  PHASE %3lu deg\n",e,(unsigned long)((frameCounter/7)%360));
@@ -441,6 +451,7 @@ static void quantum(void){
     iprintf("FFT BRIDGE READY  QPU %s\n",save.wireless?"GATEWAY":"LOCAL");
     iprintf("Software quantum simulator; no physical QPU claimed.\n");
     iprintf("PHONE BRIDGE %s  TELEMETRY %s\n",phoneLinkState?"READY":"LOCAL",phoneTelemetry?"LIVE":"IDLE");
+    iprintf("FIDELITY %d%%  ENTROPY %d%%  HIST ",qFidelity,qEntropy); for(int i=0;i<8;i++) iprintf("%d ",qHistogram[i]); iprintf("\n");
     footer("A RUN  X PHASE  Y MEASURE  B HOME  START HOLD 3s = RESET");
 }
 
@@ -474,7 +485,8 @@ static void codex(void){
 }
 
 static void animal(void){
-    page("ANIMAL AI / GAME");
+    page("ANIMAL AI / ANALYSIS LAB");
+    animalConfidence=animalAnalyzing?65+(animalPage*3)%31:0; animalEvents=(int)((frameCounter/6+animalPage)%128); animalOutput=animalAnalyzing?((animalFeature*13+(int)frameCounter)%8):0; animalHistory[(frameCounter/8)&7]=(int)((frameCounter+animalPage*17)%100);
     int a=animalPage%15,m=(int)((frameCounter/8+a)%8),feature=animalFeature%5;
     iprintf("SPECIES %s  STATE %s\n",animalNames[a],animalAnalyzing?"LIVE":"READY");
     iprintf("MIC -> FEATURES -> STATE -> RESPONSE\n");
@@ -484,6 +496,7 @@ static void animal(void){
     iprintf("PLAY |");for(int i=0;i<16;i++)iprintf("%c",((i+m)%5==0)?'O':'.');iprintf("|\n");
     iprintf("TEXT CUE + TONE + VISUAL STATE\n");
     iprintf("AI GATE %s  PHONE LINK %s\n",save.onlineAI?"ONLINE":"LOCAL PROFILE",animalLink?"READY":"IDLE");
+    iprintf("CONF %02d%% EVENTS %03d OUTPUT %d HIST ",animalConfidence,animalEvents,animalOutput); for(int i=0;i<8;i++) iprintf("%02d ",animalHistory[i]); iprintf("\n");
     iprintf("Signal classification; not literal animal speech.\n");
     footer("UP/DOWN SPECIES  A ANALYZE  X FEATURE  Y VOCALIZE  B HOME");
 }
@@ -494,11 +507,11 @@ static void rfLab(const char *title){
     const char *bands[]={"2.4GHz ISM","5GHz ISM","CUSTOM GATE"};
     const char *warnings[]={"CLEAR","LOW SIGNAL","HIGH NOISE","AUTH REQUIRED","EXTERNAL GATE"};
     int rssi=-32-(int)(frameCounter%48),noise=-78-(int)(frameCounter%17);
-    int snr=rssi-noise;
+    int snr=rssi-noise; rfSweep=(int)((frameCounter/4)%100); for(int i=0;i<24;i++) rfTrace[i]=(i*7+rfSweep+rfChannel*3)%18;
     iprintf("AUTHORIZED RF RECEIVE / ANALYZE\n");
     iprintf("%s  %s  CH %d\n",modes[rfMode&3],bands[rfBand%3],rfChannel);
     iprintf("RSSI %d dBm  NOISE %d dBm  SNR %d dB\n",rssi,noise,snr);
-    iprintf("SPECTRUM |");for(int i=0;i<24;i++)iprintf("%c",((i+(frameCounter/3))%7==0)?'^':'.');iprintf("|\n");
+    iprintf("SPECTRUM |");for(int i=0;i<24;i++){int v=rfTrace[i];iprintf("%c",v>14?'#':v>9?'*':v>4?'+':'.');}iprintf("|\n");
     iprintf("META %lu  PACKET %s  PEAK %s\n",(unsigned long)((frameCounter*3)%997),rfPacketView?"ON":"OFF",rfPeakHold?"ON":"OFF");
     iprintf("WARNING[%d] %s\n",rfWarnIndex,warnings[rfWarnIndex]);
     iprintf("AUTH GATE %s  PUSH QUEUE %d/8\n",rfAuthGate?"ARMED":"LOCKED",rfPushQueue);
@@ -519,12 +532,12 @@ static void rfLogEvent(const char *kind, int value){
 
 static void tinysa(void){
     page("TINySA LAB");
-    int stop=saStart+saSpan,markerHz=saStart+saMarker,level=18+(int)((frameCounter/4)%40);
+    int stop=saStart+saSpan,markerHz=saStart+saMarker,level=18+(int)((frameCounter/4)%40); for(int i=0;i<24;i++)saTrace[i]=(i*5+(int)(frameCounter/2)+saMarker)%32; saPeak=level+7; saAvg=level-3;
     const char *views[]={"SPECTRUM","WATERFALL","TEXT STATS","MARKER"};
     iprintf("TINySA HYBRID VISUAL + TEXT GATEWAY\n");
     iprintf("VIEW %s  INPUT %s  SWEEP %s\n",views[saView&3],saInputSource?"EXTERNAL":"SIM",saRunning?"RUN":"STOP");
     iprintf("%4d MHz ",saStart);for(int i=0;i<24;i++)iprintf("%c",i==((saMarker*24)/(saSpan?saSpan:1))?'M':(i%5==0?'|':'.'));iprintf(" %4d\n",stop);
-    iprintf("LEVEL %02d dB  PEAK %02d dB  MARK %d MHz\n",level,level+7,markerHz);
+    iprintf("LEVEL %02d dB  PEAK %02d dB  MARK %d MHz\n",level,saPeak,markerHz);
     iprintf("SPAN %d MHz RBW %d kHz ATT %d dB\n",saSpan,saRBW,saAtten);
     iprintf("SWEEP COUNT %lu  POINTS 450  HOLD %s\n",(unsigned long)(frameCounter%10000),saTraceHold?"ON":"OFF");
     iprintf("STATS MIN %d  MAX %d  AVG %d  PEAKBIN %d\n",level-14,level+7,level-3,(markerHz/5)%90);
@@ -535,6 +548,7 @@ static void tinysa(void){
 
 static void calculator(void){
     page("AETHER CALCULATOR");
+    calcError=(calcOp==3&&calcB==0)||(calcOp==4&&calcB==0);
     long long a=calcA,b=calcB,result=0;const char *fn="ADD";
     switch(calculatorCursor%12){
       case 0:result=a+b;fn="ADD";break;case 1:result=a-b;fn="SUB";break;case 2:result=a*b;fn="MUL";break;
@@ -544,6 +558,7 @@ static void calculator(void){
     }
     iprintf("A=%lld B=%lld  FN %s\nRESULT %lld\n",a,b,fn,result);
     iprintf("SCIENTIFIC: MOD / %% / SQUARE / CUBE / BITWISE\n");
+    iprintf("MEM %d/%d  ENTRY %s  %s\n",calcMemory,calcMemory2,calcInput?"B":"A",calcError?"DIV0 GUARD":"VALID");
     iprintf("Q: phase=%d parity=%d mod256=%lld\n",(int)((a*7+b*3)%360),(int)((a^b)&1),(a*b)%256);
     footer("UP/DOWN FUNCTION  A EDIT A  X EDIT B  B HOME");
 }
@@ -563,6 +578,7 @@ static void daw(void){
 
 static void dsp(void){
     page("DSP / FFT LAB");
+    dspFrames++;
     int mag[16],peak=0,peakv=0;
     for(int k=0;k<16;k++){long re=0,im=0;for(int n=0;n<32;n++){
         static const int ctab[16]={127,118,90,49,0,-49,-90,-118,-127,-118,-90,-49,0,49,90,118};
@@ -597,6 +613,8 @@ static void telemetry(void){
     iprintf("CAPABILITY HEALTH %d%%  GATE:%s\n",capabilityScore,gatewayState?"ARMED":"GUARDED");
     iprintf("INPUT EVENTS %lu  REPEAT:%d\n",(unsigned long)inputEvents,keyRepeatFrames);
     iprintf("RESOURCE FAULTS %d\n",resourceFaults);
+    iprintf("PASS 4 BUS %d PHONE %d QFID %d ANCONF %d DSPF %d\n",busEvents,phonePackets,qFidelity,animalConfidence,dspFrames);
+    iprintf("RF %d SA %d NET %d%%\n",rfSweep,saPeak,netHealth);
     iprintf("PAGE %d/3  PRESS A TO CYCLE\n",telemetryPage+1);
     if(telemetryPage){
         iprintf("UPTIME %lu  TOUCH EVENTS %lu  AUTOSAVES %lu\n",(unsigned long)uptimeFrames,(unsigned long)touchEvents,(unsigned long)autosaveCount);
@@ -618,7 +636,9 @@ static void aiHome(void){
     iprintf("QUERY SLOT %d  STATUS:%s\n",aiQuery,save.ai?"READY":"OFF");
     iprintf("ONLINE AI %s  PRIVACY %s\n",save.onlineAI?"GATE":"OFF",save.privacy?"LOCK":"OPEN");
     iprintf("BROWSER GATE %s\n",save.browser?"READY":"OFF");
+    botEvents=(int)((frameCounter/10)%256);
     iprintf("TOOLS: calculator / graph / animal / RF / web\n");
+    iprintf("BOT ROUTE %d  EVENTS %d  PHONE %s\n",aiCursor,botEvents,phoneRemote?"REMOTE":"LOCAL");
     iprintf("Local responses are deterministic; cloud AI requires gateway.\n");
     iprintf("PHONE BOT %s  CODEX %s  REMOTE %s\n",botLink?"ACTIVE":"IDLE",codexSync?"SYNC":"LOCAL",phoneRemote?"ARMED":"SAFE");
     footer("UP/DOWN MODE  A RUN  X ONLINE  Y PRIVACY  B HOME");
@@ -631,7 +651,9 @@ static void network(void){
     iprintf("BROWSER %s  DNS/HTTP EXTERNAL GATE\n",save.browser?"ENABLED":"DISABLED");
     iprintf("PHONE BACKHAUL %s  DSi WIFI 2.4G\n",hotspotState?"CONNECTED":"READY");
     iprintf("SAT BT SDR QPU: EXTERNAL GATEWAYS\n");
+    netLatency=hotspotState?25+(int)(frameCounter%20):0; netHealth=hotspotState?90+(int)(frameCounter%10):55;
     iprintf("RX QUEUE 16  TX QUEUE 8  CRC32 FRAMING  PKTS %d\n",networkPackets);
+    iprintf("LATENCY %dms  HEALTH %d%%  PHONE PKTS %d\n",netLatency,netHealth,phonePackets);
     iprintf("URL SLOT %d  SAFE WEB MODE %s\n",browserCursor,save.browser?"ON":"OFF");
     iprintf("HTTP GET / TEXT / METADATA / SAFE LINKS\n");
     iprintf("No credential capture or radio disruption.\n");
@@ -665,7 +687,7 @@ static void family(void){
 
 static void systemPage(void){
     selfTestRun=(frameCounter&15)==0; moduleHeartbeat(); page("SYSTEM / SERVICE");
-    iprintf("AETHERMOD 8.0  PASS 3/7  DSi ARM9\n");
+    iprintf("AETHERMOD 8.0  PASS 4/7  DSi ARM9\n");
     iprintf("SELFTEST %s SAFE %s DIRTY %s\n",selfTestRun?"RUN":"READY",safeMode?"ON":"OFF",dirtyState?"YES":"NO");
     iprintf("BRIGHT %u/4 THEME %s LANG %s\n",save.brightness,save.theme?"AETHER":"CLASSIC",langName());
     iprintf("SOUND %s AI %s WIFI %s BROWSER %s\n",save.sound?"ON":"OFF",save.ai?"ON":"OFF",save.wireless?"ON":"OFF",save.browser?"ON":"OFF");
