@@ -15,8 +15,10 @@
 
 #define APP_COUNT 24
 #define AETHERMOD_MAJOR 8
+#define AETHERMOD_MINOR 2
 #define AETHERMOD_PASS 1
-#define AETHERMOD_TOTAL_PASSES 7
+#define AETHERMOD_TOTAL_PASSES 2
+#define AETHER_HOME_PAGES 3
 #define NOTE_COUNT 8
 #define CODEX_PATH "data/AetherMod/codex.txt"
 #define ANIMAL_PATH "data/AetherMod/animals.txt"
@@ -78,6 +80,8 @@ static int topFrames=0, bottomFrames=0, inputRoute=0, sensorRoute=0, mediaRoute=
 static int releaseGuard=0, routeErrors=0, touchLatency=0, colorCycle=0;
 static int busQuantum=0, busAudio=0, busAnimal=0, busRF=0, busPhone=0, busBot=0;
 static int animFrame=0, animPulse=0, colorTheme=0;
+static int animTopPhase=0, animBottomPhase=0, animSweep=0, animSpark=0;
+static int navSoundGate=0, pageTransition=0;
 
 static void saveState(void);
 static void markDirty(void);
@@ -107,6 +111,8 @@ static void drawLiveBars(int seed);
 static void hwBus(void);
 static void releaseBus(void);
 static void animateUI(void);
+static void navigationFeedback(int direction);
+static void pageTransitionFeedback(void);
 
 static int storageReady(void){
     FILE *f=fopen("fat:/data/AetherMod/.aether_test","wb");
@@ -230,14 +236,34 @@ static void dawStepAdvance(void){
 }
 
 static void feedback(int kind){ hapticPulse++; visualEnergy=(visualEnergy+11+(kind*7))%101; if(save.sound) tone(); }
+static void navigationFeedback(int direction){
+    (void)direction;
+    hapticPulse++;
+    visualEnergy=(visualEnergy+3)%101;
+    navSoundGate=0;
+}
+static void pageTransitionFeedback(void){
+    pageTransition=1;
+    hapticPulse++;
+    visualEnergy=(visualEnergy+9)%101;
+    navSoundGate=0;
+}
 static void hwBus(void){ hwTouch=1; hwButtons=(int)keysHeld(); hwMic=1; hwCamera=1; hwLed=1; hwSpeaker=save.sound?1:0; inputRoute=hwTouch+(hwButtons?1:0); sensorRoute=hwMic+hwCamera; mediaRoute=hwSpeaker+phoneLinkState; ledRoute=hwLed+(hotspotState?1:0); if((frameCounter&7)==0){topFrames++;bottomFrames++;} }
 static void releaseBus(void){ releaseGuard=(hwTouch&&hwMic&&hwCamera&&hwLed)?1:0; if(!crossLink) routeErrors++; if(touchEvents) touchLatency=(touchLatency+1)%16; }
-static void animateUI(void){ animFrame=(animFrame+1)&63; animPulse=(animPulse+1)&31; colorTheme=(colorTheme+1)&15; }
+static void animateUI(void){
+    animFrame=(animFrame+1)&63;
+    animPulse=(animPulse+1)&31;
+    colorTheme=(colorTheme+1)&15;
+    animTopPhase=(animTopPhase+1)&127;
+    animBottomPhase=(animBottomPhase+1)&127;
+    animSweep=(animSweep+3)&255;
+    animSpark=(animSpark+5)&255;
+}
 static void applyAnimatedColors(void){
     static const char *topColors[6]={"\\x1b[36;1m","\\x1b[36;1m","\\x1b[32;1m","\\x1b[32;1m","\\x1b[33;1m","\\x1b[37;1m"};
     static const char *botColors[6]={"\\x1b[34;1m","\\x1b[34;1m","\\x1b[35;1m","\\x1b[35;1m","\\x1b[36;1m","\\x1b[37;1m"};
-    consoleSelect(&topConsole); printf("%s",topColors[(animFrame/8)%6]);
-    consoleSelect(&bottomConsole); printf("%s",botColors[(animFrame/8)%6]);
+    consoleSelect(&topConsole); printf("%s",topColors[(animTopPhase/22)%6]);
+    consoleSelect(&bottomConsole); printf("%s",botColors[(animBottomPhase/22)%6]);
 }
 static void liveBus(void){ if(!liveRefresh) return; livePhase=(livePhase+1)%32; visualEnergy=(visualEnergy+2+((frameCounter/4)%7))%101; if(crossLink){busEvents++;busQuantum=(busQuantum+qFidelity+1)%101;busAudio=(busAudio+dspRms+1)%101;busAnimal=(busAnimal+animalConfidence+2)%101;busRF=(busRF+saAvg+3)%101;busPhone=(busPhone+hotspotRssi+1)%101;busBot=(busBot+botEvents+1)%101;} }
 static void drawLiveBars(int seed){int p=(seed+livePhase)%24;iprintf("LIVE |");for(int i=0;i<24;i++)iprintf("%c",i==p?'@':((i+seed+visualEnergy)%5==0?'#':((i+seed)%3==0?'+':'.')));iprintf("| %3d%%\\n",visualEnergy);}
@@ -441,23 +467,30 @@ static void expansion(void){
 }
 
 static void home(void){
-    /* One authoritative selectionPin drives marker, number, label and launch target. */
     canonicalizeSelection();
+    homeScroll=selectionPin/8;
+    if(homeScroll<0) homeScroll=0;
+    if(homeScroll>=AETHER_HOME_PAGES) homeScroll=AETHER_HOME_PAGES-1;
     runDiagnostics();
     updateCapabilityHealth();
     topBg("DUAL-OS COCKPIT");
-    consoleSelect(&bottomConsole); consoleClear();    iprintf("AETHERMOD REVOLUTION IS HERE\n");
+    consoleSelect(&bottomConsole); consoleClear();
+    iprintf("AETHERMOD 8.2 / IMMERSIVE COCKPIT\n");
     iprintf("------------------------------\n");
-    iprintf("PAGE %d/3  24-module cockpit / 3 pages.\n\n",homeScroll+1);
+    iprintf("PAGE %d/3   MODULES %02d-%02d   %s\n\n",
+        homeScroll+1,homeScroll*8+1,homeScroll*8+8,
+        pageTransition?"PAGE SHIFT":"LIVE");
     int first=homeScroll*8;
     for(int i=0;i<8;i++){
         int n=first+i;
-        iprintf("%s%02d %-18s\n",n==cursor?"> ":"  ",n+1,apps[n]);
+        int pulse=((animSweep+(i*17))&63);
+        iprintf("%s%02d %-18s %c\n",n==cursor?"> ":"  ",n+1,apps[n],
+            (n==cursor && pulse<18)?'*':(pulse<34)?'+':'.');
     }
-    iprintf("\nPIN: %02d  TARGET: %s\n",selectionPin+1,apps[selectionPin]);
+    iprintf("\nPIN:%02d  TARGET:%s  ENERGY:%03d\n",selectionPin+1,apps[selectionPin],visualEnergy);
     iprintf("DIAG:%s ERR:%lu HEALTH:%d%%\n",diagnosticsPass?"PASS":"CHECK",(unsigned long)sessionErrors,capabilityScore);
-    iprintf("\nA OPEN  X QUANTUM  Y TELEMETRY\n");
-    iprintf("Touch: rows=modules, bottom=page | START hold 3s = BASE RESET\n");
+    iprintf("\nA OPEN  X QUANTUM  Y TELEMETRY  L/R PAGE\n");
+    iprintf("TOUCH rows=OPEN   top/bottom=PAGE   START hold=RESET\n");
 }
 
 static void quantum(void){
@@ -714,7 +747,7 @@ static void family(void){
 
 static void systemPage(void){
     selfTestRun=(frameCounter&15)==0; moduleHeartbeat(); page("SYSTEM / SERVICE");
-    iprintf("AETHERMOD 8.0  PASS 4/7  DSi ARM9\n");
+    iprintf("AETHERMOD 8.2  PASS 1/2  DSi ARM9\n");
     iprintf("SELFTEST %s SAFE %s DIRTY %s\n",selfTestRun?"RUN":"READY",safeMode?"ON":"OFF",dirtyState?"YES":"NO");
     iprintf("BRIGHT %u/4 THEME %s LANG %s\n",save.brightness,save.theme?"AETHER":"CLASSIC",langName());
     iprintf("SOUND %s AI %s WIFI %s BROWSER %s\n",save.sound?"ON":"OFF",save.ai?"ON":"OFF",save.wireless?"ON":"OFF",save.browser?"ON":"OFF");
@@ -738,7 +771,7 @@ static void generalSettings(void){
 
 static void about(void){
     page("ABOUT AETHERMOD");
-    iprintf("AETHERMOD 8.0 PASS 3 / 7\n");
+    iprintf("AETHERMOD 8.2 PASS 1 / 2\n");
     iprintf("ALL-ENCOMPASSING COCKPIT\n\n");
     iprintf("Local-first. Modular. Gateway-ready.\n");
     iprintf("Quantum-inspired computation.\n");
@@ -781,7 +814,6 @@ static void input(void){
     if(d&KEY_SELECT){safeMode=!safeMode;if(safeMode){save.onlineAI=0;save.wireless=0;save.downloads=0;gatewayState=0;mode=0;}saveState();changed=1;}
     if(d&KEY_TOUCH){
         touchPosition t; touchRead(&t); touchEvents++; touchFocus=1;
-        feedback((t.px/64 + (t.py/64)*4 + mode)%4);
         if(mode>=13 && mode<=24){
         if(d&KEY_B){mode=0;changed=1;}
         if(mode==13){
@@ -816,8 +848,14 @@ static void input(void){
                 int r=homeScroll*8+row;
                 if(r<APP_COUNT){setSelection(r);launchSelection();changed=1;}
             }
-            else if(t.py>=150){homeScroll=(homeScroll+1)%3;setSelection(homeScroll*8);saveState();changed=1;}
+            else if(t.py>=150){
+                homeScroll=(homeScroll+1)%AETHER_HOME_PAGES;
+                setSelection(homeScroll*8);
+                pageTransitionFeedback();
+                saveState();changed=1;
+            }
             else if(t.py<48){mode=0;changed=1;}
+            if(changed && !(t.py>=150)){ navigationFeedback(0); }
         } else {
             if(t.py<48||t.py>=192){mode=0;changed=1;}
             else if(mode==7 && t.py>=96){dawTrack=(t.py-96)/32;if(dawTrack>2)dawTrack=2;dawTrackMute^=1;changed=1;}
@@ -830,13 +868,13 @@ static void input(void){
         }
     }
     if(mode==0){
-        if(nav&KEY_UP){inputEvents++;setSelection(selectionPin-1);homeScroll=selectionPin/8;homePulse=1;saveState();changed=1;}
-        if(nav&KEY_DOWN){inputEvents++;setSelection(selectionPin+1);homeScroll=selectionPin/8;homePulse=1;saveState();changed=1;}
-        if(nav&KEY_LEFT){inputEvents++;setSelection(selectionPin-1);homeScroll=selectionPin/8;homePulse=1;saveState();changed=1;}
-        if(nav&KEY_RIGHT){inputEvents++;setSelection(selectionPin+1);homeScroll=selectionPin/8;homePulse=1;saveState();changed=1;}
-        if(d&KEY_A){inputEvents++;launchSelection();changed=1;}
-        if(d&KEY_X){setSelection(1);homeScroll=0;mode=1;save.launches++;saveState();changed=1;}
-        if(d&KEY_Y){setSelection(9);homeScroll=1;mode=10;save.launches++;saveState();changed=1;}
+        if(nav&KEY_UP){inputEvents++;setSelection(selectionPin-1);homeScroll=selectionPin/8;homePulse=1;navigationFeedback(-1);saveState();changed=1;}
+        if(nav&KEY_DOWN){inputEvents++;setSelection(selectionPin+1);homeScroll=selectionPin/8;homePulse=1;navigationFeedback(1);saveState();changed=1;}
+        if(nav&KEY_LEFT){inputEvents++;homeScroll=(homeScroll+2)%AETHER_HOME_PAGES;setSelection(homeScroll*8);pageTransitionFeedback();saveState();changed=1;}
+        if(nav&KEY_RIGHT){inputEvents++;homeScroll=(homeScroll+1)%AETHER_HOME_PAGES;setSelection(homeScroll*8);pageTransitionFeedback();saveState();changed=1;}
+        if(d&KEY_A){inputEvents++;launchSelection();feedback(1);changed=1;}
+        if(d&KEY_X){setSelection(1);homeScroll=0;mode=1;save.launches++;feedback(2);saveState();changed=1;}
+        if(d&KEY_Y){setSelection(9);homeScroll=1;mode=10;save.launches++;feedback(2);saveState();changed=1;}
     } else if(mode==1){
         if(d&KEY_B){returnHome();changed=1;} if(d&KEY_A){quantumState=(quantumState+1)%4;quantumMeasure^=1;quantumShots++;frameCounter+=97;changed=1;} if(d&KEY_X){quantumState=(quantumState+1)%4;frameCounter+=1009;changed=1;} if(d&KEY_Y){quantumState=0;changed=1;}
     } else if(mode==2){
