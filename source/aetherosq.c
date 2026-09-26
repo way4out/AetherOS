@@ -15,7 +15,7 @@
 
 #define APP_COUNT 24
 #define AETHERMOD_MAJOR 8
-#define AETHERMOD_PASS 1
+#define AETHERMOD_PASS 2
 #define AETHERMOD_TOTAL_PASSES 7
 #define NOTE_COUNT 8
 #define CODEX_PATH "data/AetherMod/codex.txt"
@@ -63,6 +63,7 @@ static u32 uptimeFrames=0, touchEvents=0, autosaveCount=0, guardTrips=0;
 static int quantumMeasure=0, quantumShots=0, aiSafetyEvents=0, networkPackets=0;
 static int familyProfile=0, systemCursor=0;
 static int visualTheme=1, hapticLevel=2, expansionCursor=0, liveRefresh=1, settingsSection=0;
+static int hotspotState=0, hotspotBand=0, hotspotSecurity=2, hotspotRssi=72, hotspotTx=0, hotspotRx=0, hotspotPing=0, hotspotMode=0, phoneType=0, phonePackets=0;
 static int aiCursor=0, aiQuery=0, browserCursor=0, graphMode=0, dawView=0, settingsCursor=0, codexLine=0, animalFeature=0, telemetryPage=0;
 
 static void saveState(void);
@@ -160,6 +161,7 @@ static const char *apps[APP_COUNT]={
     "AETHER HOME","QUANTUM CORE","YHWH CODEX","ANIMAL AI",
     "MARAUDER/RF","TINySA LAB","CALCULATOR","DAW STUDIO",
     "DSP/FFT","TELEMETRY","AI HOME","NETWORK GATEWAY",
+    "PHONE LINK",
     "MEDIA STUDIO","SENSOR HUB","DATA VAULT","FILE BROWSER",
     "HAPTIC LAB","ACCESSIBILITY","POWER LAB","CONTROL LAB",
     "DIAGNOSTICS","AETHER BOT","VISUAL LAB","GENERAL SETTINGS"
@@ -319,15 +321,15 @@ static void page(const char *title){
 static void footer(const char *s){iprintf("\n%s\n",s);}
 
 static void expansion(void){
-    const char *names[]={"MEDIA STUDIO","SENSOR HUB","DATA VAULT","FILE BROWSER","HAPTIC LAB","ACCESSIBILITY","POWER LAB","CONTROL LAB","DIAGNOSTICS","AETHER BOT","VISUAL LAB"};
-    int ix=mode-13; if(ix<0) ix=0; if(ix>10) ix=10;
+    const char *names[]={"PHONE LINK","MEDIA STUDIO","SENSOR HUB","DATA VAULT","FILE BROWSER","HAPTIC LAB","ACCESSIBILITY","POWER LAB","CONTROL LAB","DIAGNOSTICS","AETHER BOT","VISUAL LAB"};
+    int ix=mode-13; if(ix<0) ix=0; if(ix>11) ix=11;
     page(names[ix]);
     int pulse=(int)((frameCounter/2)%24), meter=(int)((frameCounter/3)%100);
     iprintf("LIVE WORKSPACE %s  REFRESH %s\\n",liveRefresh?"ON":"OFF",liveRefresh?"LIVE":"PAUSED");
     iprintf("VISUAL THEME %d  HAPTIC %d/3  CURSOR %d\\n",visualTheme,hapticLevel,expansionCursor);
     iprintf("SIGNAL |"); for(int i=0;i<24;i++) iprintf("%c",((i+pulse)%7==0)?'#':((i+meter/10)%3==0)?'+':'.'); iprintf("|\\n");
     iprintf("LEVEL %3d%%  ACTIVITY %3d%%  FRAME %lu\\n",meter,(pulse*7)%101,(unsigned long)frameCounter);
-    if(ix==0) iprintf("4-track media workspace / clip slots / local playback\\n");
+    if(ix==0) { iprintf("PHONE LINK: iPHONE 15 / ANDROID\\n"); iprintf("HOTSPOT %s  MODE %s  BAND %s\\n",hotspotState?"CONNECTED":"READY",hotspotMode?"MANUAL":"AUTO",hotspotBand?"5G":"2.4G"); iprintf("RSSI %d%%  TX %d  RX %d  PING %dms\\n",hotspotRssi,hotspotTx,hotspotRx,hotspotPing); iprintf("A = CONNECT  X = BAND  Y = TEST  L/R = PROFILE\\n"); } else if(ix==1) iprintf("4-track media workspace / clip slots / local playback\\n");
     else if(ix==1) iprintf("MIC / CAMERA / TOUCH sensor routing and live meters\\n");
     else if(ix==2) iprintf("SD capacity / corpus index / session data integrity\\n");
     else if(ix==3) iprintf("Local file navigator: data/AetherMod/\\n");
@@ -635,7 +637,7 @@ static void draw(void){
       case 0: home(); break; case 1: quantum(); break; case 2: codex(); break; case 3: animal(); break;
       case 4: rfLab("MARAUDER / RF"); break; case 5: tinysa(); break; case 6: calculator(); break;
       case 7: daw(); break; case 8: dsp(); break; case 9: telemetry(); break; case 10: aiHome(); break;
-      case 11: network(); break; case 24: generalSettings(); break; default: expansion(); break;
+      case 11: network(); break; case 25: generalSettings(); break; default: expansion(); break;
     }
 }
 
@@ -663,7 +665,11 @@ static void input(void){
         touchPosition t; touchRead(&t); touchEvents++; touchFocus=1;
         if(mode>=12){
         if(d&KEY_B){mode=0;changed=1;}
-        if(mode==24){
+        if(mode==13){
+            if(d&KEY_A){hotspotState=!hotspotState; hotspotTx+=hotspotState?1:0; hotspotRx+=hotspotState?2:0; hotspotPing=hotspotState?42:0; phonePackets+=hotspotState?3:0; changed=1;}
+            if(d&KEY_X){hotspotBand^=1; changed=1;} if(d&KEY_Y){hotspotPing=hotspotState?38+((frameCounter/10)%20):0; phonePackets++; changed=1;}
+            if(d&KEY_LEFT&&hotspotRssi>0)hotspotRssi--; if(d&KEY_RIGHT&&hotspotRssi<100)hotspotRssi++; if(d&KEY_B){mode=0;changed=1;}
+        } else if(mode==25){
             if(d&KEY_UP){settingsSection=(settingsSection+7)%8;changed=1;}
             if(d&KEY_DOWN){settingsSection=(settingsSection+1)%8;changed=1;}
             if(d&KEY_A){switch(settingsSection){
