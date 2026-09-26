@@ -80,7 +80,8 @@ static int topFrames=0, bottomFrames=0, inputRoute=0, sensorRoute=0, mediaRoute=
 static int releaseGuard=0, routeErrors=0, touchLatency=0, colorCycle=0;
 static int busQuantum=0, busAudio=0, busAnimal=0, busRF=0, busPhone=0, busBot=0;
 static int animFrame=0, animPulse=0, colorTheme=0;
-static int animTopPhase=0, animBottomPhase=0, animSweep=0, animSpark=0;\nstatic int homePageLock=0;
+static int animTopPhase=0, animBottomPhase=0, animSweep=0, animSpark=0;
+static int homePageLock=0;
 static int navSoundGate=0, pageTransition=0, touchX=0, touchY=0, touchPressed=0;
 
 static void saveState(void);
