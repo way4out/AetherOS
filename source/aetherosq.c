@@ -412,8 +412,6 @@ static void expansion(void){
             save.wireless?"ARMED":"GUARDED",save.browser?"ON":"OFF");
         iprintf("VISUAL %d  HAPTIC %d  LIVE %s\n",visualTheme,hapticLevel,liveRefresh?"ON":"OFF");
     }
-    dspPeakBin=peak; dspRms=(int)((frameCounter/5)%100); dspHistory[(frameCounter/16)&7]=dspRms;
-    iprintf("RMS %d%% PEAKBIN %d FRAMES %d HIST ",dspRms,dspPeakBin,dspFrames); for(int i=0;i<8;i++)iprintf("%02d ",dspHistory[i]); iprintf("\n");
     footer("UP/DOWN CURSOR  A ACTION  X VISUAL  Y LIVE  L/R HAPTIC  B HOME");
 }
 
