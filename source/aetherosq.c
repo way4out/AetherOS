@@ -66,8 +66,6 @@ static int visualTheme=1, hapticLevel=2, expansionCursor=0, liveRefresh=1, setti
 static int hotspotState=0, hotspotBand=0, hotspotSecurity=2, hotspotRssi=72, hotspotTx=0, hotspotRx=0, hotspotPing=0, hotspotMode=0, phoneType=0, phonePackets=0;
 static int phoneLinkState=0, phoneSession=0, phoneCompanion=0, phoneFileSync=0, phoneTelemetry=0, phoneRemote=0;
 static int busTicks=0, busEvents=0, codexSync=0, animalLink=0, dspLink=0, rfLink=0, botLink=0;
-static int phoneLinkState=0, phoneSession=0, phoneService=0, phoneLastOp=0, phoneFileSync=0, phoneTelemetry=0, phoneRemote=0, phoneCompanion=0;
-static int busTicks=0, busEvents=0, crossLink=0, codexSync=0, animalLink=0, dspLink=0, rfLink=0, botLink=0;
 static int aiCursor=0, aiQuery=0, browserCursor=0, graphMode=0, dawView=0, settingsCursor=0, codexLine=0, animalFeature=0, telemetryPage=0;
 
 static void saveState(void);
