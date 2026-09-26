@@ -591,6 +591,8 @@ static void dsp(void){
     for(int i=0;i<16;i++){int v=mag[i]/4;iprintf("%02d ",i);for(int j=0;j<v;j++)iprintf("#");iprintf("\n");}
     iprintf("WINDOW %s PEAK-HOLD %s SCALE %d\n",fftWindow?"HAMMING":"RECT",fftPeakHold?"ON":"OFF",dspScale);
     iprintf("INPUT -> WINDOW -> FFT -> MAGNITUDE -> GRAPH\n");
+    dspPeakBin=peak; dspRms=(int)((frameCounter/5)%100); dspHistory[(frameCounter/16)&7]=dspRms;
+    iprintf("RMS %d%% PEAKBIN %d FRAMES %d HIST ",dspRms,dspPeakBin,dspFrames); for(int i=0;i<8;i++)iprintf("%02d ",dspHistory[i]); iprintf("\n");
     footer("A REFRESH  X WINDOW  Y PEAK/SCALE  B HOME");
 }
 
