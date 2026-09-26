@@ -1,4 +1,4 @@
-name: Build AetherMod 8.0 Pass 3 for Nintendo DSi
+name: Build AetherMod 8.0 Pass 4 for Nintendo DSi
 on:
   workflow_dispatch:
   push:
@@ -28,10 +28,10 @@ jobs:
           cp AETHERMOD.md deploy/AETHERMOD.md
           printf '%s\n' 'Copy the apps/AetherMod and data/AetherMod directories to the DSi SD card.' > deploy/INSTALL.txt
           cd deploy
-          zip -r ../AetherMod-8.0-Pass3-DSi-Full-Rollout.zip .
+          zip -r ../AetherMod-8.0-Pass4-DSi-Full-Rollout.zip .
       - uses: actions/upload-artifact@v4
         with:
-          name: AetherMod-8.0-Pass3-DSi-Full-Rollout
+          name: AetherMod-8.0-Pass4-DSi-Full-Rollout
           path: |
             AetherMod.nds
-            AetherMod-8.0-Pass3-DSi-Full-Rollout.zip
+            AetherMod-8.0-Pass4-DSi-Full-Rollout.zip
