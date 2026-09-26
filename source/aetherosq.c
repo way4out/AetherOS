@@ -80,7 +80,7 @@ static int topFrames=0, bottomFrames=0, inputRoute=0, sensorRoute=0, mediaRoute=
 static int releaseGuard=0, routeErrors=0, touchLatency=0, colorCycle=0;
 static int busQuantum=0, busAudio=0, busAnimal=0, busRF=0, busPhone=0, busBot=0;
 static int animFrame=0, animPulse=0, colorTheme=0;
-static int animTopPhase=0, animBottomPhase=0, animSweep=0, animSpark=0;
+static int animTopPhase=0, animBottomPhase=0, animSweep=0, animSpark=0;\nstatic int homePageLock=0;
 static int navSoundGate=0, pageTransition=0;
 
 static void saveState(void);
@@ -873,8 +873,8 @@ static void input(void){
         if(nav&KEY_LEFT){inputEvents++;homeScroll=(homeScroll+2)%AETHER_HOME_PAGES;setSelection(homeScroll*8);pageTransitionFeedback();saveState();changed=1;}
         if(nav&KEY_RIGHT){inputEvents++;homeScroll=(homeScroll+1)%AETHER_HOME_PAGES;setSelection(homeScroll*8);pageTransitionFeedback();saveState();changed=1;}
         if(d&KEY_A){inputEvents++;launchSelection();feedback(1);changed=1;}
-        if(d&KEY_X){setSelection(1);homeScroll=0;mode=1;save.launches++;feedback(2);saveState();changed=1;}
-        if(d&KEY_Y){setSelection(9);homeScroll=1;mode=10;save.launches++;feedback(2);saveState();changed=1;}
+        if(d&KEY_X){setSelection(1);homeScroll=0;homePageLock=0;mode=1;save.launches++;feedback(2);saveState();changed=1;}
+        if(d&KEY_Y){setSelection(9);homeScroll=1;homePageLock=1;mode=10;save.launches++;feedback(2);saveState();changed=1;}
     } else if(mode==1){
         if(d&KEY_B){returnHome();changed=1;} if(d&KEY_A){quantumState=(quantumState+1)%4;quantumMeasure^=1;quantumShots++;frameCounter+=97;changed=1;} if(d&KEY_X){quantumState=(quantumState+1)%4;frameCounter+=1009;changed=1;} if(d&KEY_Y){quantumState=0;changed=1;}
     } else if(mode==2){
