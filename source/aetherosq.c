@@ -690,7 +690,7 @@ static void input(void){
                 int r=homeScroll*8+row;
                 if(r<APP_COUNT){setSelection(r);launchSelection();changed=1;}
             }
-            else if(t.py>=150){homeScroll^=1;setSelection(homeScroll*8);saveState();changed=1;}
+            else if(t.py>=150){homeScroll=(homeScroll+1)%3;setSelection(homeScroll*8);saveState();changed=1;}
             else if(t.py<48){mode=0;changed=1;}
         } else {
             if(t.py<48||t.py>=192){mode=0;changed=1;}
