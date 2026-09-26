@@ -1,5 +1,5 @@
 #pragma once
 #define APP_NAME "AetherMod"
-#define APP_VERSION "AetherMod 8.0 - Pass/Age 7 / 7"
+#define APP_VERSION "AetherMod 8.1 - Pass/Age 1 / 3"
 #define SAVE_MAGIC 0x414D4F44u
 #define SAVE_VERSION 4
