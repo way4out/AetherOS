@@ -19,14 +19,6 @@ jobs:
           test -f AetherMod.nds
           file AetherMod.nds || true
           ls -lh AetherMod.nds
-      - name: Stage public-domain Codex corpus
-        run: |
-          mkdir -p data/AetherMod/codex_stage
-          wget -q https://ebible.org/eng-webbe/eng-webbe_readaloud.zip -O /tmp/codex.zip
-          unzip -q /tmp/codex.zip -d data/AetherMod/codex_stage
-          find data/AetherMod/codex_stage -type f -name '*.txt' -print0 | sort -z | xargs -0 cat > data/AetherMod/codex_full.txt
-          test -s data/AetherMod/codex_full.txt
-          rm -rf data/AetherMod/codex_stage /tmp/codex.zip
       - name: Package complete SD bundle
         run: |
           mkdir -p deploy/apps/AetherMod
