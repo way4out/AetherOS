@@ -1,46 +1,29 @@
-# AetherMod 8.0 — Pass/Age 3 / 7
+# AetherMod 8.0 — Pass/Age 4 / 7
 
-Pass 3 is the integration pass: it expands the three-page 24-module cockpit and turns Pass 2 Phone Link into a runtime bridge surface.
+Pass 4 is the high-capacity systems pass. It expands the existing Pass 1–3 architecture without pretending the stock DSi has hardware it does not have.
 
-## What changed
-- Repaired the Pass 2 launcher regression: slot 24 now opens GENERAL SETTINGS.
-- Preserved 24 modules across three pages.
-- AI Safety, Family Safety and System remain consolidated under General Settings rather than occupying home slots.
-- Added bounded cross-module runtime telemetry.
-- Added phone session, companion, file-sync, telemetry and remote-control state.
-- Quantum Core, YHWH Codex, Animal AI, RF, Network Gateway and Aether Bot now expose integration state.
-- Kept local-first behavior and explicit hardware boundaries.
+## Core upgrades
+- Quantum Core: 8-lane state visualization, measurement histogram, coherence/phase/fidelity/entropy metrics, Q->DSP/phone bridge indicators.
+- YHWH Codex: expanded canonical index, name-layer, cross-reference and configurable outlier index. Local SD corpus preview/search remains available. The complete source text is not claimed unless supplied on SD.
+- Animal AI: feature extraction model, confidence, state classification, event history, output classes and phone-input bridge. It remains a signal/classification system, not literal animal-language translation.
+- Marauder/RF: rolling receive/analyze trace with RSSI/noise/SNR and authorized queue only. Jamming, deauth and credential capture remain disabled.
+- TinySA Lab: rolling spectrum visualization, marker, sweep, RBW/attenuation and peak/average metrics. External TinySA remains an external gateway.
+- Calculator: real chained operation engine, divide-by-zero guard, A/B entry state, memory state and Q-math metrics.
+- DAW: actual 4-track x 16-step pattern state, mixer values, active-step count, octave/swing/FX state and DSP routing.
+- DSP/FFT: rolling RMS/peak-bin/history metrics on the bounded 32-sample analysis engine.
+- Telemetry: Pass 4 bus, phone, quantum, animal, DSP, RF, TinySA and network health metrics.
+- Network Gateway: latency, RX/TX, CRC and health telemetry.
+- AI Home/Aether Bot: route/event state and phone remote integration.
+- Phone Link: pairing code, ACK state, packet/byte counters and expanded companion bridge state.
+- Shared bus: cross-module events and bounded runtime state.
 
 ## Phone architecture
-The supported architecture is:
+iPhone 15 or Android cellular backhaul -> Personal Hotspot -> DSi Wi-Fi -> AetherMod Network Gateway.
 
-**iPhone 15 or Android cellular backhaul -> Personal Hotspot -> DSi Wi-Fi -> AetherMod Network Gateway**
-
-The phone supplies cellular connectivity; the stock DSi is not represented as containing a 5G modem. Nintendo documents DSi advanced Wi-Fi setup for compatible WPA networks, while Apple documents Personal Hotspot sharing over Wi-Fi.
-
-## Phone Link Pass 3
-- iPhone 15 profile and Android profile.
-- Hotspot connect state.
-- Session state and packet counters.
-- RSSI and ping telemetry.
-- Companion-link state.
-- File-transfer readiness.
-- Telemetry-stream readiness.
-- Aether Bot remote-link readiness.
-- Cross-module bus state.
-
-These are runtime/gateway states; an actual phone-side companion service still requires a compatible web/PWA or external bridge.
-
-## Module integration
-- Quantum Core: phone telemetry bridge.
-- YHWH Codex: corpus-sync bridge.
-- Animal AI: sensor/phone bridge.
-- Marauder/RF: authorized gateway state only.
-- TinySA: external instrument gateway only.
-- Calculator/DAW/DSP: local engines with cross-module routing indicators.
-- Network Gateway: phone backhaul state.
-- AI Home/Aether Bot: phone remote and Codex-link states.
-- Telemetry: phone and cross-module counters.
+Apple documents Personal Hotspot over Wi-Fi, Bluetooth or USB for supported client devices. For this DSi implementation, Wi-Fi is the practical primary transport. Nintendo documents DSi advanced Internet setup and WPA-capable connections. The DSi itself is not represented as a 5G modem.
 
 ## Hardware boundaries
-No stock DSi hardware is claimed to be a physical 5G modem, SDR, QPU, satellite modem, TinySA instrument, or true animal-language translator. External hardware requires an actual compatible bridge.
+No stock DSi hardware is claimed to be a physical QPU, SDR, satellite modem, TinySA, 5G modem or literal animal-language translator. External devices require actual compatible bridges.
+
+## Release
+Pass 4 is complete only when the GitHub Actions build and packaged rollout artifact succeed.
