@@ -1,4 +1,4 @@
-name: AetherOS 8.2 Pass 1
+name: AetherOS 8.3 Baseline
 on:
   workflow_dispatch:
   push:
@@ -14,22 +14,22 @@ jobs:
           export PATH="$DEVKITARM/bin:$DEVKITPRO/tools/bin:$PATH"
           make clean
           make
-          test -f AetherMod8.2.nds
-          cp AetherMod8.2.nds AetherOS8.2.nds
+          test -f AetherMod8.3.nds
+          cp AetherMod8.3.nds AetherOS8.3.nds
       - name: Package
         run: |
           mkdir -p deploy/apps/AetherMod deploy/data/AetherMod
-          cp AetherMod8.2.nds deploy/apps/AetherMod/AetherMod8.2.nds
-          cp AetherOS8.2.nds deploy/apps/AetherMod/AetherOS8.2.nds
+          cp AetherMod8.3.nds deploy/apps/AetherMod/AetherMod8.3.nds
+          cp AetherOS8.3.nds deploy/apps/AetherMod/AetherOS8.3.nds
           cp -r data/AetherMod/. deploy/data/AetherMod/
           cp AETHERMOD.md deploy/AETHERMOD.md
-          printf '%s\n' 'Launch AetherOS8.2.nds from apps/AetherMod.' > deploy/INSTALL.txt
+          printf '%s\n' 'Launch AetherOS8.3.nds from apps/AetherMod.' > deploy/INSTALL.txt
           cd deploy
-          zip -r ../AetherOS8.2-Pass1-DSi-Public.zip .
+          zip -r ../AetherOS8.3-Pass1-DSi-Public.zip .
       - uses: actions/upload-artifact@v4
         with:
-          name: AetherOS8.2-Pass1-DSi-Public
+          name: AetherOS8.3-Pass1-DSi-Public
           path: |
-            AetherMod8.2.nds
-            AetherOS8.2.nds
-            AetherOS8.2-Pass1-DSi-Public.zip
+            AetherMod8.3.nds
+            AetherOS8.3.nds
+            AetherOS8.3-Pass1-DSi-Public.zip
