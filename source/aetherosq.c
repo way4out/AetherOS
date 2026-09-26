@@ -18,7 +18,7 @@
 #define APP_COUNT 29
 #define AETHERMOD_MAJOR 8
 #define AETHERMOD_MINOR 4
-#define AETHERMOD_PASS 4
+#define AETHERMOD_PASS 5
 #define AETHERMOD_TOTAL_PASSES 5
 #define AETHER_HOME_PAGES 4
 #define NOTE_COUNT 8
@@ -92,7 +92,7 @@ static u8 batteryLevel=0; static int dsiLive=0, touchLiveX=0, touchLiveY=0, touc
 static char vaultNames[12][48];
 static char fileNames[16][48];
 static char eventNames[12][48];
-static const char noteText[4][64]={"Rescue / build priorities","DSi local-first workspace","AetherOS 8.4 pass 4/5","User notes preserved on SD"};
+static const char noteText[4][64]={"Rescue / build priorities","DSi local-first workspace","AetherOS 8.4 pass 5/5","User notes preserved on SD"};
 static const u32 aetherLut[1024]={0};
 
 static void saveState(void);
@@ -473,11 +473,11 @@ static void clockPage(void){
     footer("A toggles 12/24 display  B HOME");
 }
 static void diagPage(void){
-    page("DIAGNOSTICS / 8.4 PASS 4/5"); runDiagnostics();
+    page("DIAGNOSTICS / 8.4 PASS 5/5"); runDiagnostics();
     iprintf("STORAGE %s\\nSAVE INTEGRITY %s\\nRUNTIME FAULTS %d\\n",storageReady()?"READY":"FAIL",saveIntegrity()?"PASS":"RECOVER",validationFaults);
     iprintf("FRAME BUDGET %s\\nINPUT EVENTS %lu\\nGUARD TRIPS %lu\\n",frameBudgetFaults?"CHECK":"PASS",(unsigned long)inputEvents,(unsigned long)guardTrips);
     iprintf("COLOR PALETTE: ACTIVE\\nAUDIO: HARD-OFF DEFAULT\\nLOCAL DATA: ENABLED\\n");
-    iprintf("\\n5-PASS BUILD: UI / COLOR / SD / TOOLS / SAFETY / RECOVERY / DATA / ROUTING\\n");
+    iprintf("\\nFINAL 5-PASS BUILD: UI / COLOR / SD / TOOLS / SAFETY / RECOVERY / DATA / ROUTING\\n");
 }
 static void page(const char *title){
     topBg(title);
@@ -571,7 +571,7 @@ static void home(void){
     updateCapabilityHealth();
     topBg("DUAL-OS COCKPIT");
     consoleSelect(&bottomConsole); consoleClear();
-    iprintf("AETHERMOD 8.4 PASS 4 / IMMERSIVE COCKPIT\n");
+    iprintf("AETHERMOD 8.4 PASS 5 / IMMERSIVE COCKPIT\n");
     iprintf("------------------------------\n");
     iprintf("PAGE %d/%d   MODULES %02d-%02d   %s\n\n",
         homeScroll+1,AETHER_HOME_PAGES,homeScroll*8+1,homeScroll*8+8,
@@ -843,7 +843,7 @@ static void family(void){
 
 static void systemPage(void){
     selfTestRun=(frameCounter&15)==0; moduleHeartbeat(); page("SYSTEM / SERVICE");
-    iprintf("AETHERMOD 8.4  PASS 4/5  DSi ARM9\n");
+    iprintf("AETHERMOD 8.4  PASS 5/5  DSi ARM9\n");
     iprintf("SELFTEST %s SAFE %s DIRTY %s\n",selfTestRun?"RUN":"READY",safeMode?"ON":"OFF",dirtyState?"YES":"NO");
     iprintf("BRIGHT %u/4 THEME %s LANG %s\n",save.brightness,save.theme?"AETHER":"CLASSIC",langName());
     iprintf("SOUND %s AI %s WIFI %s BROWSER %s\n",save.sound?"ON":"OFF",save.ai?"ON":"OFF",save.wireless?"ON":"OFF",save.browser?"ON":"OFF");
@@ -867,7 +867,7 @@ static void generalSettings(void){
 
 static void about(void){
     page("ABOUT AETHERMOD");
-    iprintf("AETHERMOD 8.4 PASS 4/5 / CORE BUILD\n");
+    iprintf("AETHERMOD 8.4 PASS 5/5 / CORE BUILD\n");
     iprintf("ALL-ENCOMPASSING COCKPIT\n\n");
     iprintf("Local-first. Modular. Gateway-ready.\n");
     iprintf("Quantum-inspired computation.\n");
