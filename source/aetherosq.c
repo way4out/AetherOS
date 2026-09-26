@@ -85,6 +85,10 @@ static int animFrame=0, animPulse=0, colorTheme=0;
 static int animTopPhase=0, animBottomPhase=0, animSweep=0, animSpark=0;
 static int homePageLock=0;
 static int navSoundGate=0, pageTransition=0, touchX=0, touchY=0, touchPressed=0;
+static int vaultCursor=0, vaultCount=0, noteCursor=0, clock24=1, diagCursor=0;
+static char vaultNames[12][48];
+static const char noteText[4][64]={"Rescue / build priorities","DSi local-first workspace","AetherOS 8.3 baseline","User notes preserved on SD"};
+static const u32 aetherLut[1024]={0x13579BDFu,0x2468ACE0u,0x10203040u,0x55667788u};
 
 static void saveState(void);
 static void markDirty(void);
@@ -103,6 +107,7 @@ static void setSelection(int value);
 static u32 hash32(const void *ptr,size_t n);
 static void defaults(void);
 static void page(const char *title);
+static void footer(const char *s);
 static void ensureDirs(void);
 static void rfLogEvent(const char *kind, int value);
 static long long calcResult(void);
@@ -1040,7 +1045,7 @@ static void input(void){
     } else if(mode==25){
         if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP&&vaultCount){vaultCursor=(vaultCursor+vaultCount-1)%vaultCount;changed=1;} if(d&KEY_DOWN&&vaultCount){vaultCursor=(vaultCursor+1)%vaultCount;changed=1;} if(d&KEY_X){vaultScan();changed=1;} if(d&KEY_A){vaultScan();changed=1;}
     } else if(mode==26){
-        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP){noteCursor=(noteCursor+3)%4;changed=1;} if(d&KEY_DOWN){noteCursor=(noteCursor+1)%4;changed=1;} if(d&KEY_A){ensureDirs(); FILE *nf=fopen("fat:/data/AetherMod/notes.txt","ab"); if(nf){fprintf(nf,"%s\\n",noteText[noteCursor]);fclose(nf);} changed=1;} 
+        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP){noteCursor=(noteCursor+3)%4;changed=1;} if(d&KEY_DOWN){noteCursor=(noteCursor+1)%4;changed=1;} if(d&KEY_A){ensureDirs(); char np[128]; snprintf(np,sizeof(np),"%sdata/AetherMod/notes.txt",root); FILE *nf=fopen(np,"ab"); if(nf){fprintf(nf,"%s\\n",noteText[noteCursor]);fclose(nf);} changed=1;} 
     } else if(mode==27){
         if(d&KEY_B){mode=0;changed=1;} if(d&KEY_A){clock24=!clock24;changed=1;}
     } else if(mode==28){
