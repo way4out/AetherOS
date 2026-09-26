@@ -234,10 +234,10 @@ static void hwBus(void){ hwTouch=1; hwButtons=(int)keysHeld(); hwMic=1; hwCamera
 static void releaseBus(void){ releaseGuard=(hwTouch&&hwMic&&hwCamera&&hwLed)?1:0; if(!crossLink) routeErrors++; if(touchEvents) touchLatency=(touchLatency+1)%16; }
 static void animateUI(void){ animFrame=(animFrame+1)&63; animPulse=(animPulse+1)&31; colorTheme=(colorTheme+1)&15; }
 static void applyAnimatedColors(void){
-    static const ConsoleColor topColors[6]={CONSOLE_CYAN,CONSOLE_LIGHT_CYAN,CONSOLE_GREEN,CONSOLE_LIGHT_GREEN,CONSOLE_YELLOW,CONSOLE_WHITE};
-    static const ConsoleColor botColors[6]={CONSOLE_LIGHT_BLUE,CONSOLE_BLUE,CONSOLE_MAGENTA,CONSOLE_LIGHT_MAGENTA,CONSOLE_LIGHT_CYAN,CONSOLE_WHITE};
-    consoleSetColor(&topConsole,topColors[(animFrame/8)%6]);
-    consoleSetColor(&bottomConsole,botColors[(animFrame/8)%6]);
+    static const char *topColors[6]={"\\x1b[36;1m","\\x1b[36;1m","\\x1b[32;1m","\\x1b[32;1m","\\x1b[33;1m","\\x1b[37;1m"};
+    static const char *botColors[6]={"\\x1b[34;1m","\\x1b[34;1m","\\x1b[35;1m","\\x1b[35;1m","\\x1b[36;1m","\\x1b[37;1m"};
+    consoleSelect(&topConsole); printf("%s",topColors[(animFrame/8)%6]);
+    consoleSelect(&bottomConsole); printf("%s",botColors[(animFrame/8)%6]);
 }
 static void liveBus(void){ if(!liveRefresh) return; livePhase=(livePhase+1)%32; visualEnergy=(visualEnergy+2+((frameCounter/4)%7))%101; if(crossLink){busEvents++;busQuantum=(busQuantum+qFidelity+1)%101;busAudio=(busAudio+dspRms+1)%101;busAnimal=(busAnimal+animalConfidence+2)%101;busRF=(busRF+saAvg+3)%101;busPhone=(busPhone+hotspotRssi+1)%101;busBot=(busBot+botEvents+1)%101;} }
 static void drawLiveBars(int seed){int p=(seed+livePhase)%24;iprintf("LIVE |");for(int i=0;i<24;i++)iprintf("%c",i==p?'@':((i+seed+visualEnergy)%5==0?'#':((i+seed)%3==0?'+':'.')));iprintf("| %3d%%\\n",visualEnergy);}
