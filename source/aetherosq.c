@@ -1112,6 +1112,17 @@ static void input(void){
         if(d&KEY_B){mode=0;changed=1;} if(d&KEY_A){controlCount++;changed=1;} if(d&KEY_X){inputEvents=0;touchEvents=0;controlCount=0;changed=1;}
     } else if(mode==22){
         if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP){botCursor=(botCursor+7)%8;changed=1;} if(d&KEY_DOWN){botCursor=(botCursor+1)%8;changed=1;} if(d&KEY_A){botExecute();changed=1;}
+    } else if(mode==18){
+        if(d&KEY_B){mode=0;changed=1;}
+        if(d&KEY_LEFT&&hapticLevel>0){hapticLevel--;changed=1;}
+        if(d&KEY_RIGHT&&hapticLevel<3){hapticLevel++;changed=1;}
+        if(d&KEY_A){feedback(3);changed=1;}
+    } else if(mode==19){
+        if(d&KEY_B){mode=0;changed=1;}
+        if(d&KEY_UP){settingsSection=(settingsSection+2)%3;changed=1;}
+        if(d&KEY_DOWN){settingsSection=(settingsSection+1)%3;changed=1;}
+        if(d&KEY_A){hapticLevel=(hapticLevel+1)%4;changed=1;}
+        if(d&KEY_X){visualTheme=(visualTheme+1)%4;changed=1;}
     } else if(mode==25){
         if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP){eventCursor--;if(eventCursor<0)eventCursor=0;changed=1;} if(d&KEY_DOWN){eventCursor++;if(eventCursor>=eventCount)eventCursor=eventCount?eventCount-1:0;changed=1;} if(d&KEY_X){changed=1;}
     } else if(mode==26){
