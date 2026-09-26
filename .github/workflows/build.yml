@@ -1,4 +1,4 @@
-name: Build AetherMod 8.2 Pass 1 for Nintendo DSi
+name: Build AetherMod 8.2 Pass 2 for Nintendo DSi
 on:
   workflow_dispatch:
   push:
@@ -10,28 +10,32 @@ jobs:
     container: devkitpro/devkitarm:20241104
     steps:
       - uses: actions/checkout@v4
-      - name: Build AetherMod
+      - name: Build AetherMod 8.2
         run: |
           export PATH="$DEVKITARM/bin:$DEVKITPRO/tools/bin:$PATH"
           make clean
           mkdir -p build/include
           make
           test -f AetherMod8.2.nds
+          cp AetherMod8.2.nds AetherOS8.2.nds
           file AetherMod8.2.nds || true
-          ls -lh AetherMod8.2.nds
+          ls -lh AetherMod8.2.nds AetherOS8.2.nds
       - name: Package complete SD bundle
         run: |
           mkdir -p deploy/apps/AetherMod
           mkdir -p deploy/data/AetherMod
           cp AetherMod8.2.nds deploy/apps/AetherMod/AetherMod8.2.nds
+          cp AetherOS8.2.nds deploy/apps/AetherMod/AetherOS8.2.nds
           cp -r data/AetherMod/. deploy/data/AetherMod/
           cp AETHERMOD.md deploy/AETHERMOD.md
-          printf '%s\n' 'Copy the apps/AetherMod and data/AetherMod directories to the DSi SD card.' > deploy/INSTALL.txt
+          printf '%s
+' 'Copy apps/AetherMod and data/AetherMod to the DSi SD card. Launch AetherOS8.2.nds or AetherMod8.2.nds.' > deploy/INSTALL.txt
           cd deploy
-          zip -r ../AetherMod-8.2-Pass1-DSi-Public.zip .
+          zip -r ../AetherOS8.2-Pass2-DSi-Public.zip .
       - uses: actions/upload-artifact@v4
         with:
-          name: AetherMod-8.2-Pass1-DSi-Public
+          name: AetherOS8.2-Pass2-DSi-Public
           path: |
             AetherMod8.2.nds
-            AetherMod-8.2-Pass1-DSi-Public.zip
+            AetherOS8.2.nds
+            AetherOS8.2-Pass2-DSi-Public.zip
