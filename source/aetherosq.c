@@ -845,7 +845,14 @@ static void input(void){
         if(d&KEY_A){aiQuery++;botLink=phoneLinkState?1:botLink;changed=1;}
         if(d&KEY_X){save.onlineAI^=1;changed=1;}
         if(d&KEY_Y){save.privacy^=1;changed=1;}
-    } else if(mode>=13 && mode<=23){
+    } else if(mode==13){
+        if(d&KEY_B){mode=0;changed=1;}
+        if(d&KEY_A){hotspotState=!hotspotState;phoneLinkState=hotspotState;phoneSession=hotspotState?1:0;phonePackets++;changed=1;}
+        if(d&KEY_X){hotspotBand^=1;changed=1;}
+        if(d&KEY_Y){hotspotPing=hotspotState?38+(int)(frameCounter%20):0;phoneTelemetry=1;changed=1;}
+        if(d&KEY_L){phoneType=0;changed=1;} if(d&KEY_R){phoneType=1;changed=1;}
+        if(d&KEY_SELECT){phoneCompanion^=1;changed=1;}
+    } else if(mode>=14 && mode<=23){
         if(d&KEY_B){mode=0;changed=1;}
         if(d&KEY_UP){expansionCursor=(expansionCursor+11)%12;changed=1;}
         if(d&KEY_DOWN){expansionCursor=(expansionCursor+1)%12;changed=1;}
@@ -857,7 +864,7 @@ static void input(void){
             if(mode==15)animalLink=1;
             if(mode==16)codexSync=1;
             if(mode==17)phoneFileSync=1;
-            if(mode==22)botLink=1;
+            if(mode==23)botLink=1;
             if(mode==23)phoneRemote^=1;
             changed=1;
         }
