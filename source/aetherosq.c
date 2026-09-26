@@ -1016,7 +1016,7 @@ int main(void){
         iprintf("AETHERMOD SAFE BOOT\nSD/FAT unavailable.\nRunning RAM-only.\n");
     } else {
         if(isDSiMode()) root="sd:/";
-        loadState(); save.launches++; saveState();
+        loadState(); save.sound=0; soundDisable(); save.launches++; saveState();
     }
 
     while(1){
