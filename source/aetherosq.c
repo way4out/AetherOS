@@ -15,7 +15,7 @@
 
 #define APP_COUNT 24
 #define AETHERMOD_MAJOR 8
-#define AETHERMOD_PASS 7
+#define AETHERMOD_PASS 1
 #define AETHERMOD_TOTAL_PASSES 7
 #define NOTE_COUNT 8
 #define CODEX_PATH "data/AetherMod/codex.txt"
@@ -77,6 +77,7 @@ static int hwTouch=0, hwButtons=0, hwMic=0, hwCamera=0, hwLed=0, hwSpeaker=0;
 static int topFrames=0, bottomFrames=0, inputRoute=0, sensorRoute=0, mediaRoute=0, ledRoute=0;
 static int releaseGuard=0, routeErrors=0, touchLatency=0, colorCycle=0;
 static int busQuantum=0, busAudio=0, busAnimal=0, busRF=0, busPhone=0, busBot=0;
+static int animFrame=0, animPulse=0, colorTheme=0;
 
 static void saveState(void);
 static void markDirty(void);
@@ -105,6 +106,7 @@ static void liveBus(void);
 static void drawLiveBars(int seed);
 static void hwBus(void);
 static void releaseBus(void);
+static void animateUI(void);
 
 static int storageReady(void){
     FILE *f=fopen("fat:/data/AetherMod/.aether_test","wb");
@@ -230,6 +232,7 @@ static void dawStepAdvance(void){
 static void feedback(int kind){ hapticPulse++; visualEnergy=(visualEnergy+11+(kind*7))%101; if(save.sound) tone(); }
 static void hwBus(void){ hwTouch=1; hwButtons=(int)keysHeld(); hwMic=1; hwCamera=1; hwLed=1; hwSpeaker=save.sound?1:0; inputRoute=hwTouch+(hwButtons?1:0); sensorRoute=hwMic+hwCamera; mediaRoute=hwSpeaker+phoneLinkState; ledRoute=hwLed+(hotspotState?1:0); if((frameCounter&7)==0){topFrames++;bottomFrames++;} }
 static void releaseBus(void){ releaseGuard=(hwTouch&&hwMic&&hwCamera&&hwLed)?1:0; if(!crossLink) routeErrors++; if(touchEvents) touchLatency=(touchLatency+1)%16; }
+static void animateUI(void){ animFrame=(animFrame+1)&63; animPulse=(animPulse+1)&31; colorTheme=(colorTheme+1)&15; }
 static void liveBus(void){ if(!liveRefresh) return; livePhase=(livePhase+1)%32; visualEnergy=(visualEnergy+2+((frameCounter/4)%7))%101; if(crossLink){busEvents++;busQuantum=(busQuantum+qFidelity+1)%101;busAudio=(busAudio+dspRms+1)%101;busAnimal=(busAnimal+animalConfidence+2)%101;busRF=(busRF+saAvg+3)%101;busPhone=(busPhone+hotspotRssi+1)%101;busBot=(busBot+botEvents+1)%101;} }
 static void drawLiveBars(int seed){int p=(seed+livePhase)%24;iprintf("LIVE |");for(int i=0;i<24;i++)iprintf("%c",i==p?'@':((i+seed+visualEnergy)%5==0?'#':((i+seed)%3==0?'+':'.')));iprintf("| %3d%%\\n",visualEnergy);}
 static void serviceInput(u32 keys){
@@ -937,6 +940,8 @@ int main(void){
     videoSetMode(MODE_0_2D); videoSetModeSub(MODE_0_2D); vramDefault();
     consoleInit(&topConsole,0,BgType_Text4bpp,BgSize_T_256x256,22,3,true,true);
     consoleInit(&bottomConsole,0,BgType_Text4bpp,BgSize_T_256x256,22,3,false,true);
+    consoleEnhancedColorHandler(&topConsole);
+    consoleEnhancedColorHandler(&bottomConsole);
     consoleSelect(&topConsole); consoleClear(); iprintf("AETHERMOD\nBOOTING DUAL-OS...\n");
     soundEnable();
     swiWaitForVBlank();
@@ -956,6 +961,7 @@ int main(void){
         frameCounter++;
         scanKeys();
         moduleHeartbeat();
+        animateUI();
         input();
         guardModuleState();
         if((frameCounter&31)==0 && dirtyState && !safeMode) saveState();
