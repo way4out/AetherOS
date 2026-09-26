@@ -147,8 +147,7 @@ static void validateRuntimeState(void){
 }
 static void guardModuleState(void){
     if(mode!=99 && (mode<0 || mode>APP_COUNT)){
-        moduleGuardFaults++;
-        mode=0;
+        moduleGuardFaults++;        mode=0;
         returnHome();
     }
 }
@@ -166,6 +165,7 @@ static int normalizeSelection(int value){
 static void setSelection(int value){
     selectionPin=normalizeSelection(value);
     cursor=selectionPin;
+    homeScroll=selectionPin/8;
     save.selectionPin=(u16)selectionPin;
 }
 
@@ -263,7 +263,7 @@ static void updateCapabilityHealth(void){
 }
 
 
-static void returnHome(void){ lastMode=mode; mode=0; homeScroll=(selectionPin>=8); setSelection(selectionPin); saveState(); }
+static void returnHome(void){ lastMode=mode; mode=0; setSelection(selectionPin); homeScroll=selectionPin/8; saveState(); }
 
 static void moduleHeartbeat(void){ hwBus(); liveBus(); releaseBus(); colorCycle=(colorCycle+1)%48;
     if(mode>=1 && mode<=APP_COUNT) moduleTicks[mode-1]++;
@@ -297,8 +297,7 @@ static void resetToBase(void){
     recoveryNotice=0; resetHoldFrames=0; resetConfirm=0; resetCursor=0; resetNotice=1;
     if(fatInitDefault()){
         ensureDirs();
-        char p[120]; snprintf(p,sizeof(p),"%sdata/AetherMod/save.dat",root); remove(p);
-        saveState();
+        char p[120]; snprintf(p,sizeof(p),"%sdata/AetherMod/save.dat",root); remove(p);        saveState();
     }
 }
 
@@ -447,8 +446,7 @@ static void home(void){
     runDiagnostics();
     updateCapabilityHealth();
     topBg("DUAL-OS COCKPIT");
-    consoleSelect(&bottomConsole); consoleClear();
-    iprintf("AETHERMOD REVOLUTION IS HERE\n");
+    consoleSelect(&bottomConsole); consoleClear();    iprintf("AETHERMOD REVOLUTION IS HERE\n");
     iprintf("------------------------------\n");
     iprintf("PAGE %d/3  24-module cockpit / 3 pages.\n\n",homeScroll+1);
     int first=homeScroll*8;
@@ -597,8 +595,7 @@ static void daw(void){
     iprintf("T3 [");for(int i=0;i<16;i++)iprintf("%c",(i%5)==0?'+':'.');iprintf("]\n");
     iprintf("VIEW %s  TRACK %d  MUTE:%d\n",dawView?"MIXER":"PIANO",dawTrack+1,dawTrackMute);
     iprintf("OSC PSG+PCM  FX GATE/PAN/LEVEL  AUDIO LOCAL\n");
-    iprintf("PLAY %s  game-loop timing %s\n",dawPlaying?"RUN":"STOP",dawPlaying?"LIVE":"READY");
-    footer("UP/DOWN STEP  A NOTE  X PLAY  Y BPM  L/R TRACK  SELECT VIEW  B HOME");
+    iprintf("PLAY %s  game-loop timing %s\n",dawPlaying?"RUN":"STOP",dawPlaying?"LIVE":"READY");    footer("UP/DOWN STEP  A NOTE  X PLAY  Y BPM  L/R TRACK  SELECT VIEW  B HOME");
 }
 
 static void dsp(void){
@@ -747,8 +744,7 @@ static void about(void){
     iprintf("Quantum-inspired computation.\n");
     iprintf("RF tools require compatible external hardware.\n");
     iprintf("No stock DSi hardware is misrepresented.\n");
-    iprintf("BUILD SELF-CHECK: PASS\nSELECTION MODEL: SINGLE SOURCE\n");
-    iprintf("RECOVERY: SAVE VALIDATION + RAM FALLBACK\n");
+    iprintf("BUILD SELF-CHECK: PASS\nSELECTION MODEL: SINGLE SOURCE\n");    iprintf("RECOVERY: SAVE VALIDATION + RAM FALLBACK\n");
     footer("B HOME");
 }
 
@@ -834,10 +830,10 @@ static void input(void){
         }
     }
     if(mode==0){
-        if(nav&KEY_UP){inputEvents++;setSelection(selectionPin-1);homeScroll=(selectionPin>=8);homePulse=1;saveState();changed=1;}
-        if(nav&KEY_DOWN){inputEvents++;setSelection(selectionPin+1);homeScroll=(selectionPin>=8);homePulse=1;saveState();changed=1;}
-        if(nav&KEY_LEFT){inputEvents++;setSelection(selectionPin-1);homeScroll=(selectionPin>=8);homePulse=1;saveState();changed=1;}
-        if(nav&KEY_RIGHT){inputEvents++;setSelection(selectionPin+1);homeScroll=(selectionPin>=8);homePulse=1;saveState();changed=1;}
+        if(nav&KEY_UP){inputEvents++;setSelection(selectionPin-1);homeScroll=selectionPin/8;homePulse=1;saveState();changed=1;}
+        if(nav&KEY_DOWN){inputEvents++;setSelection(selectionPin+1);homeScroll=selectionPin/8;homePulse=1;saveState();changed=1;}
+        if(nav&KEY_LEFT){inputEvents++;setSelection(selectionPin-1);homeScroll=selectionPin/8;homePulse=1;saveState();changed=1;}
+        if(nav&KEY_RIGHT){inputEvents++;setSelection(selectionPin+1);homeScroll=selectionPin/8;homePulse=1;saveState();changed=1;}
         if(d&KEY_A){inputEvents++;launchSelection();changed=1;}
         if(d&KEY_X){setSelection(1);homeScroll=0;mode=1;save.launches++;saveState();changed=1;}
         if(d&KEY_Y){setSelection(9);homeScroll=1;mode=10;save.launches++;saveState();changed=1;}
@@ -897,8 +893,7 @@ static void input(void){
         if(d&KEY_A){aiQuery++;botLink=phoneLinkState?1:botLink;changed=1;}
         if(d&KEY_X){save.onlineAI^=1;changed=1;}
         if(d&KEY_Y){save.privacy^=1;changed=1;}
-    } else if(mode==13){
-        if(d&KEY_B){mode=0;changed=1;}
+    } else if(mode==13){        if(d&KEY_B){mode=0;changed=1;}
         if(d&KEY_A){hotspotState=!hotspotState;phoneLinkState=hotspotState;phoneSession=hotspotState?1:0;phonePackets++;changed=1;}
         if(d&KEY_X){hotspotBand^=1;changed=1;}
         if(d&KEY_Y){hotspotPing=hotspotState?38+(int)(frameCounter%20):0;phoneTelemetry=1;changed=1;}
@@ -939,7 +934,10 @@ static void input(void){
         if(d&KEY_Y){hapticLevel=(hapticLevel+1)%4;changed=1;}
         if(d&KEY_SELECT){crossLink^=1;changed=1;}
     } else {if(d&KEY_B){mode=0;changed=1;}}
-    if(changed){ feedback(mode%4); draw(); }
+    if(changed){
+        /* Navigation must never generate a tone; tones are reserved for explicit actions. */
+        draw();
+    }
 }
 
 int main(void){
