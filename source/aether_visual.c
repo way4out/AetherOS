@@ -27,5 +27,4 @@ __attribute__((constructor))
 static void aether_visual_install(void){
     irqSet(IRQ_VBLANK,aether_visual_vblank);
     irqEnable(IRQ_VBLANK);
-    REG_DISPSTAT |= DISPSTAT_IE_VBLANK;
 }
