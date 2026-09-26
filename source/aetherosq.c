@@ -886,7 +886,7 @@ static void input(void){
         if(d&KEY_X){visualTheme=(visualTheme+1)%4;changed=1;}
         if(d&KEY_Y){hapticLevel=(hapticLevel+1)%4;changed=1;}
         if(d&KEY_SELECT){crossLink^=1;changed=1;}
-    } else {if(d&KEY_B){mode=0;changed=1;}}    } else {if(d&KEY_B){mode=0;changed=1;}}
+    } else {if(d&KEY_B){mode=0;changed=1;}}
     if(changed)draw();
 }
 
