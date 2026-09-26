@@ -18,7 +18,7 @@
 #define APP_COUNT 29
 #define AETHERMOD_MAJOR 8
 #define AETHERMOD_MINOR 4
-#define AETHERMOD_PASS 2
+#define AETHERMOD_PASS 3
 #define AETHERMOD_TOTAL_PASSES 5
 #define AETHER_HOME_PAGES 4
 #define NOTE_COUNT 8
@@ -86,10 +86,12 @@ static int animTopPhase=0, animBottomPhase=0, animSweep=0, animSpark=0;
 static int homePageLock=0;
 static int navSoundGate=0, pageTransition=0, touchX=0, touchY=0, touchPressed=0;
 static int vaultCursor=0, vaultCount=0, noteCursor=0, clock24=1, diagCursor=0, fileCursor=0, fileCount=0, eventCursor=0, eventCount=0;
+static int accessScale=1, accessContrast=0, accessScroll=1, controlCount=0, botCursor=0, botResult=0;
+static u8 batteryLevel=0; static int dsiLive=0, touchLiveX=0, touchLiveY=0, touchLiveDown=0;
 static char vaultNames[12][48];
 static char fileNames[16][48];
 static char eventNames[12][48];
-static const char noteText[4][64]={"Rescue / build priorities","DSi local-first workspace","AetherOS 8.4 pass 2/5","User notes preserved on SD"};
+static const char noteText[4][64]={"Rescue / build priorities","DSi local-first workspace","AetherOS 8.4 pass 3/5","User notes preserved on SD"};
 static const u32 aetherLut[1024]={0};
 
 static void saveState(void);
@@ -295,6 +297,8 @@ static void serviceInput(u32 keys){
 }
 
 
+static void sampleHardware(void){ dsiLive=isDSiMode()?1:0; batteryLevel=getBatteryLevel(); touchPosition t; touchRead(&t); touchLiveX=t.px; touchLiveY=t.py; touchLiveDown=(keysHeld()&KEY_TOUCH)?1:0; }
+static void botExecute(void){ switch(botCursor%8){case 0:mode=0;break;case 1:runDiagnostics();mode=29;break;case 2:fileScan();mode=17;break;case 3:mode=25;break;case 4:mode=20;break;case 5:mode=21;break;case 6:mode=19;break;default:mode=22;break;} botResult=botCursor+1;botEvents++; }
 static void updateCapabilityHealth(void){
     capabilityScore=100;
     if(storageReady()) capabilityScore+=0; else capabilityScore-=20;
@@ -870,6 +874,7 @@ static void about(void){
 }
 
 static void draw(void){
+    sampleHardware();
     setAetherPalette();
     applyAnimatedColors();
     if(mode==99){resetPage();return;}
@@ -1097,6 +1102,16 @@ static void input(void){
         if(d&KEY_X){visualTheme=(visualTheme+1)%4;changed=1;}
         if(d&KEY_Y){hapticLevel=(hapticLevel+1)%4;changed=1;}
         if(d&KEY_SELECT){crossLink^=1;changed=1;}
+    } else if(mode==18){
+        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_LEFT&&hapticLevel>0){hapticLevel--;changed=1;} if(d&KEY_RIGHT&&hapticLevel<3){hapticLevel++;changed=1;} if(d&KEY_A){feedback(3);changed=1;}
+    } else if(mode==19){
+        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP){settingsSection=(settingsSection+2)%3;changed=1;} if(d&KEY_DOWN){settingsSection=(settingsSection+1)%3;changed=1;} if(d&KEY_A){if(settingsSection==0)accessScale=(accessScale%3)+1;else if(settingsSection==1)accessContrast^=1;else accessScroll=(accessScroll%3)+1;changed=1;} if(d&KEY_X){accessContrast^=1;changed=1;}
+    } else if(mode==20){
+        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_A){safeMode=!safeMode;if(safeMode){save.wireless=0;save.onlineAI=0;}saveState();changed=1;}
+    } else if(mode==21){
+        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_A){controlCount++;changed=1;} if(d&KEY_X){inputEvents=0;touchEvents=0;controlCount=0;changed=1;}
+    } else if(mode==22){
+        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP){botCursor=(botCursor+7)%8;changed=1;} if(d&KEY_DOWN){botCursor=(botCursor+1)%8;changed=1;} if(d&KEY_A){botExecute();changed=1;}
     } else if(mode==25){
         if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP){eventCursor--;if(eventCursor<0)eventCursor=0;changed=1;} if(d&KEY_DOWN){eventCursor++;if(eventCursor>=eventCount)eventCursor=eventCount?eventCount-1:0;changed=1;} if(d&KEY_X){changed=1;}
     } else if(mode==26){
