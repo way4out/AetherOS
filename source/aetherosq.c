@@ -20,7 +20,7 @@
 #define AETHERMOD_MINOR 3
 #define AETHERMOD_PASS 1
 #define AETHERMOD_TOTAL_PASSES 15
-#define AETHER_HOME_PAGES 3
+#define AETHER_HOME_PAGES 4
 #define NOTE_COUNT 8
 #define CODEX_PATH "data/AetherMod/codex.txt"
 #define ANIMAL_PATH "data/AetherMod/animals.txt"
@@ -411,7 +411,7 @@ static void vaultPage(void){
     if(!vaultCount){iprintf("No readable entries found.\\n");}
     for(int i=0;i<vaultCount;i++) iprintf("%c %02d  %-30s\\n",i==vaultCursor?'>':' ',i+1,vaultNames[i]);
     iprintf("\\nA = inspect  X = rescan  B = home\\n");
-    if(vaultCount){ char p[128]; snprintf(p,sizeof(p),"fat:/data/AetherMod/%s",vaultNames[vaultCursor]); FILE *f=fopen(p,"rb"); if(f){char buf[81]={0}; size_t n=fread(buf,1,80,f); fclose(f); buf[n]=0; iprintf("\\nPREVIEW: %s\\n",buf);}}
+    if(vaultCount){ char p[128]; snprintf(p,sizeof(p),"%sdata/AetherMod/%s",root,vaultNames[vaultCursor]); FILE *f=fopen(p,"rb"); if(f){char buf[81]={0}; size_t n=fread(buf,1,80,f); fclose(f); buf[n]=0; iprintf("\\nPREVIEW: %s\\n",buf);}}
 }
 static void notesPage(void){
     page("PERSISTENT NOTES");
@@ -1003,7 +1003,7 @@ static void input(void){
         if(d&KEY_Y){hotspotPing=hotspotState?38+(int)(frameCounter%20):0;phoneTelemetry=1;changed=1;}
         if(d&KEY_L){phoneType=0;changed=1;} if(d&KEY_R){phoneType=1;changed=1;}
         if(d&KEY_SELECT){phoneCompanion^=1;changed=1;}
-    } else if(mode>=14 && mode<=24){
+    } else if(mode>=14 && mode<=23){
         if(d&KEY_B){mode=0;changed=1;}
         if(d&KEY_UP){expansionCursor=(expansionCursor+11)%12;changed=1;}
         if(d&KEY_DOWN){expansionCursor=(expansionCursor+1)%12;changed=1;}
