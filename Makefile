@@ -5,7 +5,7 @@ $(error "Please set DEVKITARM in your environment. export DEVKITARM=<path to>dev
 endif
 
 GAME_TITLE := AetherMod8.4
-GAME_SUBTITLE1 := DSi AetherOS 8.3
+GAME_SUBTITLE1 := DSi AetherOS 8.4
 GAME_SUBTITLE2 := Quantum Systems
 include $(DEVKITARM)/ds_rules
 
