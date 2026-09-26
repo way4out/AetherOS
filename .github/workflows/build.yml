@@ -16,6 +16,8 @@ jobs:
           make clean
           mkdir -p build/include
           cp include/pass4_prototypes.h build/include/pass4_prototypes.h
+          sed -i "s/static long long calcResult/long long calcResult/" source/aetherosq.c
+          sed -i "s/static void dawStepAdvance/void dawStepAdvance/" source/aetherosq.c
           make
           test -f AetherMod.nds
           file AetherMod.nds || true
