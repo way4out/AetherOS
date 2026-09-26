@@ -16,26 +16,26 @@ jobs:
           make clean
           mkdir -p build/include
           make
-          test -f AetherMod8.2.nds
-          cp AetherMod8.2.nds AetherOS8.2.nds
-          file AetherMod8.2.nds || true
-          ls -lh AetherMod8.2.nds AetherOS8.2.nds
+          test -f AetherMod8.3.nds
+          cp AetherMod8.3.nds AetherOS8.3.nds
+          file AetherMod8.3.nds || true
+          ls -lh AetherMod8.3.nds AetherOS8.3.nds
       - name: Package complete SD bundle
         run: |
           mkdir -p deploy/apps/AetherMod
           mkdir -p deploy/data/AetherMod
-          cp AetherMod8.2.nds deploy/apps/AetherMod/AetherMod8.2.nds
-          cp AetherOS8.2.nds deploy/apps/AetherMod/AetherOS8.2.nds
+          cp AetherMod8.3.nds deploy/apps/AetherMod/AetherMod8.3.nds
+          cp AetherOS8.3.nds deploy/apps/AetherMod/AetherOS8.3.nds
           cp -r data/AetherMod/. deploy/data/AetherMod/
           cp AETHERMOD.md deploy/AETHERMOD.md
           printf '%s
-' 'Copy apps/AetherMod and data/AetherMod to the DSi SD card. Launch AetherOS8.2.nds or AetherMod8.2.nds.' > deploy/INSTALL.txt
+' 'Copy apps/AetherMod and data/AetherMod to the DSi SD card. Launch AetherOS8.3.nds or AetherMod8.3.nds.' > deploy/INSTALL.txt
           cd deploy
-          zip -r ../AetherOS8.2-Pass2-DSi-Public.zip .
+          zip -r ../AetherOS8.3-Pass2-DSi-Public.zip .
       - uses: actions/upload-artifact@v4
         with:
-          name: AetherOS8.2-Pass2-DSi-Public
+          name: AetherOS8.3-Pass2-DSi-Public
           path: |
-            AetherMod8.2.nds
-            AetherOS8.2.nds
-            AetherOS8.2-Pass2-DSi-Public.zip
+            AetherMod8.3.nds
+            AetherOS8.3.nds
+            AetherOS8.3-Pass2-DSi-Public.zip
