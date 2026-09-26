@@ -15,7 +15,7 @@
 
 #define APP_COUNT 24
 #define AETHERMOD_MAJOR 8
-#define AETHERMOD_PASS 2
+#define AETHERMOD_PASS 3
 #define AETHERMOD_TOTAL_PASSES 7
 #define NOTE_COUNT 8
 #define CODEX_PATH "data/AetherMod/codex.txt"
@@ -64,6 +64,8 @@ static int quantumMeasure=0, quantumShots=0, aiSafetyEvents=0, networkPackets=0;
 static int familyProfile=0, systemCursor=0;
 static int visualTheme=1, hapticLevel=2, expansionCursor=0, liveRefresh=1, settingsSection=0;
 static int hotspotState=0, hotspotBand=0, hotspotSecurity=2, hotspotRssi=72, hotspotTx=0, hotspotRx=0, hotspotPing=0, hotspotMode=0, phoneType=0, phonePackets=0;
+static int phoneLinkState=0, phoneSession=0, phoneService=0, phoneLastOp=0, phoneFileSync=0, phoneTelemetry=0, phoneRemote=0, phoneCompanion=0;
+static int busTicks=0, busEvents=0, crossLink=0, codexSync=0, animalLink=0, dspLink=0, rfLink=0, botLink=0;
 static int aiCursor=0, aiQuery=0, browserCursor=0, graphMode=0, dawView=0, settingsCursor=0, codexLine=0, animalFeature=0, telemetryPage=0;
 
 static void saveState(void);
@@ -237,6 +239,20 @@ static void returnHome(void){ lastMode=mode; mode=0; homeScroll=(selectionPin>=8
 static void moduleHeartbeat(void){
     if(mode>=1 && mode<=APP_COUNT) moduleTicks[mode-1]++;
     uptimeFrames=frameCounter;
+    if((frameCounter&15)==0){
+        busTicks++;
+        if(crossLink) busEvents++;
+        if(hotspotState){
+            hotspotTx++;
+            hotspotRx+=2;
+            phonePackets++;
+            if(hotspotPing<25) hotspotPing=25+(int)(frameCounter%18);
+        }
+        if(phoneLinkState){
+            phoneTelemetry=1;
+            if(phoneSession==0) phoneSession=1;
+        }
+    }
 }
 
 
@@ -321,25 +337,74 @@ static void page(const char *title){
 static void footer(const char *s){iprintf("\n%s\n",s);}
 
 static void expansion(void){
-    const char *names[]={"PHONE LINK","MEDIA STUDIO","SENSOR HUB","DATA VAULT","FILE BROWSER","HAPTIC LAB","ACCESSIBILITY","POWER LAB","CONTROL LAB","DIAGNOSTICS","AETHER BOT","VISUAL LAB"};
+    const char *names[]={
+        "PHONE LINK","MEDIA STUDIO","SENSOR HUB","DATA VAULT","FILE BROWSER","HAPTIC LAB",
+        "ACCESSIBILITY","POWER LAB","CONTROL LAB","DIAGNOSTICS","AETHER BOT","GENERAL SETTINGS"
+    };
     int ix=mode-13; if(ix<0) ix=0; if(ix>11) ix=11;
     page(names[ix]);
     int pulse=(int)((frameCounter/2)%24), meter=(int)((frameCounter/3)%100);
-    iprintf("LIVE WORKSPACE %s  REFRESH %s\\n",liveRefresh?"ON":"OFF",liveRefresh?"LIVE":"PAUSED");
-    iprintf("VISUAL THEME %d  HAPTIC %d/3  CURSOR %d\\n",visualTheme,hapticLevel,expansionCursor);
-    iprintf("SIGNAL |"); for(int i=0;i<24;i++) iprintf("%c",((i+pulse)%7==0)?'#':((i+meter/10)%3==0)?'+':'.'); iprintf("|\\n");
-    iprintf("LEVEL %3d%%  ACTIVITY %3d%%  FRAME %lu\\n",meter,(pulse*7)%101,(unsigned long)frameCounter);
-    if(ix==0) { iprintf("PHONE LINK: iPHONE 15 / ANDROID\\n"); iprintf("HOTSPOT %s  MODE %s  BAND %s\\n",hotspotState?"CONNECTED":"READY",hotspotMode?"MANUAL":"AUTO",hotspotBand?"5G":"2.4G"); iprintf("RSSI %d%%  TX %d  RX %d  PING %dms\\n",hotspotRssi,hotspotTx,hotspotRx,hotspotPing); iprintf("A = CONNECT  X = BAND  Y = TEST  L/R = PROFILE\\n"); } else if(ix==1) iprintf("4-track media workspace / clip slots / local playback\\n");
-    else if(ix==1) iprintf("MIC / CAMERA / TOUCH sensor routing and live meters\\n");
-    else if(ix==2) iprintf("SD capacity / corpus index / session data integrity\\n");
-    else if(ix==3) iprintf("Local file navigator: data/AetherMod/\\n");
-    else if(ix==4) iprintf("Touch feedback / click tone / response-strength control\\n");
-    else if(ix==5) iprintf("Large-text / contrast / input-assist control surface\\n");
-    else if(ix==6) iprintf("Power state / workload / battery telemetry gateway\\n");
-    else if(ix==7) iprintf("Cross-module routing / universal input focus\\n");
-    else if(ix==8) iprintf("Runtime guards / save integrity / subsystem heartbeat\\n");
-    else if(ix==9) iprintf("Local assistant workspace / commands / module routing\\n");
-    else iprintf("Live graph renderer / palette / visualization diagnostics\\n");
+    iprintf("LIVE WORKSPACE %s  REFRESH %s\n",liveRefresh?"ON":"OFF",liveRefresh?"LIVE":"PAUSED");
+    iprintf("THEME %d  HAPTIC %d/3  BUS %s  EVENTS %d\n",
+        visualTheme,hapticLevel,crossLink?"LINKED":"READY",busEvents);
+    iprintf("SIGNAL |");
+    for(int i=0;i<24;i++) iprintf("%c",((i+pulse)%7==0)?'#':((i+meter/10)%3==0)?'+':'.');
+    iprintf("|\nLEVEL %3d%%  ACTIVITY %3d%%  FRAME %lu\n",meter,(pulse*7)%101,(unsigned long)frameCounter);
+
+    if(ix==0){
+        iprintf("PHONE LINK / iPHONE 15 + ANDROID\n");
+        iprintf("HOTSPOT %s  PROFILE %s  LINK %s\n",
+            hotspotState?"CONNECTED":"READY",phoneType?"ANDROID":"iPHONE 15",
+            phoneLinkState?"ACTIVE":"STANDBY");
+        iprintf("5G BACKHAUL -> 2.4G DSi WIFI\n");
+        iprintf("RSSI %d%%  TX %d  RX %d  PING %dms\n",
+            hotspotRssi,hotspotTx,hotspotRx,hotspotPing);
+        iprintf("SESSION %d  COMPANION %s  REMOTE %s\n",
+            phoneSession,phoneCompanion?"READY":"OFF",phoneRemote?"ARMED":"SAFE");
+        iprintf("SYNC FILE %s  TELEMETRY %s  BOT %s\n",
+            phoneFileSync?"READY":"IDLE",phoneTelemetry?"LIVE":"IDLE",botLink?"LINKED":"IDLE");
+        iprintf("A LINK  X BAND  Y TEST  L/R PROFILE\n");
+        iprintf("TOUCH: service rows / bridge actions\n");
+    } else if(ix==1) {
+        iprintf("MEDIA ROUTER / DAW CLIPS / DSP INPUT\n");
+        iprintf("DAW->DSP %s  PHONE MEDIA %s\n",dspLink?"LINKED":"READY",phoneFileSync?"READY":"LOCAL");
+    } else if(ix==2) {
+        iprintf("MIC / CAMERA / TOUCH SENSOR ROUTING\n");
+        iprintf("ANIMAL INPUT %s  SENSOR BUS %d\n",animalLink?"LINKED":"READY",busTicks);
+    } else if(ix==3) {
+        iprintf("SD DATA VAULT / INDEX / SESSION CHECKS\n");
+        iprintf("CODEX SYNC %s  FILE SYNC %s\n",codexSync?"READY":"IDLE",phoneFileSync?"READY":"IDLE");
+    } else if(ix==4) {
+        iprintf("LOCAL FILE NAVIGATOR: data/AetherMod/\n");
+        iprintf("PHONE TRANSFER %s  DATA BUS %s\n",phoneFileSync?"ARMED":"SAFE",crossLink?"ACTIVE":"READY");
+    } else if(ix==5) {
+        iprintf("TOUCH FEEDBACK / TONE / RESPONSE STRENGTH\n");
+        iprintf("LEVEL %d/3  EVENTS %lu\n",hapticLevel,(unsigned long)touchEvents);
+    } else if(ix==6) {
+        iprintf("LARGE TEXT / CONTRAST / INPUT ASSIST\n");
+        iprintf("TOUCH FOCUS %s  UNIVERSAL INPUT READY\n",touchFocus?"ON":"AUTO");
+    } else if(ix==7) {
+        iprintf("POWER STATE / WORKLOAD / BATTERY GATEWAY\n");
+        iprintf("WORKLOAD %d%%  SAVE %s  SAFE %s\n",meter,saveIntegrity()?"OK":"CHECK",safeMode?"ON":"OFF");
+    } else if(ix==8) {
+        iprintf("CROSS-MODULE ROUTING / UNIVERSAL CONTROL BUS\n");
+        iprintf("QCORE PHONE RF DSP BOT LINKS\n");
+        iprintf("BUS %s  EVENTS %d  TICKS %d\n",crossLink?"ACTIVE":"READY",busEvents,busTicks);
+    } else if(ix==9) {
+        iprintf("RUNTIME GUARDS / SAVE / SUBSYSTEM HEARTBEAT\n");
+        iprintf("GUARDS %lu  VALIDATION %d  HEALTH %d%%\n",
+            (unsigned long)guardTrips,validationFaults,capabilityScore);
+    } else if(ix==10) {
+        iprintf("AETHER BOT / COMMAND + MODULE ROUTING\n");
+        iprintf("PHONE REMOTE %s  KNOWLEDGE %s\n",phoneRemote?"ARMED":"SAFE",codexSync?"SYNC":"LOCAL");
+        iprintf("LINKS: CALC / CODEX / ANIMAL / RF / DSP\n");
+    } else {
+        iprintf("MASTER SETTINGS / SAFETY + FAMILY + SYSTEM\n");
+        iprintf("AI %s  PRIVACY %s  WIFI %s  BROWSER %s\n",
+            save.ai?"ON":"OFF",save.privacy?"LOCK":"OPEN",
+            save.wireless?"ARMED":"GUARDED",save.browser?"ON":"OFF");
+        iprintf("VISUAL %d  HAPTIC %d  LIVE %s\n",visualTheme,hapticLevel,liveRefresh?"ON":"OFF");
+    }
     footer("UP/DOWN CURSOR  A ACTION  X VISUAL  Y LIVE  L/R HAPTIC  B HOME");
 }
 
@@ -352,7 +417,7 @@ static void home(void){
     consoleSelect(&bottomConsole); consoleClear();
     iprintf("AETHERMOD REVOLUTION IS HERE\n");
     iprintf("------------------------------\n");
-    iprintf("PAGE %d/3  Tap a module or use D-PAD.\n\n",homeScroll+1);
+    iprintf("PAGE %d/3  24-module cockpit / 3 pages.\n\n",homeScroll+1);
     int first=homeScroll*8;
     for(int i=0;i<8;i++){
         int n=first+i;
@@ -596,7 +661,7 @@ static void family(void){
 
 static void systemPage(void){
     selfTestRun=(frameCounter&15)==0; moduleHeartbeat(); page("SYSTEM / SERVICE");
-    iprintf("AETHERMOD 8.0  PASS 1/7  DSi ARM9\n");
+    iprintf("AETHERMOD 8.0  PASS 3/7  DSi ARM9\n");
     iprintf("SELFTEST %s SAFE %s DIRTY %s\n",selfTestRun?"RUN":"READY",safeMode?"ON":"OFF",dirtyState?"YES":"NO");
     iprintf("BRIGHT %u/4 THEME %s LANG %s\n",save.brightness,save.theme?"AETHER":"CLASSIC",langName());
     iprintf("SOUND %s AI %s WIFI %s BROWSER %s\n",save.sound?"ON":"OFF",save.ai?"ON":"OFF",save.wireless?"ON":"OFF",save.browser?"ON":"OFF");
@@ -620,7 +685,7 @@ static void generalSettings(void){
 
 static void about(void){
     page("ABOUT AETHERMOD");
-    iprintf("AETHERMOD 6.0 EXPANSION / PASS 1 / 3\n");
+    iprintf("AETHERMOD 8.0 PASS 3 / 7\n");
     iprintf("ALL-ENCOMPASSING COCKPIT\n\n");
     iprintf("Local-first. Modular. Gateway-ready.\n");
     iprintf("Quantum-inspired computation.\n");
@@ -637,7 +702,7 @@ static void draw(void){
       case 0: home(); break; case 1: quantum(); break; case 2: codex(); break; case 3: animal(); break;
       case 4: rfLab("MARAUDER / RF"); break; case 5: tinysa(); break; case 6: calculator(); break;
       case 7: daw(); break; case 8: dsp(); break; case 9: telemetry(); break; case 10: aiHome(); break;
-      case 11: network(); break; case 25: generalSettings(); break; default: expansion(); break;
+      case 11: network(); break; case 12: aiHome(); break; case 24: generalSettings(); break; default: expansion(); break;
     }
 }
 
@@ -663,13 +728,13 @@ static void input(void){
     if(d&KEY_SELECT){safeMode=!safeMode;if(safeMode){save.onlineAI=0;save.wireless=0;save.downloads=0;gatewayState=0;mode=0;}saveState();changed=1;}
     if(d&KEY_TOUCH){
         touchPosition t; touchRead(&t); touchEvents++; touchFocus=1;
-        if(mode>=12){
+        if(mode>=13 && mode<=24){
         if(d&KEY_B){mode=0;changed=1;}
         if(mode==13){
             if(d&KEY_A){hotspotState=!hotspotState; hotspotTx+=hotspotState?1:0; hotspotRx+=hotspotState?2:0; hotspotPing=hotspotState?42:0; phonePackets+=hotspotState?3:0; changed=1;}
             if(d&KEY_X){hotspotBand^=1; changed=1;} if(d&KEY_Y){hotspotPing=hotspotState?38+((frameCounter/10)%20):0; phonePackets++; changed=1;}
             if(d&KEY_LEFT&&hotspotRssi>0)hotspotRssi--; if(d&KEY_RIGHT&&hotspotRssi<100)hotspotRssi++; if(d&KEY_B){mode=0;changed=1;}
-        } else if(mode==25){
+        } else if(mode==24){
             if(d&KEY_UP){settingsSection=(settingsSection+7)%8;changed=1;}
             if(d&KEY_DOWN){settingsSection=(settingsSection+1)%8;changed=1;}
             if(d&KEY_A){switch(settingsSection){
@@ -679,6 +744,7 @@ static void input(void){
             } saveState(); changed=1;}
             if(d&KEY_X){visualTheme=(visualTheme+1)%4;changed=1;}
             if(d&KEY_Y){hapticLevel=(hapticLevel+1)%4;changed=1;}
+            if(d&KEY_SELECT){crossLink^=1;changed=1;}
         } else {
             if(d&KEY_UP){expansionCursor=(expansionCursor+7)%8;changed=1;}
             if(d&KEY_DOWN){expansionCursor=(expansionCursor+1)%8;changed=1;}
@@ -704,8 +770,8 @@ static void input(void){
             else if(mode==6 && t.py>=72){calculatorCursor=((t.py-72)/14)%12;changed=1;}
             else if(mode==4){rfAuthGate=1;if(rfPushQueue<8)rfPushQueue++;rfLogEvent("TOUCH_PUSH_QUEUE",rfPushQueue);changed=1;}
             else if(mode==5){saMarker=(t.px%240)*saSpan/240;saTraceHold=1;changed=1;}
-            else if(t.px<128){if(mode==13)save.parental^=1;else if(mode==12)save.ai^=1;else if(mode==3)animalAnalyzing=1;changed=1;}
-            else {if(mode==12)save.onlineAI^=1;else if(mode==11)save.wireless^=1;else if(mode==2)codexSearch^=1;changed=1;}
+            else if(t.px<128){if(mode==13){phoneLinkState=hotspotState?1:phoneLinkState;phoneCompanion^=1;}else if(mode==3)animalAnalyzing=1;changed=1;}
+            else {if(mode==13){phoneFileSync^=1;}else if(mode==11)save.wireless^=1;else if(mode==2)codexSearch^=1;changed=1;}
             saveState();
         }
     }
@@ -767,14 +833,47 @@ static void input(void){
     } else if(mode==11){
         if(d&KEY_B){mode=0;changed=1;} if(d&KEY_A){save.wireless^=1;gatewayState=save.wireless;networkPackets++;markDirty();changed=1;} if(d&KEY_X){networkSelfTest=1;changed=1;} if(d&KEY_Y){networkSelfTest=0;changed=1;}
     } else if(mode==12){
-        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_A){save.ai^=1;aiSafetyEvents++;markDirty();changed=1;} if(d&KEY_X){save.onlineAI^=1;changed=1;} if(d&KEY_Y){save.privacy^=1;changed=1;}
-    } else if(mode==13){
-        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_A){familyProfile^=1;save.parental^=1;save.nsfw=save.unsafe=save.unregulated=save.parental;save.downloads=!save.parental;save.browser=!save.parental;saveState();changed=1;} if(d&KEY_X){save.userContent^=1;save.nsfw^=1;saveState();changed=1;} if(d&KEY_Y){save.wireless^=1;save.downloads^=1;saveState();changed=1;}
-    } else if(mode==14){
-        if(d&KEY_B){save.selectionPin=selectionPin;saveState();mode=0;changed=1;} if(d&KEY_UP&&save.brightness<4){save.brightness++;changed=1;} if(d&KEY_DOWN&&save.brightness>0){save.brightness--;changed=1;} if(d&KEY_A){save.theme^=1;saveState();changed=1;} if(d&KEY_X){save.sound^=1;saveState();changed=1;}
-    } else if(mode==15){
-        if(d&KEY_B){save.selectionPin=selectionPin;saveState();mode=0;changed=1;} if(d&KEY_UP){settingsCursor=(settingsCursor+6)%7;changed=1;} if(d&KEY_DOWN){settingsCursor=(settingsCursor+1)%7;changed=1;} if(d&KEY_A){switch(settingsCursor){case 0:save.ai^=1;break;case 1:save.onlineAI^=1;break;case 2:save.privacy^=1;break;case 3:save.browser^=1;break;case 4:save.downloads^=1;break;case 5:save.wireless^=1;break;default:save.sound^=1;break;} saveState();changed=1;} if(d&KEY_X){safeMode=!safeMode;if(safeMode){save.onlineAI=0;save.wireless=0;save.downloads=0;gatewayState=0;}saveState();changed=1;}
-    } else {if(d&KEY_B){mode=0;changed=1;}}
+        if(d&KEY_B){mode=0;changed=1;}
+        if(d&KEY_UP){aiCursor=(aiCursor+5)%6;changed=1;}
+        if(d&KEY_DOWN){aiCursor=(aiCursor+1)%6;changed=1;}
+        if(d&KEY_A){aiQuery++;botLink=phoneLinkState?1:botLink;changed=1;}
+        if(d&KEY_X){save.onlineAI^=1;changed=1;}
+        if(d&KEY_Y){save.privacy^=1;changed=1;}
+    } else if(mode>=13 && mode<=23){
+        if(d&KEY_B){mode=0;changed=1;}
+        if(d&KEY_UP){expansionCursor=(expansionCursor+11)%12;changed=1;}
+        if(d&KEY_DOWN){expansionCursor=(expansionCursor+1)%12;changed=1;}
+        if(d&KEY_LEFT&&hapticLevel>0){hapticLevel--;changed=1;}
+        if(d&KEY_RIGHT&&hapticLevel<3){hapticLevel++;changed=1;}
+        if(d&KEY_A){
+            crossLink=1; busEvents++;
+            if(mode==14)dspLink=1;
+            if(mode==15)animalLink=1;
+            if(mode==16)codexSync=1;
+            if(mode==17)phoneFileSync=1;
+            if(mode==22)botLink=1;
+            if(mode==23)phoneRemote^=1;
+            changed=1;
+        }
+        if(d&KEY_X){visualTheme=(visualTheme+1)%4;changed=1;}
+        if(d&KEY_Y){liveRefresh=!liveRefresh;changed=1;}
+        if(d&KEY_SELECT){crossLink^=1;changed=1;}
+    } else if(mode==24){
+        if(d&KEY_B){mode=0;changed=1;}
+        if(d&KEY_UP){settingsSection=(settingsSection+7)%8;changed=1;}
+        if(d&KEY_DOWN){settingsSection=(settingsSection+1)%8;changed=1;}
+        if(d&KEY_A){
+            switch(settingsSection){
+                case 0: save.ai^=1; break; case 1: save.onlineAI^=1; break; case 2: save.privacy^=1; break;
+                case 3: save.browser^=1; break; case 4: save.downloads^=1; break; case 5: save.wireless^=1; break;
+                case 6: save.sound^=1; break; default: safeMode=!safeMode; break;
+            }
+            saveState(); changed=1;
+        }
+        if(d&KEY_X){visualTheme=(visualTheme+1)%4;changed=1;}
+        if(d&KEY_Y){hapticLevel=(hapticLevel+1)%4;changed=1;}
+        if(d&KEY_SELECT){crossLink^=1;changed=1;}
+    } else {if(d&KEY_B){mode=0;changed=1;}}    } else {if(d&KEY_B){mode=0;changed=1;}}
     if(changed)draw();
 }
 
@@ -800,6 +899,7 @@ int main(void){
     while(1){
         swiWaitForVBlank();
         frameCounter++;
+        moduleHeartbeat();
         input();
         guardModuleState();
         if((frameCounter&31)==0 && dirtyState && !safeMode) saveState();
