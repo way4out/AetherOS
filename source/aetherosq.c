@@ -297,6 +297,7 @@ static void serviceInput(u32 keys){
 }
 
 
+static void fileScan(void);
 static void sampleHardware(void){ dsiLive=isDSiMode()?1:0; batteryLevel=getBatteryLevel(); touchPosition t; touchRead(&t); touchLiveX=t.px; touchLiveY=t.py; touchLiveDown=(keysHeld()&KEY_TOUCH)?1:0; }
 static void botExecute(void){ switch(botCursor%8){case 0:mode=0;break;case 1:runDiagnostics();mode=29;break;case 2:fileScan();mode=17;break;case 3:mode=25;break;case 4:mode=20;break;case 5:mode=21;break;case 6:mode=19;break;default:mode=22;break;} botResult=botCursor+1;botEvents++; }
 static void updateCapabilityHealth(void){
