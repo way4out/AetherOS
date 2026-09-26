@@ -14,12 +14,12 @@ jobs:
           export PATH="$DEVKITARM/bin:$DEVKITPRO/tools/bin:$PATH"
           make clean
           make
-          test -f AetherMod8.3.nds
-          cp AetherMod8.3.nds AetherOS8.3.nds
+          test -f AetherMod8.4.nds
+          cp AetherMod8.4.nds AetherOS8.3.nds
       - name: Package
         run: |
           mkdir -p deploy/apps/AetherMod deploy/data/AetherMod
-          cp AetherMod8.3.nds deploy/apps/AetherMod/AetherMod8.3.nds
+          cp AetherMod8.4.nds deploy/apps/AetherMod/AetherMod8.4.nds
           cp AetherOS8.3.nds deploy/apps/AetherMod/AetherOS8.3.nds
           cp -r data/AetherMod/. deploy/data/AetherMod/
           cp AETHERMOD.md deploy/AETHERMOD.md
@@ -30,6 +30,6 @@ jobs:
         with:
           name: AetherOS8.3-Pass1-DSi-Public
           path: |
-            AetherMod8.3.nds
+            AetherMod8.4.nds
             AetherOS8.3.nds
             AetherOS8.3-Pass1-DSi-Public.zip
