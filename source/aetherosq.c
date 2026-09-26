@@ -18,7 +18,7 @@
 #define APP_COUNT 28
 #define AETHERMOD_MAJOR 8
 #define AETHERMOD_MINOR 4
-#define AETHERMOD_PASS 1
+#define AETHERMOD_PASS 2
 #define AETHERMOD_TOTAL_PASSES 5
 #define AETHER_HOME_PAGES 4
 #define NOTE_COUNT 8
@@ -85,9 +85,11 @@ static int animFrame=0, animPulse=0, colorTheme=0;
 static int animTopPhase=0, animBottomPhase=0, animSweep=0, animSpark=0;
 static int homePageLock=0;
 static int navSoundGate=0, pageTransition=0, touchX=0, touchY=0, touchPressed=0;
-static int vaultCursor=0, vaultCount=0, noteCursor=0, clock24=1, diagCursor=0;
+static int vaultCursor=0, vaultCount=0, noteCursor=0, clock24=1, diagCursor=0, fileCursor=0, fileCount=0, eventCursor=0, eventCount=0;
 static char vaultNames[12][48];
-static const char noteText[4][64]={"Rescue / build priorities","DSi local-first workspace","AetherOS 8.4 pass 1/5","User notes preserved on SD"};
+static char fileNames[16][48];
+static char eventNames[12][48];
+static const char noteText[4][64]={"Rescue / build priorities","DSi local-first workspace","AetherOS 8.4 pass 2/5","User notes preserved on SD"};
 static const u32 aetherLut[1024]={0};
 
 static void saveState(void);
@@ -403,6 +405,37 @@ static void setAetherPalette(void){
     for(int i=0;i<8;i++){ BG_PALETTE[15+i*16]=pal[i]; BG_PALETTE_SUB[15+i*16]=pal[i]; }
     BG_PALETTE[0]=RGB15(1,2,4); BG_PALETTE_SUB[0]=RGB15(1,2,4);
 }
+static void fileScan(void){
+    fileCount=0; memset(fileNames,0,sizeof(fileNames));
+    DIR *d=opendir("fat:/data/AetherMod"); if(!d && isDSiMode()) d=opendir("sd:/data/AetherMod");
+    if(!d) return; struct dirent *e;
+    while((e=readdir(d)) && fileCount<16){ if(e->d_name[0]=='.') continue; strncpy(fileNames[fileCount],e->d_name,47); fileCount++; }
+    closedir(d); if(fileCursor>=fileCount) fileCursor=0;
+}
+static void fileBrowserPage(void){
+    page("FILE BROWSER / LOCAL-FIRST");
+    fileScan();
+    iprintf("ROOT: data/AetherMod/   ENTRIES:%d\n\n",fileCount);
+    for(int i=0;i<fileCount;i++) iprintf("%c %02d %-29s\n",i==fileCursor?'>':' ',i+1,fileNames[i]);
+    iprintf("\nA=PREVIEW X=RESCAN B=HOME\n");
+    if(fileCount){
+        char p[128]; snprintf(p,sizeof(p),"%sdata/AetherMod/%s",root,fileNames[fileCursor]);
+        FILE *f=fopen(p,"rb");
+        if(f){ unsigned char b[32]={0}; size_t n=fread(b,1,sizeof(b),f); fclose(f);
+            u32 h=hash32(b,n); iprintf("\nSIZE SAMPLE:%uB  HASH:%08lX\n",(unsigned)n,(unsigned long)h);
+        }
+    }
+}
+static void eventLogPage(void){
+    page("EVENT / SESSION LOG");
+    char p[128]; snprintf(p,sizeof(p),"%sdata/AetherMod/rf_session.log",root);
+    FILE *f=fopen(p,"rb"); char lines[12][64]; eventCount=0;
+    if(f){ while(eventCount<12 && fgets(lines[eventCount],64,f)){ size_t n=strlen(lines[eventCount]); if(n&&lines[eventCount][n-1]=='\\n') lines[eventCount][n-1]=0; eventCount++; } fclose(f); }
+    iprintf("SESSION EVENTS:%d\n\n",eventCount);
+    for(int i=0;i<eventCount;i++) iprintf("%c %02d %s\n",i==eventCursor?'>':' ',i+1,lines[i]);
+    if(!eventCount) iprintf("No session events recorded yet.\n");
+    footer("UP/DOWN SELECT  X REFRESH  B HOME");
+}
 static void vaultScan(void){
     vaultCount=0; memset(vaultNames,0,sizeof(vaultNames));
     DIR *d=opendir("fat:/data/AetherMod"); if(!d && isDSiMode()) d=opendir("sd:/data/AetherMod");
@@ -530,7 +563,7 @@ static void home(void){
     updateCapabilityHealth();
     topBg("DUAL-OS COCKPIT");
     consoleSelect(&bottomConsole); consoleClear();
-    iprintf("AETHERMOD 8.4 / IMMERSIVE COCKPIT\n");
+    iprintf("AETHERMOD 8.4 PASS 2 / IMMERSIVE COCKPIT\n");
     iprintf("------------------------------\n");
     iprintf("PAGE %d/3   MODULES %02d-%02d   %s\n\n",
         homeScroll+1,homeScroll*8+1,homeScroll*8+8,
@@ -826,7 +859,7 @@ static void generalSettings(void){
 
 static void about(void){
     page("ABOUT AETHERMOD");
-    iprintf("AETHERMOD 8.4 PASS 1/5 / 15-STEP BUILD\n");
+    iprintf("AETHERMOD 8.4 PASS 2/5 / CORE BUILD\n");
     iprintf("ALL-ENCOMPASSING COCKPIT\n\n");
     iprintf("Local-first. Modular. Gateway-ready.\n");
     iprintf("Quantum-inspired computation.\n");
@@ -844,7 +877,7 @@ static void draw(void){
       case 0: home(); break; case 1: quantum(); break; case 2: codex(); break; case 3: animal(); break;
       case 4: rfLab("MARAUDER / RF"); break; case 5: tinysa(); break; case 6: calculator(); break;
       case 7: daw(); break; case 8: dsp(); break; case 9: telemetry(); break; case 10: aiHome(); break;
-      case 11: network(); break; case 12: aiHome(); break; case 24: generalSettings(); break; case 25: vaultPage(); break; case 26: notesPage(); break; case 27: clockPage(); break; case 28: diagPage(); break; default: expansion(); break;
+      case 11: network(); break; case 12: aiHome(); break; case 17: fileBrowserPage(); break; case 24: generalSettings(); break; case 25: vaultPage(); break; case 26: notesPage(); break; case 27: clockPage(); break; case 28: diagPage(); break; default: expansion(); break;
     }
 }
 
@@ -870,7 +903,12 @@ static void input(void){
     if(d&KEY_SELECT){safeMode=!safeMode;if(safeMode){save.onlineAI=0;save.wireless=0;save.downloads=0;gatewayState=0;mode=0;}saveState();changed=1;}
     if(d&KEY_TOUCH){
         touchPosition t; touchRead(&t); touchEvents++; touchFocus=1;
-        if(mode>=25 && mode<=28){
+        if(mode==17){
+            if(t.py<48 || t.py>=192){ mode=0; changed=1; }
+            else if(t.py>=55 && t.py<170){ int r=((int)t.py-55)/10; if(r>=0 && r<fileCount){ fileCursor=r; changed=1; } }
+            else { fileScan(); changed=1; }
+            if(changed) draw();
+        } else if(mode>=25 && mode<=28){
         if(t.py<48 || t.py>=192){ mode=0; changed=1; }
         else if(mode==25){
             if(t.py>=55 && t.py<150){ int r=((int)t.py-55)/12; if(r>=0 && r<vaultCount){ vaultCursor=r; changed=1; } }
@@ -887,6 +925,12 @@ static void input(void){
             if(d&KEY_A){hotspotState=!hotspotState; hotspotTx+=hotspotState?1:0; hotspotRx+=hotspotState?2:0; hotspotPing=hotspotState?42:0; phonePackets+=hotspotState?3:0; changed=1;}
             if(d&KEY_X){hotspotBand^=1; changed=1;} if(d&KEY_Y){hotspotPing=hotspotState?38+((frameCounter/10)%20):0; phonePackets++; changed=1;}
             if(d&KEY_LEFT&&hotspotRssi>0)hotspotRssi--; if(d&KEY_RIGHT&&hotspotRssi<100)hotspotRssi++; if(d&KEY_B){mode=0;changed=1;}
+        } else if(mode==17){
+            if(d&KEY_B){mode=0;changed=1;}
+            if(d&KEY_UP){fileCursor--; if(fileCursor<0)fileCursor=fileCount?fileCount-1:0;changed=1;}
+            if(d&KEY_DOWN){fileCursor++; if(fileCursor>=fileCount)fileCursor=0;changed=1;}
+            if(d&KEY_X){fileScan();changed=1;}
+            if(d&KEY_A){changed=1;}
         } else if(mode==24){
             if(d&KEY_UP){settingsSection=(settingsSection+7)%8;changed=1;}
             if(d&KEY_DOWN){settingsSection=(settingsSection+1)%8;changed=1;}
