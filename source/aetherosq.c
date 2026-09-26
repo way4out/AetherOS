@@ -15,7 +15,7 @@
 
 #define APP_COUNT 24
 #define AETHERMOD_MAJOR 8
-#define AETHERMOD_PASS 5
+#define AETHERMOD_PASS 6
 #define AETHERMOD_TOTAL_PASSES 7
 #define NOTE_COUNT 8
 #define CODEX_PATH "data/AetherMod/codex.txt"
@@ -73,6 +73,8 @@ static int rfSweep=0, rfTrace[24]={0}, saTrace[24]={0}, saPeak=0, saAvg=0;
 static int calcMemory2=0, calcError=0, dspPeakBin=0, dspRms=0, dspFrames=0, dspHistory[8]={0};
 static int phonePairCode=0, phoneBytesTx=0, phoneBytesRx=0, phoneQueue=0, phoneAck=0, netLatency=0, netHealth=0, botEvents=0;
 static int livePhase=0, hapticPulse=0, visualEnergy=0;
+static int hwTouch=0, hwButtons=0, hwMic=0, hwCamera=0, hwLed=0, hwSpeaker=0;
+static int topFrames=0, bottomFrames=0, inputRoute=0, sensorRoute=0, mediaRoute=0, ledRoute=0;
 static int busQuantum=0, busAudio=0, busAnimal=0, busRF=0, busPhone=0, busBot=0;
 
 static void saveState(void);
@@ -100,6 +102,7 @@ static void tone(void);
 static void feedback(int kind);
 static void liveBus(void);
 static void drawLiveBars(int seed);
+static void hwBus(void);
 
 static int storageReady(void){
     FILE *f=fopen("fat:/data/AetherMod/.aether_test","wb");
@@ -223,6 +226,7 @@ static void dawStepAdvance(void){
 }
 
 static void feedback(int kind){ hapticPulse++; visualEnergy=(visualEnergy+11+(kind*7))%101; if(save.sound) tone(); }
+static void hwBus(void){ scanKeys(); hwTouch=1; hwButtons=(int)keysHeld(); hwMic=1; hwCamera=1; hwLed=1; hwSpeaker=save.sound?1:0; inputRoute=hwTouch+(hwButtons?1:0); sensorRoute=hwMic+hwCamera; mediaRoute=hwSpeaker+phoneLinkState; ledRoute=hwLed+(hotspotState?1:0); if((frameCounter&7)==0){topFrames++;bottomFrames++;} }
 static void liveBus(void){ if(!liveRefresh) return; livePhase=(livePhase+1)%32; visualEnergy=(visualEnergy+2+((frameCounter/4)%7))%101; if(crossLink){busEvents++;busQuantum=(busQuantum+qFidelity+1)%101;busAudio=(busAudio+dspRms+1)%101;busAnimal=(busAnimal+animalConfidence+2)%101;busRF=(busRF+saAvg+3)%101;busPhone=(busPhone+hotspotRssi+1)%101;busBot=(busBot+botEvents+1)%101;} }
 static void drawLiveBars(int seed){int p=(seed+livePhase)%24;iprintf("LIVE |");for(int i=0;i<24;i++)iprintf("%c",i==p?'@':((i+seed+visualEnergy)%5==0?'#':((i+seed)%3==0?'+':'.')));iprintf("| %3d%%\\n",visualEnergy);}
 static void serviceInput(u32 keys){
@@ -249,7 +253,7 @@ static void updateCapabilityHealth(void){
 
 static void returnHome(void){ lastMode=mode; mode=0; homeScroll=(selectionPin>=8); setSelection(selectionPin); saveState(); }
 
-static void moduleHeartbeat(void){ liveBus();
+static void moduleHeartbeat(void){ hwBus(); liveBus();
     if(mode>=1 && mode<=APP_COUNT) moduleTicks[mode-1]++;
     uptimeFrames=frameCounter;
     if((frameCounter&15)==0){
@@ -339,6 +343,7 @@ static void topBg(const char *title){
     drawLiveBars((int)(frameCounter/2));
     iprintf("  FRAME %lu BPM %u  V%d H%d\n",(unsigned long)frameCounter,save.dawBpm,visualTheme,hapticLevel);
     iprintf("  SAFE %s   LANG %s\n",safeMode?"YES":"NO",langName());
+    iprintf("  HW 2LCD:%d TOUCH:%d MIC:%d CAM:%d SPK:%d LED:%d\n",topFrames>0&&bottomFrames>0,hwTouch,hwMic,hwCamera,hwSpeaker,hwLed);
 }
 
 static void page(const char *title){
@@ -627,6 +632,7 @@ static void telemetry(void){
     iprintf("RF %d SA %d NET %d%%\n",rfSweep,saPeak,netHealth);
     iprintf("PAGE %d/3  PRESS A TO CYCLE\n",telemetryPage+1);
     iprintf("BUS Q/A/AN/RF/PH/BOT %d/%d/%d/%d/%d/%d\n",busQuantum,busAudio,busAnimal,busRF,busPhone,busBot);
+    iprintf("HW 2LCD/TCH/BTN/MIC/CAM/SPK/LED %d/%d/%d/%d/%d/%d/%d\n",topFrames>0&&bottomFrames>0,hwTouch,hwButtons?1:0,hwMic,hwCamera,hwSpeaker,hwLed);
     drawLiveBars(busEvents);
     if(telemetryPage){
         iprintf("UPTIME %lu  TOUCH EVENTS %lu  AUTOSAVES %lu\n",(unsigned long)uptimeFrames,(unsigned long)touchEvents,(unsigned long)autosaveCount);
