@@ -907,214 +907,108 @@ static void tone(void){
 }
 
 static void input(void){
-    u32 d=keysDown(); u32 repeat=keysDownRepeat(); u32 nav=d|repeat; serviceInput(d); validateRuntimeState(); int changed=0;
-    if(d&KEY_START){ resetHoldFrames++; } else { resetHoldFrames=0; }
+    u32 d=keysDown();
+    u32 repeat=keysDownRepeat();
+    u32 nav=d|repeat;
+    touchPosition tp;
+    bool touched=(d&KEY_TOUCH)!=0;
+    if(touched){
+        touchRead(&tp);
+        touchEvents++;
+        touchFocus=1;
+        touchX=tp.px; touchY=tp.py; touchPressed=1;
+        /*
+         * Universal touchscreen map:
+         *   top strip / lower-left = B (back)
+         *   lower-right           = A (select/action)
+         *   middle-left/right     = UP/DOWN
+         *   home rows             = direct module selection
+         */
+        if(mode==0){
+            if(tp.py>=48 && tp.py<144){
+                int row=((int)tp.py-48)/12;
+                int target=homePage*8+row;
+                if(row>=0 && row<8 && target<APP_COUNT){
+                    setSelection(target);
+                    launchSelection();
+                }
+            } else if(tp.py>=144){
+                setHomePage(homePage+1);
+                pageTransitionFeedback();
+            }
+        } else {
+            if(tp.py<40 || tp.py>=174) d|=KEY_B;
+            else if(tp.px<85) d|=KEY_UP;
+            else if(tp.px>170) d|=KEY_DOWN;
+            else if(tp.py>=150) d|=KEY_A;
+            else if(tp.py>=105) d|=KEY_LEFT;
+            else if(tp.py>=70) d|=KEY_RIGHT;
+            else d|=KEY_A;
+        }
+        nav=d|repeat;
+    }
+    serviceInput(d);
+    validateRuntimeState();
+    int changed=0;
+
+    if(d&KEY_START){ resetHoldFrames++; } else resetHoldFrames=0;
     if(mode!=99 && resetHoldFrames>=180){ resetHoldFrames=0; resetCursor=0; mode=99; changed=1; }
     if(mode==99){
         if(d&KEY_UP){resetCursor=0;changed=1;}
         if(d&KEY_DOWN){resetCursor=1;changed=1;}
         if(d&KEY_A){if(resetCursor==0){resetToBase();changed=1;}else{mode=0;resetConfirm=0;changed=1;}}
         if(d&KEY_B){mode=0;resetConfirm=0;changed=1;}
-        if(d&KEY_TOUCH){touchPosition t;touchRead(&t);if(t.py<80||t.py>=168){mode=0;changed=1;}else if(t.py<130){resetCursor=0;changed=1;}else{resetCursor=1;changed=1;}}
-        if(changed)draw();
+        if(changed) draw();
         return;
     }
-    if(d&KEY_SELECT){safeMode=!safeMode;if(safeMode){save.onlineAI=0;save.wireless=0;save.downloads=0;gatewayState=0;mode=0;}saveState();changed=1;}
-    if(d&KEY_TOUCH){
-        touchPosition t; touchRead(&t); touchEvents++; touchFocus=1;
-        if(mode==17){
-            if(t.py<48 || t.py>=192){ mode=0; changed=1; }
-            else if(t.py>=55 && t.py<170){ int r=((int)t.py-55)/10; if(r>=0 && r<fileCount){ fileCursor=r; changed=1; } }
-            else { fileScan(); changed=1; }
-            if(changed) draw();
-        } else if(mode>=25 && mode<=29){
-        if(t.py<48 || t.py>=192){ mode=0; changed=1; }
-        else if(mode==25){
-            if(t.py>=55 && t.py<150){ int r=((int)t.py-55)/12; if(r>=0 && r<vaultCount){ vaultCursor=r; changed=1; } }
-            else if(t.py>=150){ vaultScan(); changed=1; }
-        } else if(mode==26){
-            if(t.py>=55 && t.py<120){ int r=((int)t.py-55)/14; if(r>=0 && r<4){ noteCursor=r; changed=1; } }
-            else if(t.py>=120){ ensureDirs(); char np[128]; snprintf(np,sizeof(np),"%sdata/AetherMod/notes.txt",root); FILE *nf=fopen(np,"ab"); if(nf){fprintf(nf,"%s\n",noteText[noteCursor]);fclose(nf);} changed=1; }
-        } else if(mode==28){ clock24=!clock24; changed=1; }
-        else if(mode==29){ runDiagnostics(); changed=1; }
-        if(changed) draw();
-    } else if(mode>=13 && mode<=24){
-        if(d&KEY_B){mode=0;changed=1;}
-        if(mode==13){
-            if(d&KEY_A){hotspotState=!hotspotState; hotspotTx+=hotspotState?1:0; hotspotRx+=hotspotState?2:0; hotspotPing=hotspotState?42:0; phonePackets+=hotspotState?3:0; changed=1;}
-            if(d&KEY_X){hotspotBand^=1; changed=1;} if(d&KEY_Y){hotspotPing=hotspotState?38+((frameCounter/10)%20):0; phonePackets++; changed=1;}
-            if(d&KEY_LEFT&&hotspotRssi>0)hotspotRssi--; if(d&KEY_RIGHT&&hotspotRssi<100)hotspotRssi++; if(d&KEY_B){mode=0;changed=1;}
-        } else if(mode==17){
-            if(d&KEY_B){mode=0;changed=1;}
-            if(d&KEY_UP){fileCursor--; if(fileCursor<0)fileCursor=fileCount?fileCount-1:0;changed=1;}
-            if(d&KEY_DOWN){fileCursor++; if(fileCursor>=fileCount)fileCursor=0;changed=1;}
-            if(d&KEY_X){fileDirty=1;fileScan();changed=1;}
-            if(d&KEY_A){changed=1;}
-        } else if(mode==24){
-            if(d&KEY_UP){settingsSection=(settingsSection+7)%8;changed=1;}
-            if(d&KEY_DOWN){settingsSection=(settingsSection+1)%8;changed=1;}
-            if(d&KEY_A){switch(settingsSection){
-                case 0: save.ai^=1; break; case 1: save.onlineAI^=1; break; case 2: save.privacy^=1; break;
-                case 3: save.browser^=1; break; case 4: save.downloads^=1; break; case 5: save.wireless^=1; break;
-                case 6: save.sound^=1; break; default: safeMode=!safeMode; break;
-            } saveState(); changed=1;}
-            if(d&KEY_X){visualTheme=(visualTheme+1)%4;changed=1;}
-            if(d&KEY_Y){hapticLevel=(hapticLevel+1)%4;changed=1;}
-            if(d&KEY_SELECT){crossLink^=1;changed=1;}
-        } else {
-            if(d&KEY_UP){expansionCursor=(expansionCursor+7)%8;changed=1;}
-            if(d&KEY_DOWN){expansionCursor=(expansionCursor+1)%8;changed=1;}
-            if(d&KEY_LEFT&&hapticLevel>0){hapticLevel--;changed=1;}
-            if(d&KEY_RIGHT&&hapticLevel<3){hapticLevel++;changed=1;}
-            if(d&KEY_X){visualTheme=(visualTheme+1)%4;changed=1;}
-            if(d&KEY_Y){liveRefresh=!liveRefresh;changed=1;}
-            if(d&KEY_A){expansionCursor=(expansionCursor+1)%8;touchAction++;tone();changed=1;}
-        }
-        if(changed)markDirty();
-    } else if(mode==0){
-            /* Home touch uses two 8-item pages so all 16 modules are reachable. */
-            int row=((int)t.py-48)/12;
-            if(row>=0&&row<8){
-                int r=homeScroll*8+row;
-                if(r<APP_COUNT){setSelection(r);launchSelection();changed=1;}
-            }
-            else if(t.py>=150){
-                setHomePage(homePage+1);
-                pageTransitionFeedback();
-                saveState();changed=1;
-            }
-            else if(t.py<48){mode=0;changed=1;}
-            if(changed && !(t.py>=150)){ navigationFeedback(0); }
-        } else {
-            if(t.py<48||t.py>=192){mode=0;changed=1;}
-            else if(mode==7 && t.py>=96){dawTrack=(t.py-96)/32;if(dawTrack>2)dawTrack=2;dawTrackMute^=1;changed=1;}
-            else if(mode==6 && t.py>=72){calculatorCursor=((t.py-72)/14)%12;changed=1;}
-            else if(mode==4){rfAuthGate=1;if(rfPushQueue<8)rfPushQueue++;rfLogEvent("TOUCH_PUSH_QUEUE",rfPushQueue);changed=1;}
-            else if(mode==5){saMarker=(t.px%240)*saSpan/240;saTraceHold=1;changed=1;}
-            else if(t.px<128){if(mode==13){phoneLinkState=hotspotState?1:phoneLinkState;phoneCompanion^=1;}else if(mode==3)animalAnalyzing=1;changed=1;}
-            else {if(mode==13){phoneFileSync^=1;}else if(mode==11)save.wireless^=1;else if(mode==2)codexSearch^=1;changed=1;}
-            saveState();
-        }
+
+    if(d&KEY_SELECT){
+        safeMode=!safeMode;
+        if(safeMode){save.onlineAI=0;save.wireless=0;save.downloads=0;gatewayState=0;mode=0;}
+        saveState(); changed=1;
     }
+
+    /* Home: direct selection plus page navigation. */
     if(mode==0){
-        /* SINGLE SOURCE OF TRUTH: selectionPin controls cursor and page. */
-        if(nav&KEY_UP){ inputEvents++; setSelection(selectionPin-1); homePulse=1; navigationFeedback(-1); saveState(); changed=1; }
-        if(nav&KEY_DOWN){ inputEvents++; setSelection(selectionPin+1); homePulse=1; navigationFeedback(1); saveState(); changed=1; }
-        if(nav&KEY_LEFT){ inputEvents++; setHomePage(homePage-1); pageTransitionFeedback(); saveState(); changed=1; }
-        if(nav&KEY_RIGHT){ inputEvents++; setHomePage(homePage+1); pageTransitionFeedback(); saveState(); changed=1; }
-        if(touchPressed){
-            if(touchY>=150){
-                int next=(homePage+1)%AETHER_HOME_PAGES;
-                setHomePage(next);
-                pageTransitionFeedback();
-                saveState(); changed=1;
-            } else if(touchY>=48 && touchY<144){
-                int row=(touchY-48)/12;
-                if(row>=0 && row<8){
-                    int target=homeScroll*8+row;
-                    if(target<APP_COUNT){ setSelection(target); launchSelection(); changed=1; }
-                }
-            }
-        }
-        if(d&KEY_A){ inputEvents++; launchSelection(); feedback(1); changed=1; }
-        if(d&KEY_X){ setSelection(1); mode=1; save.launches++; feedback(2); saveState(); changed=1; }
-        if(d&KEY_Y){ setSelection(9); mode=10; save.launches++; feedback(2); saveState(); changed=1; }
+        if(!touched){
+            if(nav&KEY_UP){setSelection(selectionPin-1);homePulse=1;navigationFeedback(-1);changed=1;}
+            if(nav&KEY_DOWN){setSelection(selectionPin+1);homePulse=1;navigationFeedback(1);changed=1;}
+            if(nav&KEY_LEFT){setHomePage(homePage-1);pageTransitionFeedback();changed=1;}
+            if(nav&KEY_RIGHT){setHomePage(homePage+1);pageTransitionFeedback();changed=1;}
+            if(d&KEY_A){launchSelection();feedback(1);changed=1;}
+            if(d&KEY_X){setSelection(1);mode=1;save.launches++;feedback(2);changed=1;}
+            if(d&KEY_Y){setSelection(9);mode=10;save.launches++;feedback(2);changed=1;}
+        } else changed=1;
     } else if(mode==1){
-        if(d&KEY_B){returnHome();changed=1;} if(d&KEY_A){quantumState=(quantumState+1)%4;quantumMeasure^=1;quantumShots++;frameCounter+=97;changed=1;} if(d&KEY_X){quantumState=(quantumState+1)%4;frameCounter+=1009;changed=1;} if(d&KEY_Y){quantumState=0;changed=1;}
+        if(d&KEY_B){returnHome();changed=1;} if(d&KEY_A){quantumState=(quantumState+1)%4;quantumMeasure^=1;quantumShots++;changed=1;} if(d&KEY_X){quantumState=(quantumState+1)%4;changed=1;} if(d&KEY_Y){quantumState=0;changed=1;}
     } else if(mode==2){
         if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP){codexPage=(codexPage+9)%10;changed=1;} if(d&KEY_DOWN){codexPage=(codexPage+1)%10;changed=1;} if(d&KEY_A){codexSearch^=1;changed=1;} if(d&KEY_X){codexLine=(codexLine+1)%16;changed=1;}
     } else if(mode==3){
-        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP){animalPage=(animalPage+14)%15;animalAnalyzing=0;changed=1;} if(d&KEY_DOWN){animalPage=(animalPage+1)%15;animalAnalyzing=0;changed=1;} if(d&KEY_LEFT){animalFeature=(animalFeature+4)%5;changed=1;} if(d&KEY_RIGHT){animalFeature=(animalFeature+1)%5;changed=1;} if(d&KEY_A){animalAnalyzing=1;tone();changed=1;} if(d&KEY_X){tone();changed=1;} if(d&KEY_Y){animalAnalyzing=0;changed=1;}
+        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP){animalPage=(animalPage+14)%15;animalAnalyzing=0;changed=1;} if(d&KEY_DOWN){animalPage=(animalPage+1)%15;animalAnalyzing=0;changed=1;} if(d&KEY_LEFT){animalFeature=(animalFeature+4)%5;changed=1;} if(d&KEY_RIGHT){animalFeature=(animalFeature+1)%5;changed=1;} if(d&KEY_A){animalAnalyzing=1;changed=1;} if(d&KEY_X){animalAnalyzing=1;changed=1;} if(d&KEY_Y){animalAnalyzing=0;changed=1;}
     } else if(mode==4){
-        if(d&KEY_B){mode=0;changed=1;}
-        if(d&KEY_UP){rfMode=(rfMode+3)%4;changed=1;} if(d&KEY_DOWN){rfMode=(rfMode+1)%4;changed=1;}
-        if(d&KEY_LEFT){rfBand=(rfBand+2)%3;rfChannel=(rfChannel+10)%11+1;changed=1;} if(d&KEY_RIGHT){rfBand=(rfBand+1)%3;rfChannel=(rfChannel%11)+1;changed=1;}
-        if(d&KEY_A){save.wireless=1;gatewayState=1;rfPacketView=0;frameCounter+=11;markDirty();changed=1;}
-        if(d&KEY_X){rfPacketView^=1;changed=1;} if(d&KEY_Y){rfPeakHold^=1;changed=1;}
+        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP){rfMode=(rfMode+3)%4;changed=1;} if(d&KEY_DOWN){rfMode=(rfMode+1)%4;changed=1;} if(d&KEY_LEFT){rfBand=(rfBand+2)%3;rfChannel=(rfChannel+10)%11+1;changed=1;} if(d&KEY_RIGHT){rfBand=(rfBand+1)%3;rfChannel=(rfChannel%11)+1;changed=1;} if(d&KEY_A){save.wireless=1;gatewayState=1;rfPacketView=0;changed=1;} if(d&KEY_X){rfPacketView^=1;changed=1;} if(d&KEY_Y){rfPeakHold^=1;changed=1;}
     } else if(mode==5){
-        if(d&KEY_B){mode=0;changed=1;}
-        if(d&KEY_UP){saSpan+=5;if(saSpan>200)saSpan=5;changed=1;} if(d&KEY_DOWN){saSpan-=5;if(saSpan<5)saSpan=200;changed=1;}
-        if(d&KEY_LEFT){saStart-=5;if(saStart<0)saStart=0;saInputSource=0;changed=1;} if(d&KEY_RIGHT){saStart+=5;if(saStart>800)saStart=800;saInputSource=1;changed=1;}
-        if(d&KEY_A){saRunning=!saRunning;save.wireless=1;gatewayState=saRunning;markDirty();changed=1;}
-        if(d&KEY_X){saMarker+=5;if(saMarker>saSpan)saMarker=0;changed=1;}
-        if(d&KEY_Y){if(saRBW==10){saRBW=30;saAtten=10;}else if(saRBW==30){saRBW=100;saAtten=20;}else{saRBW=10;saAtten=0;}changed=1;}
+        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP){saSpan+=5;if(saSpan>200)saSpan=5;changed=1;} if(d&KEY_DOWN){saSpan-=5;if(saSpan<5)saSpan=200;changed=1;} if(d&KEY_LEFT){saStart-=5;if(saStart<0)saStart=0;saInputSource=0;changed=1;} if(d&KEY_RIGHT){saStart+=5;if(saStart>800)saStart=800;saInputSource=1;changed=1;} if(d&KEY_A){saRunning=!saRunning;save.wireless=1;gatewayState=saRunning;changed=1;} if(d&KEY_X){saMarker+=5;if(saMarker>saSpan)saMarker=0;changed=1;} if(d&KEY_Y){if(saRBW==10){saRBW=30;saAtten=10;}else if(saRBW==30){saRBW=100;saAtten=20;}else{saRBW=10;saAtten=0;}changed=1;}
     } else if(mode==6){
-        if(d&KEY_B){mode=0;changed=1;}
-        if(d&KEY_UP){calcOp=(calcOp+11)%12;changed=1;}
-        if(d&KEY_DOWN){calcOp=(calcOp+1)%12;changed=1;}
-        if(d&KEY_LEFT){calcInput^=1;changed=1;}
-        if(d&KEY_RIGHT){calcSign=-calcSign;changed=1;}
-        if(d&KEY_A){calcA=(int)calcResult();calcInput=0;changed=1;}
-        if(d&KEY_X){int t=calcA;calcA=calcB;calcB=t;changed=1;}
-        if(d&KEY_Y){calcOp=(calcOp+1)%12;changed=1;}
+        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP){calcOp=(calcOp+11)%12;changed=1;} if(d&KEY_DOWN){calcOp=(calcOp+1)%12;changed=1;} if(d&KEY_LEFT){calcInput^=1;changed=1;} if(d&KEY_RIGHT){calcSign=-calcSign;changed=1;} if(d&KEY_A){calcA=(int)calcResult();calcInput=0;changed=1;} if(d&KEY_X){int t=calcA;calcA=calcB;calcB=t;changed=1;} if(d&KEY_Y){calcOp=(calcOp+1)%12;changed=1;}
     } else if(mode==7){
-        if(d&KEY_B){dawPlaying=0;saveState();mode=0;changed=1;}
-        if(d&KEY_UP){save.dawStep=(save.dawStep+15)%16;changed=1;}
-        if(d&KEY_DOWN){save.dawStep=(save.dawStep+1)%16;changed=1;}
-        if(d&KEY_A){dawPattern[dawTrack][save.dawStep]^=1;markDirty();tone();changed=1;}
-        if(d&KEY_X){dawPlaying=!dawPlaying;changed=1;}
-        if(d&KEY_LEFT){dawTrack=(dawTrack+3)%4;changed=1;}
-        if(d&KEY_RIGHT){dawTrack=(dawTrack+1)%4;changed=1;}
-        if(d&KEY_Y){save.dawBpm+=5;if(save.dawBpm>240)save.dawBpm=60;markDirty();changed=1;}
-        if(d&KEY_SELECT){dawView^=1;changed=1;}
-        if(dawPlaying&&(frameCounter%15)==0){dawStepAdvance();changed=1;}
+        if(d&KEY_B){dawPlaying=0;mode=0;changed=1;} if(d&KEY_UP){save.dawStep=(save.dawStep+15)%16;changed=1;} if(d&KEY_DOWN){save.dawStep=(save.dawStep+1)%16;changed=1;} if(d&KEY_A){dawPattern[dawTrack][save.dawStep]^=1;changed=1;} if(d&KEY_X){dawPlaying=!dawPlaying;changed=1;} if(d&KEY_LEFT){dawTrack=(dawTrack+3)%4;changed=1;} if(d&KEY_RIGHT){dawTrack=(dawTrack+1)%4;changed=1;} if(d&KEY_Y){save.dawBpm+=5;if(save.dawBpm>240)save.dawBpm=60;changed=1;} if(dawPlaying&&(frameCounter%15)==0){dawStepAdvance();changed=1;}
     } else if(mode==8){
-        if(d&KEY_B){mode=0;changed=1;}
-        if(d&KEY_A){frameCounter+=31;changed=1;}
-        if(d&KEY_X){fftWindow^=1;changed=1;}
-        if(d&KEY_Y){fftPeakHold^=1;dspScale=(dspScale%3)+1;changed=1;}
-        if(d&KEY_LEFT){dspInputMode=0;changed=1;} if(d&KEY_RIGHT){dspInputMode=1;changed=1;}
-        if(d&KEY_UP){if(dspGain<8)dspGain++;changed=1;} if(d&KEY_DOWN){if(dspGain>1)dspGain--;changed=1;}
-    } else if(mode==9||mode==10){if(d&KEY_B){mode=0;changed=1;} if(mode==9&&d&KEY_A){telemetryPage^=1;changed=1;} if(mode==10&&d&KEY_UP){aiCursor=(aiCursor+5)%6;changed=1;} if(mode==10&&d&KEY_DOWN){aiCursor=(aiCursor+1)%6;changed=1;} if(mode==10&&d&KEY_A){aiQuery++;tone();changed=1;} if(mode==10&&d&KEY_X){save.onlineAI^=1;changed=1;} if(mode==10&&d&KEY_Y){save.privacy^=1;changed=1;}
+        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_A){frameCounter+=31;changed=1;} if(d&KEY_X){fftWindow^=1;changed=1;} if(d&KEY_Y){fftPeakHold^=1;dspScale=(dspScale%3)+1;changed=1;} if(d&KEY_LEFT){dspInputMode=0;changed=1;} if(d&KEY_RIGHT){dspInputMode=1;changed=1;} if(d&KEY_UP){if(dspGain<8)dspGain++;changed=1;} if(d&KEY_DOWN){if(dspGain>1)dspGain--;changed=1;}
+    } else if(mode==9){
+        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_A){telemetryPage^=1;changed=1;}
+    } else if(mode==10){
+        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP){aiCursor=(aiCursor+5)%6;changed=1;} if(d&KEY_DOWN){aiCursor=(aiCursor+1)%6;changed=1;} if(d&KEY_A){aiQuery++;changed=1;} if(d&KEY_X){save.onlineAI^=1;changed=1;} if(d&KEY_Y){save.privacy^=1;changed=1;}
     } else if(mode==11){
-        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_A){save.wireless^=1;gatewayState=save.wireless;networkPackets++;markDirty();changed=1;} if(d&KEY_X){networkSelfTest=1;changed=1;} if(d&KEY_Y){networkSelfTest=0;changed=1;}
+        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_A){save.wireless^=1;gatewayState=save.wireless;networkPackets++;changed=1;} if(d&KEY_X){networkSelfTest=1;changed=1;} if(d&KEY_Y){networkSelfTest=0;changed=1;}
     } else if(mode==12){
-        if(d&KEY_B){mode=0;changed=1;}
-        if(d&KEY_UP){aiCursor=(aiCursor+5)%6;changed=1;}
-        if(d&KEY_DOWN){aiCursor=(aiCursor+1)%6;changed=1;}
-        if(d&KEY_A){aiQuery++;botLink=phoneLinkState?1:botLink;changed=1;}
-        if(d&KEY_X){save.onlineAI^=1;changed=1;}
-        if(d&KEY_Y){save.privacy^=1;changed=1;}
-    } else if(mode==13){        if(d&KEY_B){mode=0;changed=1;}
-        if(d&KEY_A){hotspotState=!hotspotState;phoneLinkState=hotspotState;phoneSession=hotspotState?1:0;phonePackets++;changed=1;}
-        if(d&KEY_X){hotspotBand^=1;changed=1;}
-        if(d&KEY_Y){hotspotPing=hotspotState?38+(int)(frameCounter%20):0;phoneTelemetry=1;changed=1;}
-        if(d&KEY_L){phoneType=0;changed=1;} if(d&KEY_R){phoneType=1;changed=1;}
-        if(d&KEY_SELECT){phoneCompanion^=1;changed=1;}
-    } else if((mode>=14 && mode<=17) || mode==23){
-        if(d&KEY_B){mode=0;changed=1;}
-        if(d&KEY_UP){expansionCursor=(expansionCursor+11)%12;changed=1;}
-        if(d&KEY_DOWN){expansionCursor=(expansionCursor+1)%12;changed=1;}
-        if(d&KEY_LEFT&&hapticLevel>0){hapticLevel--;changed=1;}
-        if(d&KEY_RIGHT&&hapticLevel<3){hapticLevel++;changed=1;}
-        if(d&KEY_A){
-            crossLink=1; busEvents++;
-            if(mode==14)dspLink=1;
-            if(mode==15)animalLink=1;
-            if(mode==16)codexSync=1;
-            if(mode==17)phoneFileSync=1;
-            if(mode==23)botLink=1;
-            if(mode==23)phoneRemote^=1;
-            changed=1;
-        }
-        if(d&KEY_X){visualTheme=(visualTheme+1)%4;changed=1;}
-        if(d&KEY_Y){liveRefresh=!liveRefresh;changed=1;}
-        if(d&KEY_SELECT){crossLink^=1;changed=1;}
-    } else if(mode==24){
-        if(d&KEY_B){mode=0;changed=1;}
-        if(d&KEY_UP){settingsSection=(settingsSection+7)%8;changed=1;}
-        if(d&KEY_DOWN){settingsSection=(settingsSection+1)%8;changed=1;}
-        if(d&KEY_A){
-            switch(settingsSection){
-                case 0: save.ai^=1; break; case 1: save.onlineAI^=1; break; case 2: save.privacy^=1; break;
-                case 3: save.browser^=1; break; case 4: save.downloads^=1; break; case 5: save.wireless^=1; break;
-                case 6: save.sound^=1; break; default: safeMode=!safeMode; break;
-            }
-            saveState(); changed=1;
-        }
-        if(d&KEY_X){visualTheme=(visualTheme+1)%4;changed=1;}
-        if(d&KEY_Y){hapticLevel=(hapticLevel+1)%4;changed=1;}
-        if(d&KEY_SELECT){crossLink^=1;changed=1;}
+        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP){aiCursor=(aiCursor+5)%6;changed=1;} if(d&KEY_DOWN){aiCursor=(aiCursor+1)%6;changed=1;} if(d&KEY_A){aiQuery++;botLink=phoneLinkState?1:botLink;changed=1;} if(d&KEY_X){save.onlineAI^=1;changed=1;} if(d&KEY_Y){save.privacy^=1;changed=1;}
+    } else if(mode==13){
+        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_A){hotspotState=!hotspotState;phoneLinkState=hotspotState;phoneSession=hotspotState?1:0;phonePackets++;changed=1;} if(d&KEY_X){hotspotBand^=1;changed=1;} if(d&KEY_Y){hotspotPing=hotspotState?38+(int)(frameCounter%20):0;phoneTelemetry=1;changed=1;} if(d&KEY_L){phoneType=0;changed=1;} if(d&KEY_R){phoneType=1;changed=1;} if(d&KEY_SELECT){phoneCompanion^=1;changed=1;}
+    } else if(mode==14 || mode==15 || mode==16 || mode==17 || mode==23){
+        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP){expansionCursor=(expansionCursor+11)%12;changed=1;} if(d&KEY_DOWN){expansionCursor=(expansionCursor+1)%12;changed=1;} if(d&KEY_LEFT&&hapticLevel>0){hapticLevel--;changed=1;} if(d&KEY_RIGHT&&hapticLevel<3){hapticLevel++;changed=1;}
+        if(d&KEY_A){crossLink=1;busEvents++;if(mode==14)dspLink=1;if(mode==15)animalLink=1;if(mode==16)codexSync=1;if(mode==17)phoneFileSync=1;if(mode==23){botLink=1;phoneRemote^=1;}changed=1;}
+        if(d&KEY_X){visualTheme=(visualTheme+1)%4;changed=1;} if(d&KEY_Y){liveRefresh=!liveRefresh;changed=1;} if(d&KEY_SELECT){crossLink^=1;changed=1;}
     } else if(mode==18){
         if(d&KEY_B){mode=0;changed=1;} if(d&KEY_LEFT&&hapticLevel>0){hapticLevel--;changed=1;} if(d&KEY_RIGHT&&hapticLevel<3){hapticLevel++;changed=1;} if(d&KEY_A){feedback(3);changed=1;}
     } else if(mode==19){
@@ -1125,30 +1019,27 @@ static void input(void){
         if(d&KEY_B){mode=0;changed=1;} if(d&KEY_A){controlCount++;changed=1;} if(d&KEY_X){inputEvents=0;touchEvents=0;controlCount=0;changed=1;}
     } else if(mode==22){
         if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP){botCursor=(botCursor+7)%8;changed=1;} if(d&KEY_DOWN){botCursor=(botCursor+1)%8;changed=1;} if(d&KEY_A){botExecute();changed=1;}
-    } else if(mode==18){
-        if(d&KEY_B){mode=0;changed=1;}
-        if(d&KEY_LEFT&&hapticLevel>0){hapticLevel--;changed=1;}
-        if(d&KEY_RIGHT&&hapticLevel<3){hapticLevel++;changed=1;}
-        if(d&KEY_A){feedback(3);changed=1;}
-    } else if(mode==19){
-        if(d&KEY_B){mode=0;changed=1;}
-        if(d&KEY_UP){settingsSection=(settingsSection+2)%3;changed=1;}
-        if(d&KEY_DOWN){settingsSection=(settingsSection+1)%3;changed=1;}
-        if(d&KEY_A){hapticLevel=(hapticLevel+1)%4;changed=1;}
-        if(d&KEY_X){visualTheme=(visualTheme+1)%4;changed=1;}
+    } else if(mode==24){
+        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP){settingsSection=(settingsSection+7)%8;changed=1;} if(d&KEY_DOWN){settingsSection=(settingsSection+1)%8;changed=1;}
+        if(d&KEY_A){switch(settingsSection){case 0:save.ai^=1;break;case 1:save.onlineAI^=1;break;case 2:save.privacy^=1;break;case 3:save.browser^=1;break;case 4:save.downloads^=1;break;case 5:save.wireless^=1;break;case 6:save.sound^=1;break;default:safeMode=!safeMode;break;}saveState();changed=1;}
+        if(d&KEY_X){visualTheme=(visualTheme+1)%4;changed=1;} if(d&KEY_Y){hapticLevel=(hapticLevel+1)%4;changed=1;}
     } else if(mode==25){
-        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP){eventCursor--;if(eventCursor<0)eventCursor=0;changed=1;} if(d&KEY_DOWN){eventCursor++;if(eventCursor>=eventCount)eventCursor=eventCount?eventCount-1:0;changed=1;} if(d&KEY_X){changed=1;}
+        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP){eventCursor--;if(eventCursor<0)eventCursor=0;changed=1;} if(d&KEY_DOWN){eventCursor++;if(eventCursor>=eventCount)eventCursor=eventCount?eventCount-1:0;changed=1;} if(d&KEY_X){eventDirty=1;changed=1;}
     } else if(mode==26){
-        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP&&vaultCount){vaultCursor=(vaultCursor+vaultCount-1)%vaultCount;changed=1;} if(d&KEY_DOWN&&vaultCount){vaultCursor=(vaultCursor+1)%vaultCount;changed=1;} if(d&KEY_X){vaultDirty=1;vaultScan();changed=1;} if(d&KEY_A){vaultDirty=1;vaultScan();changed=1;}
+        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP&&vaultCount){vaultCursor=(vaultCursor+vaultCount-1)%vaultCount;changed=1;} if(d&KEY_DOWN&&vaultCount){vaultCursor=(vaultCursor+1)%vaultCount;changed=1;} if(d&KEY_X||d&KEY_A){vaultDirty=1;vaultScan();changed=1;}
     } else if(mode==27){
         if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP){noteCursor=(noteCursor+3)%4;changed=1;} if(d&KEY_DOWN){noteCursor=(noteCursor+1)%4;changed=1;} if(d&KEY_A){ensureDirs();char np[128];snprintf(np,sizeof(np),"%sdata/AetherMod/notes.txt",root);FILE *nf=fopen(np,"ab");if(nf){fprintf(nf,"%s\\n",noteText[noteCursor]);fclose(nf);}changed=1;}
     } else if(mode==28){
         if(d&KEY_B){mode=0;changed=1;} if(d&KEY_A){clock24=!clock24;changed=1;}
     } else if(mode==29){
         if(d&KEY_B){mode=0;changed=1;} if(d&KEY_A){runDiagnostics();changed=1;} if(d&KEY_X){resetNotice=0;changed=1;}
-    } else {if(d&KEY_B){mode=0;changed=1;}}
+    } else {
+        if(d&KEY_B){mode=0;changed=1;}
+    }
+
     if(changed){
-        /* Navigation must never generate a tone; tones are reserved for explicit actions. */
+        if(mode==0) saveState();
+        else markDirty();
         draw();
     }
 }
