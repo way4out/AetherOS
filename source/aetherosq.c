@@ -85,7 +85,8 @@ static u32 hash32(const void *p,size_t n){
  while(n--){h^=*b++;h*=16777619u;} return h;
 }
 static void markDirty(void){dirty=1;}
-static int storageOk(void){ FILE *f=fopen("fat:/data/AetherMod/.aether_test","wb"); if(!f) return 0; fputs("OK",f); fclose(f); remove("fat:/data/AetherMod/.aether_test"); return 1; }\nstatic void ensureDirs(void){mkdir("fat:/data",0777);mkdir("fat:/data/AetherMod",0777);}
+static int storageOk(void){ FILE *f=fopen("fat:/data/AetherMod/.aether_test","wb"); if(!f) return 0; fputs("OK",f); fclose(f); remove("fat:/data/AetherMod/.aether_test"); return 1; }
+static void ensureDirs(void){mkdir("fat:/data",0777);mkdir("fat:/data/AetherMod",0777);}
 static void saveState(void){
  if(safeMode)return; ensureDirs(); save.checksum=0;save.checksum=hash32(&save,sizeof(save));
  FILE *f=fopen("fat:/data/AetherMod/save.dat","wb");if(f){fwrite(&save,1,sizeof(save),f);fclose(f);dirty=0;}
