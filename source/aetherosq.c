@@ -637,7 +637,9 @@ static int codexRenderBook(void){
             if(strstr(line,header)) found=1;
             continue;
         }
-        if(lines++ < codexPage*7) continue;
+        if(codexSearch){
+            if(!strstr(line,"LORD") && !strstr(line,"GOD") && !strstr(line,"JEHOVAH") && !strstr(line,"YHWH")) continue;
+        } else if(lines++ < codexPage*7) continue;
         if(shown<7){ line[119]='\\0'; iprintf("%.118s",line); shown++; }
         else break;
     }
