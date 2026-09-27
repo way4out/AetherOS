@@ -618,43 +618,38 @@ static void quantum(void){
     footer("A RUN  X PHASE  Y MEASURE  B HOME  START HOLD 3s = RESET");
 }
 
-static int codexPartForBook(int b){ if(b<64) return b/8+1; return 0; }
+static const u8 codexPartMap[66]={4,3,6,7,3,5,4,8,1,2,1,2,1,1,4,6,3,5,7,7,3,8,4,5,5,3,2,4,5,2,7,5,6,6,4,8,4,8,6,6,6,6,5,2,7,1,2,4,3,7,2,1,2,1,2,8,7,4,4,1,2,1,2,2,5,7};
 static void codexPathForBook(int b,char *out,size_t n){
-    if(b==64) snprintf(out,n,"%sdata/AetherMod/KJV/JUDE.txt",root);
-    else if(b==65) snprintf(out,n,"%sdata/AetherMod/KJV/REVELATION.txt",root);
-    else snprintf(out,n,"%sdata/AetherMod/KJV/KJV_PART_%02d.txt",root,codexPartForBook(b));
+    int part=(b>=0&&b<66)?codexPartMap[b]:1;
+    snprintf(out,n,"%sdata/AetherMod/Geneva/GENEVA_%02d.txt",root,part);
 }
 static int codexRenderBook(void){
     char path[160];
     codexPathForBook(codexBook,path,sizeof(path));
     FILE *f=fopen(path,"rb");
-    if(!f){ iprintf("CORPUS FILE MISSING\n%s\n",path); return 0; }
-    char line[120], header[96];
-    snprintf(header,sizeof(header),"===== %s =====",codexBooks[codexBook]);
+    if(!f){ iprintf("GENEVA CORPUS FILE MISSING\n%s\n",path); return 0; }
+    char line[180], header[96];
+    snprintf(header,sizeof(header),"===== BOOK: %s =====",codexBooks[codexBook]);
     int found=0, lines=0, shown=0;
     while(fgets(line,sizeof(line),f)){
-        if(!found){
-            if(strstr(line,header)) found=1;
-            continue;
-        }
+        if(!found){ if(strstr(line,header)) found=1; continue; }
+        if(strstr(line,"===== BOOK:") && found) break;
         if(codexSearch){
-            if(!strstr(line,"LORD") && !strstr(line,"GOD") && !strstr(line,"JEHOVAH") && !strstr(line,"YHWH")) continue;
-        } else if(lines++ < codexPage*7) continue;
-        if(shown<7){ line[119]='\\0'; iprintf("%.118s",line); shown++; }
-        else break;
+            if(!strstr(line,"Iehouah") && !strstr(line,"Iehovah") && !strstr(line,"Jehovah") &&
+               !strstr(line,"LORD") && !strstr(line,"Lord") && !strstr(line,"GOD")) continue;
+        } else if(lines++ < codexPage*6) continue;
+        if(shown<6){ line[179]='\0'; iprintf("%.178s",line); shown++; } else break;
     }
     fclose(f);
     return found;
 }
 static void codex(void){
-    page("YHWH CODEX — FULL KJV");
+    page("YHWH CODEX — GENEVA 1599");
     iprintf("BOOK %02d/66  %s\n",codexBook+1,codexBooks[codexBook]);
-    iprintf("SECTION %d  SEARCH:%s  YHWH/LORD LAYER:ON\n\n",codexPage+1,codexSearch?"ON":"OFF");
-    if(!codexRenderBook()){
-        iprintf("Select a published KJV corpus file on SD.\n");
-    }
-    iprintf("\nCORPUS: PUBLIC-DOMAIN KJV / OFFLINE\n");
-    footer("TOUCH: TOP=B  LEFT=PREV BOOK  RIGHT=NEXT BOOK  BOTTOM=A  UP/DOWN=PAGE  X=SEARCH");
+    iprintf("SECTION %d  SEARCH:%s  DIVINE-NAME LAYER:ON\n\n",codexPage+1,codexSearch?"ON":"OFF");
+    if(!codexRenderBook()) iprintf("GENEVA CORPUS FILE MISSING — check SD/data/AetherMod/Geneva.\n");
+    iprintf("\nCORPUS: GENEVA 1599 / PUBLIC DOMAIN / OFFLINE\n");
+    footer("TOUCH: TOP=B  LEFT/RIGHT=BOOK  BOTTOM=A  UP/DOWN=PAGE  X=NAME SEARCH");
 }
 
 static void animal(void){
@@ -923,9 +918,10 @@ static void input(void){
     u32 nav=d|repeat;
     touchPosition tp;
     bool touched=(d&KEY_TOUCH)!=0;
-    if(touched){
+    bool touchHeld=(keysHeld()&KEY_TOUCH)!=0;
+    if(touched || touchHeld){
         touchRead(&tp);
-        touchEvents++;
+        if(touched) touchEvents++;
         touchFocus=1;
         touchX=tp.px; touchY=tp.py; touchPressed=1;
         /*
@@ -935,7 +931,7 @@ static void input(void){
          *   middle-left/right     = UP/DOWN
          *   home rows             = direct module selection
          */
-        if(mode==0){
+        if(mode==0 && touched){
             if(tp.py>=48 && tp.py<144){
                 int row=((int)tp.py-48)/12;
                 int target=homePage*8+row;
@@ -947,7 +943,7 @@ static void input(void){
                 setHomePage(homePage+1);
                 pageTransitionFeedback();
             }
-        } else {
+        } else if(touched) {
             /*
              * Every module receives the same complete touchscreen control
              * surface. This is deliberately mapped to DS-native A/B/X/Y
