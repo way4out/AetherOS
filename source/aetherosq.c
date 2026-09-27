@@ -17,12 +17,12 @@
 
 #define APP_COUNT 29
 #define AETHERMOD_MAJOR 8
-#define AETHERMOD_MINOR 4
-#define AETHERMOD_PASS 5
-#define AETHERMOD_TOTAL_PASSES 5
+#define AETHERMOD_MINOR 5
+#define AETHERMOD_PASS 6
+#define AETHERMOD_TOTAL_PASSES 6
 #define AETHER_HOME_PAGES 4
 #define NOTE_COUNT 8
-#define CODEX_PATH "data/AetherMod/codex.txt"
+#define CODEX_PATH "data/AetherMod/Geneva/"
 #define ANIMAL_PATH "data/AetherMod/animals.txt"
 
 typedef struct {
@@ -45,7 +45,7 @@ static SaveData save;
 static PrintConsole topConsole, bottomConsole;
 static const char *root = "fat:/";
 static int mode=0, cursor=0, codexPage=0, animalPage=0, codexBook=0;
-static const char *codexBooks[66]={"Genesis","Exodus","Leviticus","Numbers","Deuteronomy","Joshua","Judges","Ruth","1 Samuel","2 Samuel","1 Kings","2 Kings","1 Chronicles","2 Chronicles","Ezra","Nehemiah","Esther","Job","Psalms","Proverbs","Ecclesiastes","Song of Solomon","Isaiah","Jeremiah","Lamentations","Ezekiel","Daniel","Hosea","Joel","Amos","Obadiah","Jonah","Micah","Nahum","Habakkuk","Zephaniah","Haggai","Zechariah","Malachi","Matthew","Mark","Luke","John","Acts","Romans","1 Corinthians","2 Corinthians","Galatians","Ephesians","Philippians","Colossians","1 Thessalonians","2 Thessalonians","1 Timothy","2 Timothy","Titus","Philemon","Hebrews","James","1 Peter","2 Peter","1 John","2 John","3 John","Jude","Revelation"};
+static const char *codexBooks[66]={"Genesis","Exodus","Leviticus","Numbers","Deuteronomy","Joshua","Judges","Ruth","1 Samuel","2 Samuel","1 Kings","2 Kings","1 Chronicles","2 Chronicles","Ezra","Nehemiah","Esther","Job","Psalm","Proverbs","Ecclesiastes","Song of Solomon","Isaiah","Jeremiah","Lamentations","Ezekiel","Daniel","Hosea","Joel","Amos","Obadiah","Jonah","Micah","Nahum","Habakkuk","Zephaniah","Haggai","Zechariah","Malachi","Matthew","Mark","Luke","John","Acts","Romans","1 Corinthians","2 Corinthians","Galatians","Ephesians","Philippians","Colossians","1 Thessalonians","2 Thessalonians","1 Timothy","2 Timothy","Titus","Philemon","Hebrews","James","1 Peter","2 Peter","1 John","2 John","3 John","Jude","Revelation"};
 static int safeMode=0, spectrumCursor=0, calculatorCursor=0;
 static int selectionPin=0, homeScroll=0, homePulse=0, selfTestRun=0, coreTick=0;
 static int touchPage=0, calcA=17, calcB=9, dawTrackMute=0, dspScale=1;
