@@ -20,7 +20,7 @@
 #define AETHERMOD_PASS 7
 #define AETHERMOD_TOTAL_PASSES 7
 #define HOME_PAGES 4
-#define SAVE_VERSION 5
+#define AETHER_SAVE_VERSION 5
 
 typedef struct {
     u32 magic, checksum, launches;
@@ -85,13 +85,13 @@ static u32 hash32(const void *p,size_t n){
  while(n--){h^=*b++;h*=16777619u;} return h;
 }
 static void markDirty(void){dirty=1;}
-static void ensureDirs(void){mkdir("fat:/data",0777);mkdir("fat:/data/AetherMod",0777);}
+static int storageOk(void){ FILE *f=fopen("fat:/data/AetherMod/.aether_test","wb"); if(!f) return 0; fputs("OK",f); fclose(f); remove("fat:/data/AetherMod/.aether_test"); return 1; }\nstatic void ensureDirs(void){mkdir("fat:/data",0777);mkdir("fat:/data/AetherMod",0777);}
 static void saveState(void){
  if(safeMode)return; ensureDirs(); save.checksum=0;save.checksum=hash32(&save,sizeof(save));
  FILE *f=fopen("fat:/data/AetherMod/save.dat","wb");if(f){fwrite(&save,1,sizeof(save),f);fclose(f);dirty=0;}
 }
 static void defaults(void){
- memset(&save,0,sizeof(save));save.magic=SAVE_MAGIC;save.version=SAVE_VERSION;
+ memset(&save,0,sizeof(save));save.magic=SAVE_MAGIC;save.version=AETHER_SAVE_VERSION;
  save.sound=0;save.brightness=3;save.language=0;save.theme=1;save.ai=1;save.privacy=1;
  save.parental=1;save.nsfw=1;save.unsafe=1;save.unregulated=1;save.userContent=1;save.bpm=120;
 }
