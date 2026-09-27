@@ -85,7 +85,9 @@ static int busQuantum=0, busAudio=0, busAnimal=0, busRF=0, busPhone=0, busBot=0;
 static int animFrame=0, animPulse=0, colorTheme=0;
 static int animTopPhase=0, animBottomPhase=0, animSweep=0, animSpark=0;
 static int homePageLock=0, homePage=0;
-static int navSoundGate=0, pageTransition=0, touchX=0, touchY=0, touchPressed=0, codexTouchLastY=0, codexTouchDragging=0;
+static int navSoundGate=0, pageTransition=0, touchX=0, touchY=0, touchPressed=0;
+static int touchLastX=0, touchLastY=0, touchDragX=0, touchDragY=0, touchGesture=0;
+static int codexTouchLastY=0, codexTouchDragging=0;
 static int vaultCursor=0, vaultCount=0, noteCursor=0, clock24=1, diagCursor=0, fileCursor=0, fileCount=0, eventCursor=0, eventCount=0;
 static int vaultDirty=1, fileDirty=1, eventDirty=1, drawDecimation=0, lastHardwareFrame=0;
 static int accessScale=1, accessContrast=0, accessScroll=1, controlCount=0, botCursor=0, botResult=0;
@@ -484,7 +486,7 @@ static void clockPage(void){
     footer("A toggles 12/24 display  B HOME");
 }
 static void diagPage(void){
-    page("DIAGNOSTICS / 8.4 PASS 5/5"); runDiagnostics();
+    page("DIAGNOSTICS / 8.4 PASS 6/6"); runDiagnostics();
     iprintf("STORAGE %s\\nSAVE INTEGRITY %s\\nRUNTIME FAULTS %d\\n",storageReady()?"READY":"FAIL",saveIntegrity()?"PASS":"RECOVER",validationFaults);
     iprintf("FRAME BUDGET %s\\nINPUT EVENTS %lu\\nGUARD TRIPS %lu\\n",frameBudgetFaults?"CHECK":"PASS",(unsigned long)inputEvents,(unsigned long)guardTrips);
     iprintf("COLOR PALETTE: ACTIVE\\nAUDIO: HARD-OFF DEFAULT\\nLOCAL DATA: ENABLED\\n");
@@ -582,7 +584,7 @@ static void home(void){
     updateCapabilityHealth();
     topBg("DUAL-OS COCKPIT");
     consoleSelect(&bottomConsole); consoleClear();
-    iprintf("AETHERMOD 8.4 PASS 5 / IMMERSIVE COCKPIT\n");
+    iprintf("AETHERMOD 8.5 PASS 5 / IMMERSIVE COCKPIT\n");
     iprintf("------------------------------\n");
     iprintf("PAGE %d/%d   MODULES %02d-%02d   %s\n\n",
         homeScroll+1,AETHER_HOME_PAGES,homeScroll*8+1,homeScroll*8+8,
@@ -859,7 +861,7 @@ static void family(void){
 
 static void systemPage(void){
     selfTestRun=(frameCounter&15)==0; moduleHeartbeat(); page("SYSTEM / SERVICE");
-    iprintf("AETHERMOD 8.4  PASS 5/5  DSi ARM9\n");
+    iprintf("AETHERMOD 8.5  PASS 6/6  DSi ARM9\n");
     iprintf("SELFTEST %s SAFE %s DIRTY %s\n",selfTestRun?"RUN":"READY",safeMode?"ON":"OFF",dirtyState?"YES":"NO");
     iprintf("BRIGHT %u/4 THEME %s LANG %s\n",save.brightness,save.theme?"AETHER":"CLASSIC",langName());
     iprintf("SOUND %s AI %s WIFI %s BROWSER %s\n",save.sound?"ON":"OFF",save.ai?"ON":"OFF",save.wireless?"ON":"OFF",save.browser?"ON":"OFF");
@@ -883,7 +885,7 @@ static void generalSettings(void){
 
 static void about(void){
     page("ABOUT AETHERMOD");
-    iprintf("AETHERMOD 8.4 PASS 5/5 / CORE BUILD\n");
+    iprintf("AETHERMOD 8.5 PASS 6/6 / CORE BUILD\n");
     iprintf("ALL-ENCOMPASSING COCKPIT\n\n");
     iprintf("Local-first. Modular. Gateway-ready.\n");
     iprintf("Quantum-inspired computation.\n");
@@ -919,59 +921,52 @@ static void input(void){
     touchPosition tp;
     bool touched=(d&KEY_TOUCH)!=0;
     bool touchHeld=(keysHeld()&KEY_TOUCH)!=0;
+    /* scanKeys() has already latched the touchscreen for this frame. */
     if(touched || touchHeld){
         touchRead(&tp);
-        if(touched){ codexTouchLastY=tp.py; codexTouchDragging=0; }
-        else if(mode==2){
-            int dy=(int)tp.py-codexTouchLastY;
-            if(dy>=12){ d|=KEY_DOWN; codexTouchLastY=tp.py; codexTouchDragging=1; }
-            else if(dy<=-12){ d|=KEY_UP; codexTouchLastY=tp.py; codexTouchDragging=1; }
+        touchX=tp.px; touchY=tp.py; touchPressed=1; touchFocus=1;
+        if(touched){
+            touchLastX=tp.px; touchLastY=tp.py;
+            touchDragX=0; touchDragY=0; touchGesture=0;
+            touchEvents++;
+        } else {
+            int dx=(int)tp.px-touchLastX;
+            int dy=(int)tp.py-touchLastY;
+            /* Universal drag engine: every module gets continuous 8px gestures. */
+            if(dx>=8){ d|=KEY_RIGHT; touchLastX=tp.px; touchDragX++; touchGesture=1; }
+            else if(dx<=-8){ d|=KEY_LEFT; touchLastX=tp.px; touchDragX--; touchGesture=1; }
+            if(dy>=8){ d|=KEY_DOWN; touchLastY=tp.py; touchDragY++; touchGesture=1; }
+            else if(dy<=-8){ d|=KEY_UP; touchLastY=tp.py; touchDragY--; touchGesture=1; }
         }
-        if(touched) touchEvents++;
-        touchFocus=1;
-        touchX=tp.px; touchY=tp.py; touchPressed=1;
-        /*
-         * Universal touchscreen map:
-         *   top strip / lower-left = B (back)
-         *   lower-right           = A (select/action)
-         *   middle-left/right     = UP/DOWN
-         *   home rows             = direct module selection
-         */
-        if(mode==0 && touched){
-            if(tp.py>=48 && tp.py<144){
-                int row=((int)tp.py-48)/12;
-                int target=homePage*8+row;
-                if(row>=0 && row<8 && target<APP_COUNT){
-                    setSelection(target);
-                    launchSelection();
-                }
-            } else if(tp.py>=144){
-                setHomePage(homePage+1);
-                pageTransitionFeedback();
+        /* Tap zones are shared by every module. Dragging never creates an action tap. */
+        if(touched && !touchGesture){
+            if(mode==0){
+                if(tp.py>=48 && tp.py<144){
+                    int row=((int)tp.py-48)/12;
+                    int target=homePage*8+row;
+                    if(row>=0 && row<8 && target<APP_COUNT){ setSelection(target); launchSelection(); }
+                } else if(tp.py>=144){ setHomePage(homePage+1); pageTransitionFeedback(); }
+            } else {
+                if(tp.py<32 && tp.px<128) d|=KEY_B;
+                else if(tp.py<32 && tp.px>=128) d|=KEY_Y;
+                else if(tp.py>=160 && tp.px<128) d|=KEY_X;
+                else if(tp.py>=160 && tp.px>=128) d|=KEY_A;
+                else if(tp.py>=96 && tp.px<64) d|=KEY_UP;
+                else if(tp.py>=96 && tp.px>192) d|=KEY_DOWN;
+                else if(tp.py>=96 && tp.px<128) d|=KEY_LEFT;
+                else if(tp.py>=96 && tp.px>128) d|=KEY_RIGHT;
+                else if(tp.py>=32 && tp.py<64 && tp.px<128) d|=KEY_X;
+                else if(tp.py>=32 && tp.py<64 && tp.px>=128) d|=KEY_Y;
+                else d|=KEY_A;
             }
-        } else if(touched) {
-            /*
-             * Every module receives the same complete touchscreen control
-             * surface. This is deliberately mapped to DS-native A/B/X/Y
-             * semantics so module handlers remain identical for touch and
-             * physical buttons.
-             */
-            if(tp.py<32 && tp.px<128) d|=KEY_B;          /* back */
-            else if(tp.py<32 && tp.px>=128) d|=KEY_Y;    /* secondary toggle */
-            else if(tp.py>=160 && tp.px<128) d|=KEY_X;   /* alternate */
-            else if(tp.py>=160 && tp.px>=128) d|=KEY_A;  /* select/action */
-            else if(tp.py>=96 && tp.px<64) d|=KEY_UP;
-            else if(tp.py>=96 && tp.px>192) d|=KEY_DOWN;
-            else if(tp.py>=96 && tp.px<128) d|=KEY_LEFT;
-            else if(tp.py>=96 && tp.px>128) d|=KEY_RIGHT;
-            else if(tp.py>=32 && tp.py<64 && tp.px<128) d|=KEY_X;
-            else if(tp.py>=32 && tp.py<64 && tp.px>=128) d|=KEY_Y;
-            else d|=KEY_A;
         }
         nav=d|repeat;
+    } else {
+        touchPressed=0; touchGesture=0; touchDragX=0; touchDragY=0;
     }
     if(!touchHeld) codexTouchDragging=0;
     serviceInput(d);
+
     validateRuntimeState();
     int changed=0;
 
