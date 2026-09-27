@@ -134,10 +134,10 @@ static void touchMap(u32 *d){
        int r=((int)t.py-48)/16;
        int n=homePage*8+r;
        if(!touchMoved && n<APP_COUNT && held){homeSet(n);mode=n+1;feedback();}
-     } else if(t.py>=176 && !touchMoved && (d&KEY_TOUCH)){
+     } else if(t.py>=176 && !touchMoved && held){
        homePage=(homePage+1)%HOME_PAGES; homeSet(homePage*8); feedback();
      }
-     if(touchMoved && (d&KEY_TOUCH)){
+     if(touchMoved && held){
        if(touchStartY>=0 && t.py+24<touchStartY){homePage=(homePage+1)%HOME_PAGES;homeSet(homePage*8);feedback();}
        else if(touchStartY>=0 && t.py>touchStartY+24){homePage=(homePage+HOME_PAGES-1)%HOME_PAGES;homeSet(homePage*8);feedback();}
        touchStartY=t.py; touchMoved=0;
