@@ -133,7 +133,7 @@ static void touchMap(u32 *d){
      if(t.py>=48 && t.py<176){
        int r=((int)t.py-48)/16;
        int n=homePage*8+r;
-       if(!touchMoved && n<APP_COUNT && (d&KEY_TOUCH)){homeSet(n);mode=n+1;feedback();}
+       if(!touchMoved && n<APP_COUNT && held){homeSet(n);mode=n+1;feedback();}
      } else if(t.py>=176 && !touchMoved && (d&KEY_TOUCH)){
        homePage=(homePage+1)%HOME_PAGES; homeSet(homePage*8); feedback();
      }
