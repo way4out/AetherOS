@@ -17,7 +17,7 @@
 #define APP_COUNT 29
 #define AETHERMOD_MAJOR 8
 #define AETHERMOD_MINOR 7
-#define AETHERMOD_PASS 2
+#define AETHERMOD_PASS 3
 #define AETHERMOD_TOTAL_PASSES 3
 #define HOME_PAGES 4
 #define AETHER_SAVE_VERSION 6
@@ -144,26 +144,27 @@ static void touchMap(u32 *d){
      }
      lastHeld=1; return;
    }
-   if(t.py<32&&t.px<128)*d|=KEY_B;else if(t.py<32)*d|=KEY_Y;
-   else if(t.py>160&&t.px<128)*d|=KEY_X;else if(t.py>160)*d|=KEY_A;
-   else if(t.px<64)*d|=KEY_UP;else if(t.px>192)*d|=KEY_DOWN;
-   else if(t.px<128)*d|=KEY_LEFT;else if(t.px>128)*d|=KEY_RIGHT;else *d|=KEY_A;
+   if(!touchActionLatch){
+     if(touchMoved){
+       if(touchStartY>=0 && t.py+24<touchStartY)*d|=KEY_UP;
+       else if(touchStartY>=0 && t.py>touchStartY+24)*d|=KEY_DOWN;
+       else if(t.px>touchX+24)*d|=KEY_RIGHT;
+       else if(t.px+24<touchX)*d|=KEY_LEFT;
+     } else if(t.py<32&&t.px<128)*d|=KEY_B;
+     else if(t.py<32)*d|=KEY_Y;
+     else if(t.py>160&&t.px<128)*d|=KEY_X;
+     else if(t.py>160)*d|=KEY_A;
+     else if(t.px<64)*d|=KEY_LEFT;
+     else if(t.px>192)*d|=KEY_RIGHT;
+     else if(t.py<96)*d|=KEY_UP;
+     else *d|=KEY_DOWN;
+     if(*d & (KEY_A|KEY_B|KEY_X|KEY_Y|KEY_UP|KEY_DOWN|KEY_LEFT|KEY_RIGHT)) touchActionLatch=1;
+   }
  } else {
    lastHeld=0; touchPrevY=-1; touchStartY=-1; touchMoved=0; touchActionLatch=0;
  }
 }
-static void touchModuleActions(u32 *d){
- if(mode<=0)return;
- /* Pass 2: touchscreen mirrors the most useful D-pad/action controls.
-    A tap in the upper/lower halves maps to primary action/back; horizontal
-    zones map left/right; vertical zones map up/down. */
- if(!touchDown)return;
- if(touchY<44){*d|=KEY_B;return;}
- if(touchY>148){*d|=KEY_A;return;}
- if(touchX<80){*d|=KEY_LEFT;return;}
- if(touchX>176){*d|=KEY_RIGHT;return;}
- if(touchY<96){*d|=KEY_UP;}else{*d|=KEY_DOWN;}
-}
+static void touchModuleActions(u32 *d){ (void)d; }
 static void openModule(int n){homeSet(n);mode=n+1;save.launches++;markDirty();feedback();}
 static void back(void){mode=0;homePage=selected/8;cursor=selected;saveState();}
 
@@ -317,7 +318,7 @@ static void modClock(void){page("26 CLOCK / TIME");time_t now=time(NULL);struct 
  iprintf("%04d-%02d-%02d\n",t->tm_year+1900,t->tm_mon+1,t->tm_mday);}footer("A 12/24H | B HOME");}
 
 /* 27 — About */
-static void modAbout(void){page("27 ABOUT");iprintf("AETHEROS 8.7 / PASS 1/3\n");iprintf("29 INDIVIDUAL MODULE IMPLEMENTATIONS\n");iprintf("Geneva 1599 corpus: SD/OFFLINE\n");iprintf("Universal touch: TAP / HOLD / DRAG\n");iprintf("Local-first, bounded, recoverable runtime.\n");footer("B HOME");}
+static void modAbout(void){page("27 ABOUT");iprintf("AETHEROS 8.7 / PASS 3/3\n");iprintf("29 INDIVIDUAL MODULE IMPLEMENTATIONS\n");iprintf("Geneva 1599 corpus: SD/OFFLINE\n");iprintf("Universal touch: TAP / SWIPE / DRAG\n");iprintf("Local-first, bounded, recoverable runtime.\n");footer("B HOME");}
 
 /* 28 — Safety Center */
 static void modSafety(void){page("28 SAFETY CENTER");const char *n[]={"PARENTAL","NSFW FILTER","UNSAFE FILTER","UNREGULATED","USER CONTENT","BROWSER","DOWNLOADS","WIRELESS"};
