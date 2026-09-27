@@ -1,4 +1,4 @@
-name: Build AetherOS 8.7 Pass 1 for Nintendo DSi
+name: Build AetherOS 8.7 Pass 2 for Nintendo DSi
 on:
   workflow_dispatch:
   push:
@@ -27,7 +27,7 @@ jobs:
           cp AETHERMOD.md deploy/AETHERMOD.md
           printf '%s\n' 'Copy apps/AetherMod and data/AetherMod to the DSi SD card. Launch AetherOS8.7.nds.' > deploy/INSTALL.txt
           cd deploy
-          zip -r ../AetherOS8.7-Pass1-DSi-Public.zip .
+          zip -r ../AetherOS8.7-Pass2-DSi-Public.zip .
       - uses: actions/upload-artifact@v4
         with:
           name: AetherOS8.7-Pass1-DSi-Public
