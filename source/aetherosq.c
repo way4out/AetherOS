@@ -44,7 +44,8 @@ typedef struct {
 static SaveData save;
 static PrintConsole topConsole, bottomConsole;
 static const char *root = "fat:/";
-static int mode=0, cursor=0, codexPage=0, animalPage=0;
+static int mode=0, cursor=0, codexPage=0, animalPage=0, codexBook=0;
+static const char *codexBooks[66]={"Genesis","Exodus","Leviticus","Numbers","Deuteronomy","Joshua","Judges","Ruth","1 Samuel","2 Samuel","1 Kings","2 Kings","1 Chronicles","2 Chronicles","Ezra","Nehemiah","Esther","Job","Psalms","Proverbs","Ecclesiastes","Song of Solomon","Isaiah","Jeremiah","Lamentations","Ezekiel","Daniel","Hosea","Joel","Amos","Obadiah","Jonah","Micah","Nahum","Habakkuk","Zephaniah","Haggai","Zechariah","Malachi","Matthew","Mark","Luke","John","Acts","Romans","1 Corinthians","2 Corinthians","Galatians","Ephesians","Philippians","Colossians","1 Thessalonians","2 Thessalonians","1 Timothy","2 Timothy","Titus","Philemon","Hebrews","James","1 Peter","2 Peter","1 John","2 John","3 John","Jude","Revelation"};
 static int safeMode=0, spectrumCursor=0, calculatorCursor=0;
 static int selectionPin=0, homeScroll=0, homePulse=0, selfTestRun=0, coreTick=0;
 static int touchPage=0, calcA=17, calcB=9, dawTrackMute=0, dspScale=1;
@@ -348,7 +349,7 @@ static void resetToBase(void){
     defaults();
     selectionPin=0; cursor=0; homePage=0; homeScroll=0; homePulse=0;
     mode=0; safeMode=0; gatewayState=0; dirtyState=0;
-    codexPage=0; codexSearch=0; codexLine=0; animalPage=0; animalFeature=0; animalAnalyzing=0; rfWarnIndex=0; rfPushQueue=0; rfAuthGate=0; rfLogCount=0; saView=0; saTraceHold=0; saInputSource=0;
+    codexPage=0; codexBook=0; codexSearch=0; codexLine=0; animalPage=0; animalFeature=0; animalAnalyzing=0; rfWarnIndex=0; rfPushQueue=0; rfAuthGate=0; rfLogCount=0; saView=0; saTraceHold=0; saInputSource=0;
     calculatorCursor=0; calcA=17; calcB=9; calcOp=0; calcInput=0; calcSign=1; calcMemory=0; calcTouchKey=0; dawTrack=0; dawTrackMute=0; dawPlaying=0; dawView=0; dawOctave=4; dawSwing=0; dawFx=0;
     dspScale=1; fftWindow=0; fftPeakHold=0; dspInputMode=0; dspSampleRate=44100; dspGain=1; dspCursor=0; telemetryPage=0; aiCursor=0; aiQuery=0; browserCursor=0;
     networkSelfTest=0; quantumState=0; rfMode=0; rfBand=0; rfChannel=1; rfPeakHold=0; rfPacketView=0;
@@ -617,33 +618,41 @@ static void quantum(void){
     footer("A RUN  X PHASE  Y MEASURE  B HOME  START HOLD 3s = RESET");
 }
 
+static int codexPartForBook(int b){ if(b<64) return b/8+1; return 0; }
+static void codexPathForBook(int b,char *out,size_t n){
+    if(b==64) snprintf(out,n,"%sdata/AetherMod/KJV/JUDE.txt",root);
+    else if(b==65) snprintf(out,n,"%sdata/AetherMod/KJV/REVELATION.txt",root);
+    else snprintf(out,n,"%sdata/AetherMod/KJV/KJV_PART_%02d.txt",root,codexPartForBook(b));
+}
+static int codexRenderBook(void){
+    char path[160];
+    codexPathForBook(codexBook,path,sizeof(path));
+    FILE *f=fopen(path,"rb");
+    if(!f){ iprintf("CORPUS FILE MISSING\n%s\n",path); return 0; }
+    char line[120], header[96];
+    snprintf(header,sizeof(header),"===== %s =====",codexBooks[codexBook]);
+    int found=0, lines=0, shown=0;
+    while(fgets(line,sizeof(line),f)){
+        if(!found){
+            if(strstr(line,header)) found=1;
+            continue;
+        }
+        if(lines++ < codexPage*7) continue;
+        if(shown<7){ line[119]='\\0'; iprintf("%.118s",line); shown++; }
+        else break;
+    }
+    fclose(f);
+    return found;
+}
 static void codex(void){
-    page("YHWH BIBLIO CODEX");
-    iprintf("CODEX READER / INDEX\n");
-    iprintf("Page %d / 10   SEARCH:%s  LINE:%d\n\n",codexPage+1,codexSearch?"ON":"OFF",codexLine);
-    switch(codexPage){
-      case 0: iprintf("GENESIS  EXODUS  LEVITICUS\nNUMBERS  DEUTERONOMY  JOSHUA\nJUDGES  RUTH  1 SAMUEL  2 SAMUEL\n"); break;
-      case 1: iprintf("1 KINGS  2 KINGS  1 CHRONICLES\n2 CHRONICLES  EZRA  NEHEMIAH\nESTHER  JOB  PSALMS  PROVERBS\n"); break;
-      case 2: iprintf("ECCLESIASTES  SONG  ISAIAH\nJEREMIAH  LAMENTATIONS  EZEKIEL\nDANIEL  HOSEA  JOEL  AMOS\n"); break;
-      case 3: iprintf("OBADIAH  JONAH  MICAH  NAHUM\nHABAKKUK  ZEPHANIAH  HAGGAI\nZECHARIAH  MALACHI\n"); break;
-      case 4: iprintf("MATTHEW  MARK  LUKE  JOHN\nACTS  ROMANS  1 CORINTHIANS\n2 CORINTHIANS  GALATIANS  EPHESIANS\n"); break;
-      case 5: iprintf("PHILIPPIANS  COLOSSIANS  1 THESS\n2 THESS  1 TIMOTHY  2 TIMOTHY\nTITUS  PHILEMON  HEBREWS  JAMES\n"); break;
-      case 6: iprintf("1 PETER  2 PETER  1 JOHN  2 JOHN\n3 JOHN  JUDE  REVELATION\n"); break;
-      case 7: iprintf("NAME LAYER: YHWH / LORD / ADONAI\nSEARCHABLE TEXT GATEWAY\nSD DATA: " CODEX_PATH "\n"); break;
-      case 8: iprintf("CROSS-REFERENCE ENGINE\nBOOK / CHAPTER / VERSE\nLEXICON / STRONG-STYLE INDEX\n"); break;
-      default: iprintf("USER CODEX DATASET\nAdd UTF-8/plain-text corpus on SD.\nReader remains available offline.\n"); break;
+    page("YHWH CODEX — FULL KJV");
+    iprintf("BOOK %02d/66  %s\n",codexBook+1,codexBooks[codexBook]);
+    iprintf("SECTION %d  SEARCH:%s  YHWH/LORD LAYER:ON\n\n",codexPage+1,codexSearch?"ON":"OFF");
+    if(!codexRenderBook()){
+        iprintf("Select a published KJV corpus file on SD.\n");
     }
-    if(codexSearch){
-        char p[120]; snprintf(p,sizeof(p),"%s%s",root,CODEX_PATH);
-        FILE *f=fopen(p,"rb");
-        if(f){ char line[72]; int shown=0; iprintf("\nDATA PREVIEW\n");
-            while(shown<3 && fgets(line,sizeof(line),f)){iprintf("%.66s",line);shown++;}
-            fclose(f);
-        } else iprintf("\nDATA FILE NOT FOUND\n");
-    }
-    iprintf("YHWH LAYER: יהוה / YHWH / LORD / ADONAI\n");
-    iprintf("CORPUS SYNC %s  PHONE FILE LINK %s\n",codexSync?"READY":"IDLE",phoneFileSync?"READY":"LOCAL");
-    footer("UP/DOWN PAGE  A SEARCH  X LINE  L/R CORPUS  B HOME");
+    iprintf("\nCORPUS: PUBLIC-DOMAIN KJV / OFFLINE\n");
+    footer("TOUCH: TOP=B  LEFT=PREV BOOK  RIGHT=NEXT BOOK  BOTTOM=A  UP/DOWN=PAGE  X=SEARCH");
 }
 
 static void animal(void){
@@ -937,12 +946,22 @@ static void input(void){
                 pageTransitionFeedback();
             }
         } else {
-            if(tp.py<40 || tp.py>=174) d|=KEY_B;
-            else if(tp.px<85) d|=KEY_UP;
-            else if(tp.px>170) d|=KEY_DOWN;
-            else if(tp.py>=150) d|=KEY_A;
-            else if(tp.py>=105) d|=KEY_LEFT;
-            else if(tp.py>=70) d|=KEY_RIGHT;
+            /*
+             * Every module receives the same complete touchscreen control
+             * surface. This is deliberately mapped to DS-native A/B/X/Y
+             * semantics so module handlers remain identical for touch and
+             * physical buttons.
+             */
+            if(tp.py<32 && tp.px<128) d|=KEY_B;          /* back */
+            else if(tp.py<32 && tp.px>=128) d|=KEY_Y;    /* secondary toggle */
+            else if(tp.py>=160 && tp.px<128) d|=KEY_X;   /* alternate */
+            else if(tp.py>=160 && tp.px>=128) d|=KEY_A;  /* select/action */
+            else if(tp.py>=96 && tp.px<64) d|=KEY_UP;
+            else if(tp.py>=96 && tp.px>192) d|=KEY_DOWN;
+            else if(tp.py>=96 && tp.px<128) d|=KEY_LEFT;
+            else if(tp.py>=96 && tp.px>128) d|=KEY_RIGHT;
+            else if(tp.py>=32 && tp.py<64 && tp.px<128) d|=KEY_X;
+            else if(tp.py>=32 && tp.py<64 && tp.px>=128) d|=KEY_Y;
             else d|=KEY_A;
         }
         nav=d|repeat;
@@ -982,7 +1001,14 @@ static void input(void){
     } else if(mode==1){
         if(d&KEY_B){returnHome();changed=1;} if(d&KEY_A){quantumState=(quantumState+1)%4;quantumMeasure^=1;quantumShots++;changed=1;} if(d&KEY_X){quantumState=(quantumState+1)%4;changed=1;} if(d&KEY_Y){quantumState=0;changed=1;}
     } else if(mode==2){
-        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP){codexPage=(codexPage+9)%10;changed=1;} if(d&KEY_DOWN){codexPage=(codexPage+1)%10;changed=1;} if(d&KEY_A){codexSearch^=1;changed=1;} if(d&KEY_X){codexLine=(codexLine+1)%16;changed=1;}
+        if(d&KEY_B){mode=0;changed=1;}
+        if(d&KEY_UP){if(codexPage>0)codexPage--;else if(codexBook>0){codexBook--;codexPage=0;}changed=1;}
+        if(d&KEY_DOWN){codexPage++;changed=1;}
+        if(d&KEY_LEFT){codexBook=(codexBook+65)%66;codexPage=0;changed=1;}
+        if(d&KEY_RIGHT){codexBook=(codexBook+1)%66;codexPage=0;changed=1;}
+        if(d&KEY_A){codexSearch^=1;changed=1;}
+        if(d&KEY_X){codexLine=(codexLine+1)%32;codexSearch^=1;changed=1;}
+        if(d&KEY_Y){codexBook=0;codexPage=0;changed=1;}
     } else if(mode==3){
         if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP){animalPage=(animalPage+14)%15;animalAnalyzing=0;changed=1;} if(d&KEY_DOWN){animalPage=(animalPage+1)%15;animalAnalyzing=0;changed=1;} if(d&KEY_LEFT){animalFeature=(animalFeature+4)%5;changed=1;} if(d&KEY_RIGHT){animalFeature=(animalFeature+1)%5;changed=1;} if(d&KEY_A){animalAnalyzing=1;changed=1;} if(d&KEY_X){animalAnalyzing=1;changed=1;} if(d&KEY_Y){animalAnalyzing=0;changed=1;}
     } else if(mode==4){
