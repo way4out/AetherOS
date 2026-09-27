@@ -85,7 +85,7 @@ static int busQuantum=0, busAudio=0, busAnimal=0, busRF=0, busPhone=0, busBot=0;
 static int animFrame=0, animPulse=0, colorTheme=0;
 static int animTopPhase=0, animBottomPhase=0, animSweep=0, animSpark=0;
 static int homePageLock=0, homePage=0;
-static int navSoundGate=0, pageTransition=0, touchX=0, touchY=0, touchPressed=0;
+static int navSoundGate=0, pageTransition=0, touchX=0, touchY=0, touchPressed=0, codexTouchLastY=0, codexTouchDragging=0;
 static int vaultCursor=0, vaultCount=0, noteCursor=0, clock24=1, diagCursor=0, fileCursor=0, fileCount=0, eventCursor=0, eventCount=0;
 static int vaultDirty=1, fileDirty=1, eventDirty=1, drawDecimation=0, lastHardwareFrame=0;
 static int accessScale=1, accessContrast=0, accessScroll=1, controlCount=0, botCursor=0, botResult=0;
@@ -921,6 +921,12 @@ static void input(void){
     bool touchHeld=(keysHeld()&KEY_TOUCH)!=0;
     if(touched || touchHeld){
         touchRead(&tp);
+        if(touched){ codexTouchLastY=tp.py; codexTouchDragging=0; }
+        else if(mode==2){
+            int dy=(int)tp.py-codexTouchLastY;
+            if(dy>=12){ d|=KEY_DOWN; codexTouchLastY=tp.py; codexTouchDragging=1; }
+            else if(dy<=-12){ d|=KEY_UP; codexTouchLastY=tp.py; codexTouchDragging=1; }
+        }
         if(touched) touchEvents++;
         touchFocus=1;
         touchX=tp.px; touchY=tp.py; touchPressed=1;
@@ -964,6 +970,7 @@ static void input(void){
         }
         nav=d|repeat;
     }
+    if(!touchHeld) codexTouchDragging=0;
     serviceInput(d);
     validateRuntimeState();
     int changed=0;
@@ -1002,6 +1009,7 @@ static void input(void){
         if(d&KEY_B){mode=0;changed=1;}
         if(d&KEY_UP){if(codexPage>0)codexPage--;else if(codexBook>0){codexBook--;codexPage=0;}changed=1;}
         if(d&KEY_DOWN){codexPage++;changed=1;}
+        if(codexPage>4095) codexPage=4095;
         if(d&KEY_LEFT){codexBook=(codexBook+65)%66;codexPage=0;changed=1;}
         if(d&KEY_RIGHT){codexBook=(codexBook+1)%66;codexPage=0;changed=1;}
         if(d&KEY_A){codexSearch^=1;changed=1;}
