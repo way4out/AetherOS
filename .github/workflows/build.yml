@@ -2,7 +2,7 @@ name: Build AetherOS 8.7 Pass 2 for Nintendo DSi
 on:
   workflow_dispatch:
   push:
-    branches: [ main, aetheros8.7-pass1 ]
+    branches: [ main, aetheros8.7-pass1, aetheros8.7-pass2 ]
 
 jobs:
   build:
