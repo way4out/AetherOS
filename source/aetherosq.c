@@ -16,11 +16,11 @@
  */
 #define APP_COUNT 29
 #define AETHERMOD_MAJOR 8
-#define AETHERMOD_MINOR 6
-#define AETHERMOD_PASS 7
-#define AETHERMOD_TOTAL_PASSES 7
+#define AETHERMOD_MINOR 7
+#define AETHERMOD_PASS 1
+#define AETHERMOD_TOTAL_PASSES 3
 #define HOME_PAGES 4
-#define AETHER_SAVE_VERSION 5
+#define AETHER_SAVE_VERSION 6
 
 typedef struct {
     u32 magic, checksum, launches;
@@ -35,7 +35,7 @@ static PrintConsole topConsole,bottomConsole;
 static const char *root="fat:/";
 static int mode=0,selected=0,homePage=0,cursor=0;
 static int dirty=0, safeMode=0, frame=0, actionCount=0;
-static int touchX=0,touchY=0,touchDown=0;
+static int touchX=0,touchY=0,touchDown=0,touchStartY=-1,touchPrevY=-1,touchMoved=0;
 static int pageCursor=0, subCursor=0, moduleValue=0;
 static int qState=0,qShots=0,qFidelity=0;
 static int codexBook=0,codexPage=0,codexSearch=0;
@@ -100,13 +100,16 @@ static void loadState(void){
  defaults();ensureDirs();FILE *f=fopen("fat:/data/AetherMod/save.dat","rb");
  if(f){SaveData t;if(fread(&t,1,sizeof(t),f)==sizeof(t)){u32 c=t.checksum;t.checksum=0;
    if(c==hash32(&t,sizeof(t))&&t.magic==SAVE_MAGIC&&(t.version==4||t.version==SAVE_VERSION))save=t;
-  }fclose(f);}bootCount++;selected=save.selected;if(selected>=APP_COUNT)selected=0;homePage=selected/8;cursor=selected;
+  }fclose(f);}
+ bootCount++;
+ /* 8.7 Pass 1: deterministic cold start on the first home entry. */
+ selected=0; cursor=0; homePage=0; save.selected=0;
 }
 static void persistSelection(void){save.selected=(u16)selected;markDirty();}
 static void homeSet(int n){if(n<0)n=APP_COUNT-1;if(n>=APP_COUNT)n=0;selected=n;cursor=n;homePage=n/8;persistSelection();}
 static void page(const char *title){
  consoleSelect(&topConsole);consoleClear();
- iprintf("\x1b[36;1mAETHERMOD 8.6 / PASS 7/7\x1b[37;1m\n");
+ iprintf("\x1b[36;1mAETHEROS 8.7 / PASS 1/3\x1b[37;1m\n");
  iprintf("\x1b[35;1m==============================\x1b[37;1m\n");
  iprintf("%s\n",title);
  iprintf("DSi:%s  SAFE:%s  AI:%s  WIFI:%s\n",isDSiMode()?"YES":"DS",safeMode?"ON":"OFF",save.ai?"ON":"OFF",save.wireless?"ON":"OFF");
@@ -119,13 +122,35 @@ static void graph(const char *label,int seed){
  iprintf("%s|",label);for(int i=0;i<24;i++){int v=(i*7+seed+visualPhase)%16;iprintf("%c",v>12?'#':v>8?'*':v>4?'+':'.');}iprintf("|\n");
 }
 static void touchMap(u32 *d){
- touchPosition t;if(!(keysHeld()&KEY_TOUCH))return;touchRead(&t);touchX=t.px;touchY=t.py;touchDown=1;
- if(mode==0){if(t.py>=40&&t.py<136){int r=((int)t.py-40)/12;if(r<8){int n=homePage*8+r;if(n<APP_COUNT){homeSet(n);mode=n+1;feedback();}}}
-   else if(t.py>=136){homePage=(homePage+1)%HOME_PAGES;homeSet(homePage*8);feedback();}return;}
- if(t.py<32&&t.px<128)*d|=KEY_B;else if(t.py<32)*d|=KEY_Y;
- else if(t.py>160&&t.px<128)*d|=KEY_X;else if(t.py>160)*d|=KEY_A;
- else if(t.px<64)*d|=KEY_UP;else if(t.px>192)*d|=KEY_DOWN;
- else if(t.px<128)*d|=KEY_LEFT;else if(t.px>128)*d|=KEY_RIGHT;else *d|=KEY_A;
+ static int lastHeld=0;
+ int held=(keysHeld()&KEY_TOUCH)!=0;
+ touchPosition t; touchRead(&t); touchX=t.px; touchY=t.py; touchDown=held;
+ if(held){
+   if(!lastHeld){touchStartY=t.py;touchPrevY=t.py;touchMoved=0;}
+   if(touchPrevY>=0 && (t.py>touchPrevY+10 || t.py+10<touchPrevY)) touchMoved=1;
+   touchPrevY=t.py;
+   if(mode==0){
+     if(t.py>=48 && t.py<176){
+       int r=((int)t.py-48)/16;
+       int n=homePage*8+r;
+       if(!touchMoved && n<APP_COUNT && (d&KEY_TOUCH)){homeSet(n);mode=n+1;feedback();}
+     } else if(t.py>=176 && !touchMoved && (d&KEY_TOUCH)){
+       homePage=(homePage+1)%HOME_PAGES; homeSet(homePage*8); feedback();
+     }
+     if(touchMoved && (d&KEY_TOUCH)){
+       if(touchStartY>=0 && t.py+24<touchStartY){homePage=(homePage+1)%HOME_PAGES;homeSet(homePage*8);feedback();}
+       else if(touchStartY>=0 && t.py>touchStartY+24){homePage=(homePage+HOME_PAGES-1)%HOME_PAGES;homeSet(homePage*8);feedback();}
+       touchStartY=t.py; touchMoved=0;
+     }
+     lastHeld=1; return;
+   }
+   if(t.py<32&&t.px<128)*d|=KEY_B;else if(t.py<32)*d|=KEY_Y;
+   else if(t.py>160&&t.px<128)*d|=KEY_X;else if(t.py>160)*d|=KEY_A;
+   else if(t.px<64)*d|=KEY_UP;else if(t.px>192)*d|=KEY_DOWN;
+   else if(t.px<128)*d|=KEY_LEFT;else if(t.px>128)*d|=KEY_RIGHT;else *d|=KEY_A;
+ } else {
+   lastHeld=0; touchPrevY=-1; touchStartY=-1; touchMoved=0;
+ }
 }
 static void openModule(int n){homeSet(n);mode=n+1;save.launches++;markDirty();feedback();}
 static void back(void){mode=0;homePage=selected/8;cursor=selected;saveState();}
@@ -280,7 +305,7 @@ static void modClock(void){page("26 CLOCK / TIME");time_t now=time(NULL);struct 
  iprintf("%04d-%02d-%02d\n",t->tm_year+1900,t->tm_mon+1,t->tm_mday);}footer("A 12/24H | B HOME");}
 
 /* 27 — About */
-static void modAbout(void){page("27 ABOUT");iprintf("AETHERMOD 8.6 / PASS 7/7\n");iprintf("29 INDIVIDUAL MODULE IMPLEMENTATIONS\n");iprintf("Geneva 1599 corpus: SD/OFFLINE\n");iprintf("Universal touch: TAP / HOLD / DRAG\n");iprintf("Local-first, bounded, recoverable runtime.\n");footer("B HOME");}
+static void modAbout(void){page("27 ABOUT");iprintf("AETHEROS 8.7 / PASS 1/3\n");iprintf("29 INDIVIDUAL MODULE IMPLEMENTATIONS\n");iprintf("Geneva 1599 corpus: SD/OFFLINE\n");iprintf("Universal touch: TAP / HOLD / DRAG\n");iprintf("Local-first, bounded, recoverable runtime.\n");footer("B HOME");}
 
 /* 28 — Safety Center */
 static void modSafety(void){page("28 SAFETY CENTER");const char *n[]={"PARENTAL","NSFW FILTER","UNSAFE FILTER","UNREGULATED","USER CONTENT","BROWSER","DOWNLOADS","WIRELESS"};
@@ -292,7 +317,7 @@ static void home(void){
  iprintf("PAGE %d/%d  MODULES %02d-%02d\n\n",homePage+1,HOME_PAGES,homePage*8+1,homePage*8+8);
  int first=homePage*8;for(int i=0;i<8;i++){int n=first+i;if(n>=APP_COUNT)break;iprintf("%c%02d %-18s %c\n",n==selected?'>':' ',n+1,apps[n],((frame+i*7)%16<5)?'*':'.');}
  iprintf("\nSELECT:%02d  %s\n",selected+1,apps[selected]);iprintf("A OPEN | L/R PAGE | UP/DOWN MODULE\n");
- iprintf("TOUCH ROWS OPEN | LOWER SCREEN = NEXT PAGE\n");footer("START+SELECT: normal controls | START hold is not destructive");
+ iprintf("TOUCH: 8 LARGE ROWS OPEN | SWIPE = SCROLL | LOWER STRIP = NEXT PAGE\n");footer("START+SELECT: normal controls | START hold is not destructive");
 }
 static void draw(void){
  switch(mode){
