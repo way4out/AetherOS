@@ -1,8 +1,8 @@
-name: Build AetherMod 8.2 Pass 2 for Nintendo DSi
+name: Build AetherOS 8.7 Pass 1 for Nintendo DSi
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [ main, aetheros8.7-pass1 ]
 
 jobs:
   build:
@@ -10,32 +10,27 @@ jobs:
     container: devkitpro/devkitarm:latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build AetherMod 8.2
+      - name: Build AetherOS 8.7
         run: |
           export PATH="$DEVKITARM/bin:$DEVKITPRO/tools/bin:$PATH"
           make clean
-          mkdir -p build/include
           make
-          test -f AetherMod8.4.nds
-          cp AetherMod8.4.nds AetherOS8.4.nds
-          file AetherMod8.4.nds || true
-          ls -lh AetherMod8.4.nds AetherOS8.4.nds
+          test -s AetherOS8.7.nds
+          file AetherOS8.7.nds || true
+          ls -lh AetherOS8.7.nds
       - name: Package complete SD bundle
         run: |
           mkdir -p deploy/apps/AetherMod
           mkdir -p deploy/data/AetherMod
-          cp AetherMod8.4.nds deploy/apps/AetherMod/AetherMod8.4.nds
-          cp AetherOS8.4.nds deploy/apps/AetherMod/AetherOS8.4.nds
+          cp AetherOS8.7.nds deploy/apps/AetherMod/AetherOS8.7.nds
           cp -r data/AetherMod/. deploy/data/AetherMod/
           cp AETHERMOD.md deploy/AETHERMOD.md
-          printf '%s
-' 'Copy apps/AetherMod and data/AetherMod to the DSi SD card. Launch AetherOS8.4.nds or AetherMod8.4.nds.' > deploy/INSTALL.txt
+          printf '%s\n' 'Copy apps/AetherMod and data/AetherMod to the DSi SD card. Launch AetherOS8.7.nds.' > deploy/INSTALL.txt
           cd deploy
-          zip -r ../AetherOS8.4-Pass2-DSi-Public.zip .
+          zip -r ../AetherOS8.7-Pass1-DSi-Public.zip .
       - uses: actions/upload-artifact@v4
         with:
-          name: AetherOS8.4-Pass2-DSi-Public
+          name: AetherOS8.7-Pass1-DSi-Public
           path: |
-            AetherMod8.4.nds
-            AetherOS8.4.nds
-            AetherOS8.4-Pass2-DSi-Public.zip
+            AetherOS8.7.nds
+            AetherOS8.7-Pass1-DSi-Public.zip
