@@ -17,7 +17,7 @@
 #define APP_COUNT 29
 #define AETHERMOD_MAJOR 8
 #define AETHERMOD_MINOR 7
-#define AETHERMOD_PASS 1
+#define AETHERMOD_PASS 2
 #define AETHERMOD_TOTAL_PASSES 3
 #define HOME_PAGES 4
 #define AETHER_SAVE_VERSION 6
@@ -36,7 +36,7 @@ static const char *root="fat:/";
 static int mode=0,selected=0,homePage=0,cursor=0;
 static int dirty=0, safeMode=0, frame=0, actionCount=0;
 static int touchX=0,touchY=0,touchDown=0,touchStartY=-1,touchPrevY=-1,touchMoved=0;
-static int pageCursor=0, subCursor=0, moduleValue=0;
+static int pageCursor=0, subCursor=0, moduleValue=0, touchActionLatch=0;
 static int qState=0,qShots=0,qFidelity=0;
 static int codexBook=0,codexPage=0,codexSearch=0;
 static int animal=0,animalFeature=0,animalLive=0,animalEvents=0;
@@ -109,7 +109,7 @@ static void persistSelection(void){save.selected=(u16)selected;markDirty();}
 static void homeSet(int n){if(n<0)n=APP_COUNT-1;if(n>=APP_COUNT)n=0;selected=n;cursor=n;homePage=n/8;persistSelection();}
 static void page(const char *title){
  consoleSelect(&topConsole);consoleClear();
- iprintf("\x1b[36;1mAETHEROS 8.7 / PASS 1/3\x1b[37;1m\n");
+ iprintf("\x1b[36;1mAETHEROS 8.7 / PASS 2/3\x1b[37;1m\n");
  iprintf("\x1b[35;1m==============================\x1b[37;1m\n");
  iprintf("%s\n",title);
  iprintf("DSi:%s  SAFE:%s  AI:%s  WIFI:%s\n",isDSiMode()?"YES":"DS",safeMode?"ON":"OFF",save.ai?"ON":"OFF",save.wireless?"ON":"OFF");
@@ -126,21 +126,21 @@ static void touchMap(u32 *d){
  int held=(keysHeld()&KEY_TOUCH)!=0;
  touchPosition t; touchRead(&t); touchX=t.px; touchY=t.py; touchDown=held;
  if(held){
-   if(!lastHeld){touchStartY=t.py;touchPrevY=t.py;touchMoved=0;}
+   if(!lastHeld){touchStartY=t.py;touchPrevY=t.py;touchMoved=0;touchActionLatch=0;}
    if(touchPrevY>=0 && (t.py>touchPrevY+10 || t.py+10<touchPrevY)) touchMoved=1;
    touchPrevY=t.py;
    if(mode==0){
      if(t.py>=48 && t.py<176){
        int r=((int)t.py-48)/16;
        int n=homePage*8+r;
-       if(!touchMoved && n<APP_COUNT && held){homeSet(n);mode=n+1;feedback();}
+       if(!touchMoved && n<APP_COUNT && held && !touchActionLatch){homeSet(n);mode=n+1;touchActionLatch=1;feedback();}
      } else if(t.py>=176 && !touchMoved && held){
        homePage=(homePage+1)%HOME_PAGES; homeSet(homePage*8); feedback();
      }
-     if(touchMoved && held){
+     if(touchMoved && held && !touchActionLatch){
        if(touchStartY>=0 && t.py+24<touchStartY){homePage=(homePage+1)%HOME_PAGES;homeSet(homePage*8);feedback();}
        else if(touchStartY>=0 && t.py>touchStartY+24){homePage=(homePage+HOME_PAGES-1)%HOME_PAGES;homeSet(homePage*8);feedback();}
-       touchStartY=t.py; touchMoved=0;
+       touchStartY=t.py; touchMoved=0; touchActionLatch=1;
      }
      lastHeld=1; return;
    }
@@ -149,8 +149,20 @@ static void touchMap(u32 *d){
    else if(t.px<64)*d|=KEY_UP;else if(t.px>192)*d|=KEY_DOWN;
    else if(t.px<128)*d|=KEY_LEFT;else if(t.px>128)*d|=KEY_RIGHT;else *d|=KEY_A;
  } else {
-   lastHeld=0; touchPrevY=-1; touchStartY=-1; touchMoved=0;
+   lastHeld=0; touchPrevY=-1; touchStartY=-1; touchMoved=0; touchActionLatch=0;
  }
+}
+static void touchModuleActions(u32 *d){
+ if(mode<=0)return;
+ /* Pass 2: touchscreen mirrors the most useful D-pad/action controls.
+    A tap in the upper/lower halves maps to primary action/back; horizontal
+    zones map left/right; vertical zones map up/down. */
+ if(!touchDown)return;
+ if(touchY<44){*d|=KEY_B;return;}
+ if(touchY>148){*d|=KEY_A;return;}
+ if(touchX<80){*d|=KEY_LEFT;return;}
+ if(touchX>176){*d|=KEY_RIGHT;return;}
+ if(touchY<96){*d|=KEY_UP;}else{*d|=KEY_DOWN;}
 }
 static void openModule(int n){homeSet(n);mode=n+1;save.launches++;markDirty();feedback();}
 static void back(void){mode=0;homePage=selected/8;cursor=selected;saveState();}
