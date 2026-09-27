@@ -8,1098 +8,359 @@
 #include <dirent.h>
 #include "config.h"
 
-/*
- * AetherMod for Nintendo DSi
- * Local-first dual-screen cockpit.
- * Hardware gateways are explicit: stock DSi hardware cannot become a physical
- * spectrum analyzer, QPU, satellite modem, or external RF instrument.
+/* AetherMod 8.6 — DSi-native modular cockpit.
+ * Every home entry maps to an independent implementation.
+ * Hardware claims remain honest: external RF/TinySA/camera/AI/phone/QPU
+ * capabilities are represented as software workspaces/gateways, not invented
+ * stock-DSi hardware.
  */
-
 #define APP_COUNT 29
 #define AETHERMOD_MAJOR 8
-#define AETHERMOD_MINOR 5
-#define AETHERMOD_PASS 6
-#define AETHERMOD_TOTAL_PASSES 6
-#define AETHER_HOME_PAGES 4
-#define NOTE_COUNT 8
-#define CODEX_PATH "data/AetherMod/Geneva/"
-#define ANIMAL_PATH "data/AetherMod/animals.txt"
+#define AETHERMOD_MINOR 6
+#define AETHERMOD_PASS 7
+#define AETHERMOD_TOTAL_PASSES 7
+#define HOME_PAGES 4
+#define SAVE_VERSION 5
 
 typedef struct {
-    u32 magic;
-    u16 version;
-    u16 mode;
-    u16 sound;
-    u16 intensity;
-    u32 launches;
-    u16 language;
-    u8 parental, nsfw, unsafe, unregulated;
-    u8 ai, onlineAI, privacy, wireless;
-    u8 downloads, browser, userContent, theme;
-    u8 brightness, dawBpm, dawStep;
-    u16 selectionPin;
-    u32 checksum;
+    u32 magic, checksum, launches;
+    u16 version, selected, sound, brightness, language, theme;
+    u8 ai, onlineAI, privacy, wireless, browser, downloads, parental;
+    u8 nsfw, unsafe, unregulated, userContent;
+    u16 bpm;
 } SaveData;
 
 static SaveData save;
-static PrintConsole topConsole, bottomConsole;
-static const char *root = "fat:/";
-static int mode=0, cursor=0, codexPage=0, animalPage=0, codexBook=0;
-static const char *codexBooks[66]={"Genesis","Exodus","Leviticus","Numbers","Deuteronomy","Joshua","Judges","Ruth","1 Samuel","2 Samuel","1 Kings","2 Kings","1 Chronicles","2 Chronicles","Ezra","Nehemiah","Esther","Job","Psalm","Proverbs","Ecclesiastes","Song of Solomon","Isaiah","Jeremiah","Lamentations","Ezekiel","Daniel","Hosea","Joel","Amos","Obadiah","Jonah","Micah","Nahum","Habakkuk","Zephaniah","Haggai","Zechariah","Malachi","Matthew","Mark","Luke","John","Acts","Romans","1 Corinthians","2 Corinthians","Galatians","Ephesians","Philippians","Colossians","1 Thessalonians","2 Thessalonians","1 Timothy","2 Timothy","Titus","Philemon","Hebrews","James","1 Peter","2 Peter","1 John","2 John","3 John","Jude","Revelation"};
-static int safeMode=0, spectrumCursor=0, calculatorCursor=0;
-static int selectionPin=0, homeScroll=0, homePulse=0, selfTestRun=0, coreTick=0;
-static int touchPage=0, calcA=17, calcB=9, dawTrackMute=0, dspScale=1;
-static int codexSearch=0, animalAnalyzing=0, fftWindow=0, fftPeakHold=0;
-static int networkSelfTest=0, quantumState=0, dawPlaying=0, dawTrack=0;
-static int rfMode=0, rfBand=0, rfChannel=1, rfPeakHold=0, rfPacketView=0;
-static int saSpan=20, saStart=0, saRBW=10, saAtten=0, saMarker=0, saRunning=0, saGenArmed=0;
-static int rfWarnIndex=0, rfPushQueue=0, rfAuthGate=0, rfLogCount=0, saView=0, saTraceHold=0, saInputSource=0;
-static u32 frameCounter=0;
-static u32 lastSaveFrame=0, sessionErrors=0, inputEvents=0;
-static int diagnosticsPass=0, recoveryNotice=0, lastDiagnosticFrame=0;
-static int dirtyState=0, bootCount=0, lastMode=0;
-static int gatewayState=0, capabilityScore=0, resourceFaults=0;
-static int keyRepeatFrames=0, lastKeys=0, eventBurst=0, frameBudgetFaults=0;
-static int recoveryCount=0, validationFaults=0, moduleGuardFaults=0;
-static int resetHoldFrames=0, resetConfirm=0, resetCursor=0, resetNotice=0;
-static int soundId=-1;
-static int touchFocus=0, touchAction=0, moduleTicks[APP_COUNT]={0};
-static u32 uptimeFrames=0, touchEvents=0, autosaveCount=0, guardTrips=0;
-static int quantumMeasure=0, quantumShots=0, aiSafetyEvents=0, networkPackets=0;
-static int familyProfile=0, systemCursor=0;
-static int visualTheme=1, hapticLevel=2, expansionCursor=0, liveRefresh=1, settingsSection=0;
-static int hotspotState=0, hotspotBand=0, hotspotSecurity=2, hotspotRssi=72, hotspotTx=0, hotspotRx=0, hotspotPing=0, hotspotMode=0, phoneType=0, phonePackets=0;
-static int phoneLinkState=0, phoneSession=0, phoneCompanion=0, phoneFileSync=0, phoneTelemetry=0, phoneRemote=0;
-static int busTicks=0, busEvents=0, crossLink=0, codexSync=0, animalLink=0, dspLink=0, rfLink=0, botLink=0;
-static int aiCursor=0, aiQuery=0, browserCursor=0, graphMode=0, dawView=0, settingsCursor=0, codexLine=0, animalFeature=0, telemetryPage=0;
-static int qEntropy=0, qFidelity=0, qCursor=0, qHistogram[8]={0}, codexHits=0, codexLayer=0;
-static int animalConfidence=0, animalEvents=0, animalOutput=0, animalHistory[8]={0};
-static int rfSweep=0, rfTrace[24]={0}, saTrace[24]={0}, saPeak=0, saAvg=0;
-static int calcMemory2=0, calcError=0, dspPeakBin=0, dspRms=0, dspFrames=0, dspHistory[8]={0};
-static int phonePairCode=0, phoneBytesTx=0, phoneBytesRx=0, phoneQueue=0, phoneAck=0, netLatency=0, netHealth=0, botEvents=0;
-static int livePhase=0, hapticPulse=0, visualEnergy=0;
-static int hwTouch=0, hwButtons=0, hwMic=0, hwCamera=0, hwLed=0, hwSpeaker=0;
-static int topFrames=0, bottomFrames=0, inputRoute=0, sensorRoute=0, mediaRoute=0, ledRoute=0;
-static int releaseGuard=0, routeErrors=0, touchLatency=0, colorCycle=0;
-static int busQuantum=0, busAudio=0, busAnimal=0, busRF=0, busPhone=0, busBot=0;
-static int animFrame=0, animPulse=0, colorTheme=0;
-static int animTopPhase=0, animBottomPhase=0, animSweep=0, animSpark=0;
-static int homePageLock=0, homePage=0;
-static int navSoundGate=0, pageTransition=0, touchX=0, touchY=0, touchPressed=0;
-static int touchLastX=0, touchLastY=0, touchDragX=0, touchDragY=0, touchGesture=0;
-static int codexTouchLastY=0, codexTouchDragging=0;
-static int vaultCursor=0, vaultCount=0, noteCursor=0, clock24=1, diagCursor=0, fileCursor=0, fileCount=0, eventCursor=0, eventCount=0;
-static int vaultDirty=1, fileDirty=1, eventDirty=1, drawDecimation=0, lastHardwareFrame=0;
-static int accessScale=1, accessContrast=0, accessScroll=1, controlCount=0, botCursor=0, botResult=0;
-static u8 batteryLevel=0; static int dsiLive=0, touchLiveX=0, touchLiveY=0, touchLiveDown=0;
-static char vaultNames[12][48];
-static char fileNames[16][48];
-static char eventNames[12][48];
-static const char noteText[4][64]={"Rescue / build priorities","DSi local-first workspace","AetherOS 8.4 pass 5/5","User notes preserved on SD"};
-static const u32 aetherLut[1024]={0};
-
-static void saveState(void);
-static void markDirty(void);
-static void returnHome(void);
-static void updateCapabilityHealth(void);
-static void serviceInput(u32 keys);
-static void resetToBase(void);
-static int calcOp, calcInput, calcSign, calcMemory, calcTouchKey;
-static int dawOctave, dawSwing, dawFx;
-static int dspInputMode, dspSampleRate, dspGain, dspCursor;
+static PrintConsole topConsole,bottomConsole;
+static const char *root="fat:/";
+static int mode=0,selected=0,homePage=0,cursor=0;
+static int dirty=0, safeMode=0, frame=0, actionCount=0;
+static int touchX=0,touchY=0,touchDown=0;
+static int pageCursor=0, subCursor=0, moduleValue=0;
+static int qState=0,qShots=0,qFidelity=0;
+static int codexBook=0,codexPage=0,codexSearch=0;
+static int animal=0,animalFeature=0,animalLive=0,animalEvents=0;
+static int rfBand=0,rfChannel=1,rfView=0,rfHold=0,rfEvents=0;
+static int saStart=100,saSpan=20,saRbw=10,saRunning=0,saMarker=0;
+static int calcA=17,calcB=9,calcOp=0,calcMemory=0;
+static int dawTrack=0,dawStep=0,dawPlaying=0,dawView=0;
 static u8 dawPattern[4][16];
-static int dawVolume[4];
-static int normalizeSelection(int value);
-static void canonicalizeSelection(void);
-static void setSelection(int value);
-static u32 hash32(const void *ptr,size_t n);
-static void defaults(void);
-static void page(const char *title);
-static void footer(const char *s);
-static void ensureDirs(void);
-static void rfLogEvent(const char *kind, int value);
-static long long calcResult(void);
-static void dawStepAdvance(void);
-static void tone(void);
-static void feedback(int kind);
-static void liveBus(void);
-static void drawLiveBars(int seed);
-static void hwBus(void);
-static void releaseBus(void);
-static void animateUI(void);
-static void navigationFeedback(int direction);
-static void pageTransitionFeedback(void);
-
-static int storageReady(void){
-    FILE *f=fopen("fat:/data/AetherMod/.aether_test","wb");
-    if(!f) return 0;
-    fputs("OK",f); fclose(f);
-    remove("fat:/data/AetherMod/.aether_test");
-    return 1;
-}
-
-static int saveIntegrity(void){
-    SaveData t=save; u32 c=t.checksum; t.checksum=0;
-    return c==hash32(&t,sizeof(t)) && save.magic==SAVE_MAGIC && save.version==4;
-}
-
-static void runDiagnostics(void){
-    diagnosticsPass=0;
-    sessionErrors=0;
-    if(!saveIntegrity()) sessionErrors++;
-    if(!storageReady()) sessionErrors++;
-    if(selectionPin<0 || selectionPin>=APP_COUNT) sessionErrors++;
-    if(cursor!=selectionPin) sessionErrors++;
-    if(save.selectionPin!=selectionPin) sessionErrors++;
-    diagnosticsPass=(sessionErrors==0);
-    lastDiagnosticFrame=(int)frameCounter;
-}
-
-static void validateRuntimeState(void){
-    int faults=0;
-    if(selectionPin<0 || selectionPin>=APP_COUNT) faults++;
-    if(cursor<0 || cursor>=APP_COUNT) faults++;
-    if(save.selectionPin>=APP_COUNT) faults++;
-    if(mode!=99 && (mode<0 || mode>APP_COUNT)) faults++;
-    if(faults){
-        validationFaults+=faults; guardTrips+=faults;
-        canonicalizeSelection();
-        if(mode!=99 && (mode<0 || mode>APP_COUNT)){ mode=0; recoveryCount++; }
-    }
-}
-static void guardModuleState(void){
-    if(mode!=99 && (mode<0 || mode>APP_COUNT)){
-        moduleGuardFaults++;        mode=0;
-        returnHome();
-    }
-}
-
-static void canonicalizeSelection(void){
-    int p=normalizeSelection(save.selectionPin);
-    setSelection(p);
-}
-
-static int normalizeSelection(int value){
-    if(value<0) return APP_COUNT-1;
-    return value%APP_COUNT;
-}
-
-static void setSelection(int value){
-    selectionPin=normalizeSelection(value);
-    cursor=selectionPin;
-    homePage=selectionPin/8;
-    homeScroll=homePage;
-    save.selectionPin=(u16)selectionPin;
-}
-static void setHomePage(int pageIndex){
-    if(pageIndex<0) pageIndex=AETHER_HOME_PAGES-1;
-    if(pageIndex>=AETHER_HOME_PAGES) pageIndex=0;
-    homePage=pageIndex;
-    homeScroll=homePage;
-    int first=homePage*8;
-    if(first>=APP_COUNT) first=APP_COUNT-1;
-    setSelection(first);
-}
-
-static void launchSelection(void){
-    setSelection(selectionPin);
-    mode=selectionPin+1;
-    save.launches++;
-    saveState();
-}
+static int dspWindow=0,dspHold=0,dspGain=1,dspInput=0,dspFrames=0;
+static int telemetryPage=0,networkTest=0,networkPackets=0;
+static int aiMode=0,aiQuery=0,phoneConnected=0,phonePackets=0,phoneSync=0;
+static int mediaTrack=0,mediaPlaying=0,mediaVolume=70,mediaMode=0;
+static int sensorMode=0,sensorSamples=0,sensorPeak=0;
+static int vaultCursor=0,vaultCount=0,fileCursor=0,fileCount=0;
+static int hapticLevel=2,accessScale=1,accessContrast=0,accessScroll=1;
+static int powerMode=0,powerSaver=0,powerCycles=0;
+static int controlCursor=0,controlEvents=0,diagRuns=0,diagErrors=0;
+static int botCursor=0,botRuns=0,settingsCursor=0,eventCursor=0,eventCount=0;
+static int noteCursor=0,clock24=1,safetyCursor=0;
+static int visualPhase=0,energy=0,bootCount=0;
+static char fileNames[16][48],vaultNames[12][48],eventNames[16][48];
 
 static const char *apps[APP_COUNT]={
-    "AETHER HOME","QUANTUM CORE","YHWH CODEX","ANIMAL AI",
-    "MARAUDER/RF","TINySA LAB","CALCULATOR","DAW STUDIO",
-    "DSP/FFT","TELEMETRY","AI HOME","NETWORK GATEWAY",
-    "PHONE LINK",
-    "MEDIA STUDIO","SENSOR HUB","DATA VAULT","FILE BROWSER",
-    "HAPTIC LAB","ACCESSIBILITY","POWER LAB","CONTROL LAB",
-    "DIAGNOSTICS","AETHER BOT","GENERAL SETTINGS","EVENT LOG","DATA VAULT","NOTES","CLOCK","DIAGNOSTICS"
+ "AETHER HOME","QUANTUM CORE","YHWH CODEX","ANIMAL AI","MARAUDER/RF",
+ "TINySA LAB","CALCULATOR","DAW STUDIO","DSP/FFT","TELEMETRY","AI HOME",
+ "NETWORK GATEWAY","PHONE LINK","MEDIA STUDIO","SENSOR HUB","DATA VAULT",
+ "FILE BROWSER","HAPTIC LAB","ACCESSIBILITY","POWER LAB","CONTROL LAB",
+ "DIAGNOSTICS","AETHER BOT","GENERAL SETTINGS","EVENT LOG","NOTES","CLOCK",
+ "ABOUT","SAFETY CENTER"
+};
+static const char *animalNames[]={"Horse","Dog","Cat","Cow","Bison","Camel","Zebra","Ostrich","Bird","Wolf","Fox","Deer","Bear","Big Cat","Other"};
+static const char *codexBooks[66]={
+ "Genesis","Exodus","Leviticus","Numbers","Deuteronomy","Joshua","Judges","Ruth",
+ "1 Samuel","2 Samuel","1 Kings","2 Kings","1 Chronicles","2 Chronicles","Ezra",
+ "Nehemiah","Esther","Job","Psalm","Proverbs","Ecclesiastes","Song of Solomon",
+ "Isaiah","Jeremiah","Lamentations","Ezekiel","Daniel","Hosea","Joel","Amos",
+ "Obadiah","Jonah","Micah","Nahum","Habakkuk","Zephaniah","Haggai","Zechariah",
+ "Malachi","Matthew","Mark","Luke","John","Acts","Romans","1 Corinthians",
+ "2 Corinthians","Galatians","Ephesians","Philippians","Colossians",
+ "1 Thessalonians","2 Thessalonians","1 Timothy","2 Timothy","Titus","Philemon",
+ "Hebrews","James","1 Peter","2 Peter","1 John","2 John","3 John","Jude","Revelation"
 };
 
-static const char *langs[10]={
-    "English","Espanol","Francais","Deutsch","Italiano",
-    "Portugues","Nihongo","Hangul","Chinese","Russian"
-};
-
-static const char *animalNames[]={
-    "Horse","Dog","Cat","Cow","Bison","Camel","Zebra","Ostrich",
-    "Bird","Wolf","Fox","Deer","Bear","Big Cat","Other"
-};
-
-static u32 hash32(const void *ptr,size_t n){
-    const u8 *p=(const u8*)ptr; u32 h=2166136261u;
-    while(n--){h^=*p++; h*=16777619u;} return h;
+static u32 hash32(const void *p,size_t n){
+ const u8 *b=(const u8*)p; u32 h=2166136261u;
+ while(n--){h^=*b++;h*=16777619u;} return h;
 }
-
-static void defaults(void){
-    memset(&save,0,sizeof(save));
-    save.magic=SAVE_MAGIC; save.version=4;
-    save.sound=0; save.intensity=2; save.language=0;
-    save.parental=1; save.nsfw=1; save.unsafe=1; save.unregulated=1;
-    save.ai=1; save.privacy=1; save.wireless=0; save.downloads=0;
-    save.browser=0; save.userContent=1; save.theme=0; save.brightness=3;
-    save.dawBpm=120; save.dawStep=0; save.selectionPin=0;
-}
-
-static void ensureDirs(void){
-    char a[96],b[96];
-    snprintf(a,sizeof(a),"%sdata",root);
-    snprintf(b,sizeof(b),"%sdata/AetherMod",root);
-    mkdir(a,0777); mkdir(b,0777);
-}
-
-static void markDirty(void){ dirtyState=1; }
-
-static long long calcResult(void){
-    long long a=calcA,b=calcB;
-    switch(calcOp%12){case 0:return a+b;case 1:return a-b;case 2:return a*b;case 3:return b?a/b:0;case 4:return b?a%b:0;case 5:return b?(a*100)/b:0;case 6:return a*a;case 7:return a*a*a;case 8:return a>b?a:b;case 9:return a<b?a:b;case 10:return a^b;default:return (a*a+b*b)%1000003;}
-}
-static void dawStepAdvance(void){
-    save.dawStep=(save.dawStep+1)%16;
-    for(int t=0;t<4;t++) if(dawPattern[t][save.dawStep]) tone();
-}
-
-static void feedback(int kind){
-    hapticPulse++;
-    visualEnergy=(visualEnergy+11+(kind*7))%101;
-    /* Explicit action feedback only; navigation remains silent. */
-    if(save.sound) tone();
-}
-static void navigationFeedback(int direction){
-    (void)direction;
-    hapticPulse++;
-    visualEnergy=(visualEnergy+3)%101;
-    navSoundGate=0;
-    /* Navigation is intentionally silent. */
-}
-static void pageTransitionFeedback(void){
-    pageTransition=1;
-    hapticPulse++;
-    visualEnergy=(visualEnergy+9)%101;
-    navSoundGate=0;
-    /* Page changes are intentionally silent. */
-}
-static void hwBus(void){ hwTouch=1; hwButtons=(int)keysHeld(); hwMic=1; hwCamera=1; hwLed=1; hwSpeaker=save.sound?1:0; inputRoute=hwTouch+(hwButtons?1:0); sensorRoute=hwMic+hwCamera; mediaRoute=hwSpeaker+phoneLinkState; ledRoute=hwLed+(hotspotState?1:0); if((frameCounter&7)==0){topFrames++;bottomFrames++;} }
-static void releaseBus(void){ releaseGuard=(hwTouch&&hwMic&&hwCamera&&hwLed)?1:0; if(!crossLink) routeErrors++; if(touchEvents) touchLatency=(touchLatency+1)%16; }
-static void animateUI(void){
-    animFrame=(animFrame+1)&63;
-    animPulse=(animPulse+1)&31;
-    colorTheme=(colorTheme+1)&15;
-    animTopPhase=(animTopPhase+1)&127;
-    animBottomPhase=(animBottomPhase+1)&127;
-    animSweep=(animSweep+3)&255;
-    animSpark=(animSpark+5)&255;
-}
-static void applyAnimatedColors(void){
-    static const char *topColors[6]={"\x1b[36;1m","\x1b[36;1m","\x1b[32;1m","\x1b[32;1m","\x1b[33;1m","\x1b[37;1m"};
-    static const char *botColors[6]={"\x1b[34;1m","\x1b[34;1m","\x1b[35;1m","\x1b[35;1m","\x1b[36;1m","\x1b[37;1m"};
-    consoleSelect(&topConsole); printf("%s",topColors[(animTopPhase/22)%6]);
-    consoleSelect(&bottomConsole); printf("%s",botColors[(animBottomPhase/22)%6]);
-}
-static void liveBus(void){ if(!liveRefresh) return; livePhase=(livePhase+1)%32; visualEnergy=(visualEnergy+2+((frameCounter/4)%7))%101; if(crossLink){busEvents++;busQuantum=(busQuantum+qFidelity+1)%101;busAudio=(busAudio+dspRms+1)%101;busAnimal=(busAnimal+animalConfidence+2)%101;busRF=(busRF+saAvg+3)%101;busPhone=(busPhone+hotspotRssi+1)%101;busBot=(busBot+botEvents+1)%101;} }
-static void drawLiveBars(int seed){int p=(seed+livePhase)%24;iprintf("LIVE |");for(int i=0;i<24;i++)iprintf("%c",i==p?'@':((i+seed+visualEnergy)%5==0?'#':((i+seed)%3==0?'+':'.')));iprintf("| %3d%%\n",visualEnergy);}
-static void serviceInput(u32 keys){
-    int changedKeys=(int)keys ^ lastKeys;
-    if(changedKeys) inputEvents++;
-    if(keys) keyRepeatFrames++; else keyRepeatFrames=0;
-    if(keys && keyRepeatFrames>180) frameBudgetFaults++;
-    if(changedKeys && eventBurst<255) eventBurst++;
-    else if(!keys && eventBurst>0) eventBurst--;
-    lastKeys=(int)keys;
-}
-
-
-static void fileScan(void);
-static void sampleHardware(void){ if(lastHardwareFrame==frameCounter) return; dsiLive=isDSiMode()?1:0; batteryLevel=getBatteryLevel(); touchPosition t; touchRead(&t); touchLiveX=t.px; touchLiveY=t.py; touchLiveDown=(keysHeld()&KEY_TOUCH)?1:0; lastHardwareFrame=frameCounter; }
-static void botExecute(void){ switch(botCursor%8){case 0:mode=0;break;case 1:runDiagnostics();mode=29;break;case 2:fileScan();mode=17;break;case 3:mode=25;break;case 4:mode=20;break;case 5:mode=21;break;case 6:mode=19;break;default:mode=22;break;} botResult=botCursor+1;botEvents++; }
-static void updateCapabilityHealth(void){
-    capabilityScore=100;
-    if(storageReady()) capabilityScore+=0; else capabilityScore-=20;
-    if(!isDSiMode()) capabilityScore-=5;
-    if(save.wireless) capabilityScore-=0;
-    if(save.onlineAI && save.privacy) capabilityScore-=10;
-    if(safeMode) capabilityScore-=5;
-    if(capabilityScore<0) capabilityScore=0;
-}
-
-
-static void returnHome(void){ lastMode=mode; mode=0; setSelection(selectionPin); homeScroll=selectionPin/8; saveState(); }
-
-static void moduleHeartbeat(void){ hwBus(); liveBus(); releaseBus(); colorCycle=(colorCycle+1)%48;
-    if(mode>=1 && mode<=APP_COUNT) moduleTicks[mode-1]++;
-    uptimeFrames=frameCounter;
-    if((frameCounter&15)==0){
-        busTicks++;
-        if(crossLink) busEvents++;
-        if(hotspotState){
-            hotspotTx++;
-            hotspotRx+=2;
-            phonePackets++;
-            if(hotspotPing<25) hotspotPing=25+(int)(frameCounter%18);
-        }
-        if(phoneLinkState){
-            phoneTelemetry=1;
-            if(phoneSession==0) phoneSession=1;
-        }
-    }
-}
-
-
-static void resetToBase(void){
-    defaults();
-    selectionPin=0; cursor=0; homePage=0; homeScroll=0; homePulse=0;
-    mode=0; safeMode=0; gatewayState=0; dirtyState=0;
-    codexPage=0; codexBook=0; codexSearch=0; codexLine=0; animalPage=0; animalFeature=0; animalAnalyzing=0; rfWarnIndex=0; rfPushQueue=0; rfAuthGate=0; rfLogCount=0; saView=0; saTraceHold=0; saInputSource=0;
-    calculatorCursor=0; calcA=17; calcB=9; calcOp=0; calcInput=0; calcSign=1; calcMemory=0; calcTouchKey=0; dawTrack=0; dawTrackMute=0; dawPlaying=0; dawView=0; dawOctave=4; dawSwing=0; dawFx=0;
-    dspScale=1; fftWindow=0; fftPeakHold=0; dspInputMode=0; dspSampleRate=44100; dspGain=1; dspCursor=0; telemetryPage=0; aiCursor=0; aiQuery=0; browserCursor=0;
-    networkSelfTest=0; quantumState=0; rfMode=0; rfBand=0; rfChannel=1; rfPeakHold=0; rfPacketView=0;
-    saSpan=20; saStart=0; saRBW=10; saAtten=0; saMarker=0; saRunning=0; saGenArmed=0;
-    recoveryNotice=0; resetHoldFrames=0; resetConfirm=0; resetCursor=0; resetNotice=1;
-    if(fatInitDefault()){
-        ensureDirs();
-        char p[120]; snprintf(p,sizeof(p),"%sdata/AetherMod/save.dat",root); remove(p);        saveState();
-    }
-}
-
-static void resetPage(void){
-    page("AETHERMOD BASE RESET");
-    iprintf("RESTORE FACTORY / BASE SETTINGS\n\n");
-    iprintf("This clears AetherMod settings and runtime state.\n");
-    iprintf("Installed SD corpus/data files are preserved.\n\n");
-    iprintf("%s  YES\n",resetCursor==0?">":" ");
-    iprintf("%s  NO\n\n",resetCursor==1?">":" ");
-    iprintf("SELECT = CONFIRM YES    B = CANCEL\n");
-    iprintf("START hold detected: 3-second recovery path.\n");
-}
-
+static void markDirty(void){dirty=1;}
+static void ensureDirs(void){mkdir("fat:/data",0777);mkdir("fat:/data/AetherMod",0777);}
 static void saveState(void){
-    if(safeMode) return;
-    ensureDirs();
-    save.checksum=0; save.checksum=hash32(&save,sizeof(save));
-    char p[120]; snprintf(p,sizeof(p),"%sdata/AetherMod/save.dat",root);
-    FILE *f=fopen(p,"wb"); if(!f) return;
-    fwrite(&save,1,sizeof(save),f); fclose(f); lastSaveFrame=frameCounter;
+ if(safeMode)return; ensureDirs(); save.checksum=0;save.checksum=hash32(&save,sizeof(save));
+ FILE *f=fopen("fat:/data/AetherMod/save.dat","wb");if(f){fwrite(&save,1,sizeof(save),f);fclose(f);dirty=0;}
 }
-
+static void defaults(void){
+ memset(&save,0,sizeof(save));save.magic=SAVE_MAGIC;save.version=SAVE_VERSION;
+ save.sound=0;save.brightness=3;save.language=0;save.theme=1;save.ai=1;save.privacy=1;
+ save.parental=1;save.nsfw=1;save.unsafe=1;save.unregulated=1;save.userContent=1;save.bpm=120;
+}
 static void loadState(void){
-    defaults();
-    bootCount=1; ensureDirs();
-    char p[120]; snprintf(p,sizeof(p),"%sdata/AetherMod/save.dat",root);
-    FILE *f=fopen(p,"rb"); if(!f) return;
-    SaveData t; if(fread(&t,1,sizeof(t),f)==sizeof(t)){
-        u32 old=t.checksum; t.checksum=0;
-        if(old==hash32(&t,sizeof(t)) && t.magic==SAVE_MAGIC && t.version==4){
-            save=t; if(save.selectionPin>=APP_COUNT) save.selectionPin=0;
-        }
-    }
-    fclose(f);
-    canonicalizeSelection();
-    if(!saveIntegrity()) recoveryNotice=1;
-    dirtyState=0;
+ defaults();ensureDirs();FILE *f=fopen("fat:/data/AetherMod/save.dat","rb");
+ if(f){SaveData t;if(fread(&t,1,sizeof(t),f)==sizeof(t)){u32 c=t.checksum;t.checksum=0;
+   if(c==hash32(&t,sizeof(t))&&t.magic==SAVE_MAGIC&&(t.version==4||t.version==SAVE_VERSION))save=t;
+  }fclose(f);}bootCount++;selected=save.selected;if(selected>=APP_COUNT)selected=0;homePage=selected/8;cursor=selected;
 }
-
-static const char *langName(void){return langs[save.language%10];}
-
-static void topBg(const char *title){
-    consoleSelect(&topConsole); consoleClear();
-    iprintf("\x1b[36;1m      A E T H E R M O D  8.2\x1b[37;1m\n");
-    iprintf("\x1b[35;1m  ========================\x1b[37;1m\n");
-    iprintf("  %s\n\n",title);
-    iprintf("  [%s]  QCORE:%s  AI:%s\n",
-        isDSiMode()?"DSi":"DS",save.ai?"ON":"OFF",save.privacy?"LOCAL":"OPEN");
-    iprintf("  RF:%s  NET:%s  DSP:%s\n",
-        save.wireless?"GATE":"OFF",save.onlineAI?"ON":"LOCAL","READY");
-    iprintf("\n  %c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c\n",
-      '#','.',':','*','+','.',':','*','+','.',':','*','+','.',':','#');
-    drawLiveBars((int)(frameCounter/2));
-    iprintf("  FRAME %lu BPM %u  V%d H%d\n",(unsigned long)frameCounter,save.dawBpm,visualTheme,hapticLevel);
-    iprintf("  SAFE %s   LANG %s\n",safeMode?"YES":"NO",langName());
-    iprintf("  HW 2LCD:%d TOUCH:%d MIC:%d CAM:%d SPK:%d LED:%d\n",topFrames>0&&bottomFrames>0,hwTouch,hwMic,hwCamera,hwSpeaker,hwLed);
-}
-
-static void setAetherPalette(void){
-    static const u16 pal[8]={RGB15(31,31,31),RGB15(31,8,8),RGB15(8,31,12),RGB15(31,27,5),RGB15(8,16,31),RGB15(28,8,31),RGB15(5,31,31),RGB15(22,22,27)};
-    for(int i=0;i<8;i++){ BG_PALETTE[15+i*16]=pal[i]; BG_PALETTE_SUB[15+i*16]=pal[i]; }
-    BG_PALETTE[0]=RGB15(1,2,4); BG_PALETTE_SUB[0]=RGB15(1,2,4);
-}
-static void fileScan(void){
-    fileDirty=0;
-    fileCount=0; memset(fileNames,0,sizeof(fileNames));
-    DIR *d=opendir("fat:/data/AetherMod"); if(!d && isDSiMode()) d=opendir("sd:/data/AetherMod");
-    if(!d) return; struct dirent *e;
-    while((e=readdir(d)) && fileCount<16){ if(e->d_name[0]=='.') continue; strncpy(fileNames[fileCount],e->d_name,47); fileCount++; }
-    closedir(d); if(fileCursor>=fileCount) fileCursor=0;
-}
-static void fileBrowserPage(void){
-    page("FILE BROWSER / LOCAL-FIRST");
-    if(fileDirty) fileScan();
-    iprintf("ROOT: data/AetherMod/   ENTRIES:%d\n\n",fileCount);
-    for(int i=0;i<fileCount;i++) iprintf("%c %02d %-29s\n",i==fileCursor?'>':' ',i+1,fileNames[i]);
-    iprintf("\nA=PREVIEW X=RESCAN B=HOME\n");
-    if(fileCount){
-        char p[128]; snprintf(p,sizeof(p),"%sdata/AetherMod/%s",root,fileNames[fileCursor]);
-        FILE *f=fopen(p,"rb");
-        if(f){ unsigned char b[32]={0}; size_t n=fread(b,1,sizeof(b),f); fclose(f);
-            u32 h=hash32(b,n); iprintf("\nSIZE SAMPLE:%uB  HASH:%08lX\n",(unsigned)n,(unsigned long)h);
-        }
-    }
-}
-static void eventLogPage(void){
-    page("EVENT / SESSION LOG");
-    char p[128]; snprintf(p,sizeof(p),"%sdata/AetherMod/rf_session.log",root);
-    FILE *f=fopen(p,"rb"); char lines[12][64]; eventCount=0;
-    if(f){ while(eventCount<12 && fgets(lines[eventCount],64,f)){ size_t n=strlen(lines[eventCount]); if(n&&lines[eventCount][n-1]=='\\n') lines[eventCount][n-1]=0; eventCount++; } fclose(f); }
-    iprintf("SESSION EVENTS:%d\n\n",eventCount);
-    for(int i=0;i<eventCount;i++) iprintf("%c %02d %s\n",i==eventCursor?'>':' ',i+1,lines[i]);
-    if(!eventCount) iprintf("No session events recorded yet.\n");
-    footer("UP/DOWN SELECT  X REFRESH  B HOME");
-}
-static void vaultScan(void){
-    vaultDirty=0;
-    vaultCount=0; memset(vaultNames,0,sizeof(vaultNames));
-    DIR *d=opendir("fat:/data/AetherMod"); if(!d && isDSiMode()) d=opendir("sd:/data/AetherMod");
-    if(!d) return; struct dirent *e; while((e=readdir(d)) && vaultCount<12){
-        if(e->d_name[0]=='.') continue; strncpy(vaultNames[vaultCount],e->d_name,47); vaultCount++;
-    } closedir(d); if(vaultCursor>=vaultCount) vaultCursor=0;
-}
-static void vaultPage(void){
-    page("DATA VAULT / SD BROWSER"); if(vaultDirty) vaultScan();
-    iprintf("REAL SD DIRECTORY: data/AetherMod\n\n");
-    if(!vaultCount){iprintf("No readable entries found.\n");}
-    for(int i=0;i<vaultCount;i++) iprintf("%c %02d  %-30s\\n",i==vaultCursor?'>':' ',i+1,vaultNames[i]);
-    iprintf("\nA = inspect  X = rescan  B = home\n");
-    if(vaultCount){ char p[128]; snprintf(p,sizeof(p),"%sdata/AetherMod/%s",root,vaultNames[vaultCursor]); FILE *f=fopen(p,"rb"); if(f){char buf[81]={0}; size_t n=fread(buf,1,80,f); fclose(f); buf[n]=0; iprintf("\nPREVIEW: %s\n",buf);}}
-}
-static void notesPage(void){
-    page("PERSISTENT NOTES");
-    iprintf("SD-BACKED QUICK NOTES\n\n");
-    for(int i=0;i<4;i++) iprintf("%c %d  %s\\n",i==noteCursor?'>':' ',i+1,noteText[i]);
-    iprintf("\nA = append selected note to SD\nX = refresh  UP/DOWN = select\n");
-}
-static void clockPage(void){
-    page("CLOCK / SYSTEM TIME"); time_t now=time(NULL); struct tm *tmv=localtime(&now);
-    if(tmv){ int hh=tmv->tm_hour; if(!clock24){ hh%=12; if(hh==0) hh=12; } iprintf("%02d:%02d:%02d %s\n\nDATE %04d-%02d-%02d\n",hh,tmv->tm_min,tmv->tm_sec,clock24?"":"12H",1900+tmv->tm_year,1+tmv->tm_mon,tmv->tm_mday); }
-    else iprintf("RTC TIME UNAVAILABLE\\n");
-    iprintf("FRAME %lu\\nUPTIME %lu FRAMES\\nDSi MODE %s\\n",(unsigned long)frameCounter,(unsigned long)uptimeFrames,isDSiMode()?"YES":"NO");
-    footer("A toggles 12/24 display  B HOME");
-}
-static void diagPage(void){
-    page("DIAGNOSTICS / 8.4 PASS 6/6"); runDiagnostics();
-    iprintf("STORAGE %s\\nSAVE INTEGRITY %s\\nRUNTIME FAULTS %d\\n",storageReady()?"READY":"FAIL",saveIntegrity()?"PASS":"RECOVER",validationFaults);
-    iprintf("FRAME BUDGET %s\\nINPUT EVENTS %lu\\nGUARD TRIPS %lu\\n",frameBudgetFaults?"CHECK":"PASS",(unsigned long)inputEvents,(unsigned long)guardTrips);
-    iprintf("COLOR PALETTE: ACTIVE\\nAUDIO: HARD-OFF DEFAULT\\nLOCAL DATA: ENABLED\\n");
-    iprintf("\\nFINAL 5-PASS BUILD: UI / COLOR / SD / TOOLS / SAFETY / RECOVERY / DATA / ROUTING\\n");
-}
+static void persistSelection(void){save.selected=(u16)selected;markDirty();}
+static void homeSet(int n){if(n<0)n=APP_COUNT-1;if(n>=APP_COUNT)n=0;selected=n;cursor=n;homePage=n/8;persistSelection();}
 static void page(const char *title){
-    topBg(title);
-    consoleSelect(&bottomConsole); consoleClear();
-    iprintf("\x1b[36;1mAETHERMOD :: %s\x1b[37;1m\n",title);
-    iprintf("------------------------------\n");
+ consoleSelect(&topConsole);consoleClear();
+ iprintf("\x1b[36;1mAETHERMOD 8.6 / PASS 7/7\x1b[37;1m\n");
+ iprintf("\x1b[35;1m==============================\x1b[37;1m\n");
+ iprintf("%s\n",title);
+ iprintf("DSi:%s  SAFE:%s  AI:%s  WIFI:%s\n",isDSiMode()?"YES":"DS",safeMode?"ON":"OFF",save.ai?"ON":"OFF",save.wireless?"ON":"OFF");
+ iprintf("FRAME:%d  ENERGY:%d%%  ACTIONS:%d\n\n",frame,energy,actionCount);
 }
-
-static void footer(const char *s){iprintf("\n%s\n",s);}
-
-static void expansion(void){
-    const char *names[]={
-        "PHONE LINK","MEDIA STUDIO","SENSOR HUB","DATA VAULT","FILE BROWSER","HAPTIC LAB",
-        "ACCESSIBILITY","POWER LAB","CONTROL LAB","DIAGNOSTICS","AETHER BOT","GENERAL SETTINGS"
-    };
-    int ix=mode-13; if(ix<0) ix=0; if(ix>11) ix=11;
-    page(names[ix]);
-    int pulse=(int)((frameCounter/2)%24), meter=(int)((frameCounter/3)%100);
-    iprintf("LIVE WORKSPACE %s  REFRESH %s\n",liveRefresh?"ON":"OFF",liveRefresh?"LIVE":"PAUSED");
-    iprintf("THEME %d  HAPTIC %d/3  BUS %s  EVENTS %d\n",
-        visualTheme,hapticLevel,crossLink?"LINKED":"READY",busEvents);
-    iprintf("SIGNAL |");
-    for(int i=0;i<24;i++) iprintf("%c",((i+pulse)%7==0)?'#':((i+meter/10)%3==0)?'+':'.');
-    iprintf("|\nLEVEL %3d%%  ACTIVITY %3d%%  FRAME %lu\n",meter,(pulse*7)%101,(unsigned long)frameCounter);
-
-    if(ix==0){
-        iprintf("PHONE LINK / iPHONE 15 + ANDROID\n");
-        iprintf("HOTSPOT %s  PROFILE %s  LINK %s\n",
-            hotspotState?"CONNECTED":"READY",phoneType?"ANDROID":"iPHONE 15",
-            phoneLinkState?"ACTIVE":"STANDBY");
-        iprintf("5G BACKHAUL -> 2.4G DSi WIFI\n");
-        iprintf("RSSI %d%%  TX %d  RX %d  PING %dms\n",
-            hotspotRssi,hotspotTx,hotspotRx,hotspotPing);
-        iprintf("SESSION %d  COMPANION %s  REMOTE %s\n",
-            phoneSession,phoneCompanion?"READY":"OFF",phoneRemote?"ARMED":"SAFE");
-        phonePairCode=100000+(int)((frameCounter/30)%899999); phoneBytesTx+=hotspotState?2:0; phoneBytesRx+=hotspotState?3:0; phoneAck=hotspotState?1:0;
-        iprintf("PAIR %06d ACK %s QUEUE %d TX/RX %d/%d\n",phonePairCode,phoneAck?"YES":"NO",phoneQueue,phoneBytesTx,phoneBytesRx);
-        iprintf("SYNC FILE %s  TELEMETRY %s  BOT %s\n",
-            phoneFileSync?"READY":"IDLE",phoneTelemetry?"LIVE":"IDLE",botLink?"LINKED":"IDLE");
-        iprintf("A LINK  X BAND  Y TEST  L/R PROFILE\n");
-        iprintf("TOUCH: service rows / bridge actions\n");
-    } else if(ix==1) {
-        iprintf("MEDIA ROUTER / DAW CLIPS / DSP INPUT\n");
-        iprintf("DAW->DSP %s  PHONE MEDIA %s\n",dspLink?"LINKED":"READY",phoneFileSync?"READY":"LOCAL");
-    } else if(ix==2) {
-        iprintf("MIC / CAMERA / TOUCH SENSOR ROUTING\n");
-        iprintf("ANIMAL INPUT %s  SENSOR BUS %d\n",animalLink?"LINKED":"READY",busTicks);
-    } else if(ix==3) {
-        iprintf("SD DATA VAULT / INDEX / SESSION CHECKS\n");
-        iprintf("CODEX SYNC %s  FILE SYNC %s\n",codexSync?"READY":"IDLE",phoneFileSync?"READY":"IDLE");
-    } else if(ix==4) {
-        iprintf("LOCAL FILE NAVIGATOR: data/AetherMod/\n");
-        iprintf("PHONE TRANSFER %s  DATA BUS %s\n",phoneFileSync?"ARMED":"SAFE",crossLink?"ACTIVE":"READY");
-    } else if(ix==5) {
-        iprintf("TOUCH FEEDBACK / TONE / RESPONSE STRENGTH\n");
-        iprintf("LEVEL %d/3  EVENTS %lu\n",hapticLevel,(unsigned long)touchEvents);
-    } else if(ix==6) {
-        iprintf("LARGE TEXT / CONTRAST / INPUT ASSIST\n");
-        iprintf("TOUCH FOCUS %s  UNIVERSAL INPUT READY\n",touchFocus?"ON":"AUTO");
-    } else if(ix==7) {
-        iprintf("POWER STATE / WORKLOAD / BATTERY GATEWAY\n");
-        iprintf("WORKLOAD %d%%  SAVE %s  SAFE %s\n",meter,saveIntegrity()?"OK":"CHECK",safeMode?"ON":"OFF");
-    } else if(ix==8) {
-        iprintf("CROSS-MODULE ROUTING / UNIVERSAL CONTROL BUS\n");
-        iprintf("QCORE PHONE RF DSP BOT LINKS\n");
-        iprintf("BUS %s  EVENTS %d  TICKS %d\n",crossLink?"ACTIVE":"READY",busEvents,busTicks);
-    } else if(ix==9) {
-        iprintf("RUNTIME GUARDS / SAVE / SUBSYSTEM HEARTBEAT\n");
-        iprintf("GUARDS %lu  VALIDATION %d  HEALTH %d%%\n",
-            (unsigned long)guardTrips,validationFaults,capabilityScore);
-    } else if(ix==10) {
-        iprintf("AETHER BOT / COMMAND + MODULE ROUTING\n");
-        iprintf("PHONE REMOTE %s  KNOWLEDGE %s\n",phoneRemote?"ARMED":"SAFE",codexSync?"SYNC":"LOCAL");
-        iprintf("LINKS: CALC / CODEX / ANIMAL / RF / DSP\n");
-    } else {
-        iprintf("MASTER SETTINGS / SAFETY + FAMILY + SYSTEM\n");
-        iprintf("AI %s  PRIVACY %s  WIFI %s  BROWSER %s\n",
-            save.ai?"ON":"OFF",save.privacy?"LOCK":"OPEN",
-            save.wireless?"ARMED":"GUARDED",save.browser?"ON":"OFF");
-        iprintf("VISUAL %d  HAPTIC %d  LIVE %s\n",visualTheme,hapticLevel,liveRefresh?"ON":"OFF");
-    }
-    footer("UP/DOWN CURSOR  A ACTION  X VISUAL  Y LIVE  L/R HAPTIC  B HOME");
+static void footer(const char *s){consoleSelect(&bottomConsole);iprintf("\n%s\n",s);}
+static void feedback(void){actionCount++;energy=(energy+17)%101;if(save.sound)soundPlayPSG(DutyCycle_50,440,80,64);}
+static void saveIfDirty(void){if(dirty && (frame%30)==0)saveState();}
+static void graph(const char *label,int seed){
+ iprintf("%s|",label);for(int i=0;i<24;i++){int v=(i*7+seed+visualPhase)%16;iprintf("%c",v>12?'#':v>8?'*':v>4?'+':'.');}iprintf("|\n");
 }
-
-static void home(void){
-    canonicalizeSelection();
-    if(homePage<0) homePage=0;
-    if(homePage>=AETHER_HOME_PAGES) homePage=AETHER_HOME_PAGES-1;
-    homeScroll=homePage;
-    runDiagnostics();
-    updateCapabilityHealth();
-    topBg("DUAL-OS COCKPIT");
-    consoleSelect(&bottomConsole); consoleClear();
-    iprintf("AETHERMOD 8.5 PASS 5 / IMMERSIVE COCKPIT\n");
-    iprintf("------------------------------\n");
-    iprintf("PAGE %d/%d   MODULES %02d-%02d   %s\n\n",
-        homeScroll+1,AETHER_HOME_PAGES,homeScroll*8+1,homeScroll*8+8,
-        pageTransition?"PAGE SHIFT":"LIVE");
-    int first=homeScroll*8;
-    for(int i=0;i<8;i++){
-        int n=first+i;
-        int pulse=((animSweep+(i*17))&63);
-        iprintf("%s%02d %-18s %c\n",n==cursor?"> ":"  ",n+1,apps[n],
-            (n==cursor && pulse<18)?'*':(pulse<34)?'+':'.');
-    }
-    iprintf("\nPIN:%02d  TARGET:%s  ENERGY:%03d\n",selectionPin+1,apps[selectionPin],visualEnergy);
-    iprintf("DIAG:%s ERR:%lu HEALTH:%d%%\n",diagnosticsPass?"PASS":"CHECK",(unsigned long)sessionErrors,capabilityScore);
-    iprintf("\nA OPEN  X QUANTUM  Y TELEMETRY  L/R PAGE\n");
-    iprintf("TOUCH rows=OPEN   top/bottom=PAGE   START hold=RESET\n");
+static void touchMap(u32 *d){
+ touchPosition t;if(!(keysHeld()&KEY_TOUCH))return;touchRead(&t);touchX=t.px;touchY=t.py;touchDown=1;
+ if(mode==0){if(t.py>=40&&t.py<136){int r=((int)t.py-40)/12;if(r<8){int n=homePage*8+r;if(n<APP_COUNT){homeSet(n);mode=n+1;feedback();}}}
+   else if(t.py>=136){homePage=(homePage+1)%HOME_PAGES;homeSet(homePage*8);feedback();}return;}
+ if(t.py<32&&t.px<128)*d|=KEY_B;else if(t.py<32)*d|=KEY_Y;
+ else if(t.py>160&&t.px<128)*d|=KEY_X;else if(t.py>160)*d|=KEY_A;
+ else if(t.px<64)*d|=KEY_UP;else if(t.px>192)*d|=KEY_DOWN;
+ else if(t.px<128)*d|=KEY_LEFT;else if(t.px>128)*d|=KEY_RIGHT;else *d|=KEY_A;
 }
-
-static void quantum(void){
-    page("QUANTUM CORE");
-    qEntropy=(int)((frameCounter/5+qCursor*17)%101); qFidelity=80+(int)((frameCounter/13)%20);
-    int e=(frameCounter/3)%101;
-    iprintf("QUANTUM WORKBENCH / LOCAL SIM\n");
-    iprintf("COHERENCE %3d%%  PHASE %3lu deg\n",e,(unsigned long)((frameCounter/7)%360));
-    iprintf("Q-LANES 8  STATE %d  MEASURE:%s  SHOTS:%d\n",quantumState,quantumMeasure?"YES":"NO",quantumShots);
-    iprintf("VECTOR |"); for(int i=0;i<16;i++) iprintf("%c",((i+e/7)%5==0)?'#':'.'); iprintf("|\n");
-    iprintf("GRAPH  |"); for(int i=0;i<16;i++){int v=(i*7+e)%16;iprintf("%c",v>10?'*':v>5?'+':'.');} iprintf("|\n");
-    iprintf("ALGO superposition / phase / measure\n");
-    iprintf("FFT BRIDGE READY  QPU %s\n",save.wireless?"GATEWAY":"LOCAL");
-    iprintf("Software quantum simulator; no physical QPU claimed.\n");
-    iprintf("PHONE BRIDGE %s  TELEMETRY %s\n",phoneLinkState?"READY":"LOCAL",phoneTelemetry?"LIVE":"IDLE");
-    iprintf("FIDELITY %d%%  ENTROPY %d%%  HIST ",qFidelity,qEntropy);
-    drawLiveBars(qEntropy); for(int i=0;i<8;i++) iprintf("%d ",qHistogram[i]); iprintf("\n");
-    footer("A RUN  X PHASE  Y MEASURE  B HOME  START HOLD 3s = RESET");
-}
+static void openModule(int n){homeSet(n);mode=n+1;save.launches++;markDirty();feedback();}
+static void back(void){mode=0;homePage=selected/8;cursor=selected;saveState();}
 
 static const u8 codexPartMap[66]={4,3,6,7,3,5,4,8,1,2,1,2,1,1,4,6,3,5,7,7,3,8,4,5,5,3,2,4,5,2,7,5,6,6,4,8,4,8,6,6,6,6,5,2,7,1,2,4,3,7,2,1,2,1,2,8,7,4,4,1,2,1,2,2,5,7};
-static void codexPathForBook(int b,char *out,size_t n){
-    int part=(b>=0&&b<66)?codexPartMap[b]:1;
-    snprintf(out,n,"%sdata/AetherMod/Geneva/GENEVA_%02d.txt",root,part);
-}
-static int codexRenderBook(void){
-    char path[160];
-    codexPathForBook(codexBook,path,sizeof(path));
-    FILE *f=fopen(path,"rb");
-    if(!f){ iprintf("GENEVA CORPUS FILE MISSING\n%s\n",path); return 0; }
-    char line[180], header[96];
-    snprintf(header,sizeof(header),"===== BOOK: %s =====",codexBooks[codexBook]);
-    int found=0, lines=0, shown=0;
-    while(fgets(line,sizeof(line),f)){
-        if(!found){ if(strstr(line,header)) found=1; continue; }
-        if(strstr(line,"===== BOOK:") && found) break;
-        if(codexSearch){
-            if(!strstr(line,"Iehouah") && !strstr(line,"Iehovah") && !strstr(line,"Jehovah") &&
-               !strstr(line,"LORD") && !strstr(line,"Lord") && !strstr(line,"GOD")) continue;
-        } else if(lines++ < codexPage*6) continue;
-        if(shown<6){ line[179]='\0'; iprintf("%.178s",line); shown++; } else break;
-    }
-    fclose(f);
-    return found;
-}
-static void codex(void){
-    page("YHWH CODEX — GENEVA 1599");
-    iprintf("BOOK %02d/66  %s\n",codexBook+1,codexBooks[codexBook]);
-    iprintf("SECTION %d  SEARCH:%s  DIVINE-NAME LAYER:ON\n\n",codexPage+1,codexSearch?"ON":"OFF");
-    if(!codexRenderBook()) iprintf("GENEVA CORPUS FILE MISSING — check SD/data/AetherMod/Geneva.\n");
-    iprintf("\nCORPUS: GENEVA 1599 / PUBLIC DOMAIN / OFFLINE\n");
-    footer("TOUCH: TOP=B  LEFT/RIGHT=BOOK  BOTTOM=A  UP/DOWN=PAGE  X=NAME SEARCH");
+static int codexRender(void){
+ char path[160],line[192],head[96];int found=0,skip=codexPage*6,shown=0;
+ snprintf(path,sizeof(path),"%sdata/AetherMod/Geneva/GENEVA_%02d.txt",root,codexPartMap[codexBook]);
+ FILE *f=fopen(path,"rb");if(!f)return 0;snprintf(head,sizeof(head),"===== BOOK: %s =====",codexBooks[codexBook]);
+ while(fgets(line,sizeof(line),f)){if(!found){if(strstr(line,head))found=1;continue;}if(strstr(line,"===== BOOK:")&&found)break;
+  if(codexSearch&&!strstr(line,"Iehouah")&&!strstr(line,"Iehovah")&&!strstr(line,"Jehovah")&&!strstr(line,"LORD")&&!strstr(line,"GOD"))continue;
+  if(!codexSearch&&skip-->0)continue;if(shown++<6)iprintf("%.178s",line);else break;}
+ fclose(f);return found;
 }
 
-static void animal(void){
-    page("ANIMAL AI / ANALYSIS LAB");
-    animalConfidence=animalAnalyzing?65+(animalPage*3)%31:0; animalEvents=(int)((frameCounter/6+animalPage)%128); animalOutput=animalAnalyzing?((animalFeature*13+(int)frameCounter)%8):0; animalHistory[(frameCounter/8)&7]=(int)((frameCounter+animalPage*17)%100);
-    int a=animalPage%15,m=(int)((frameCounter/8+a)%8),feature=animalFeature%5;
-    iprintf("SPECIES %s  STATE %s\n",animalNames[a],animalAnalyzing?"LIVE":"READY");
-    iprintf("MIC -> FEATURES -> STATE -> RESPONSE\n");
-    iprintf("PITCH %02d ENERGY %02d RHYTHM %02d\n",(int)((a*7+frameCounter)%100),(int)((a*11+frameCounter/2)%100),(int)((a*5+frameCounter)%100));
-    iprintf("FEATURE %s  WINDOW %dms  EVENTS %02d\n",feature==0?"PITCH":feature==1?"ENERGY":feature==2?"RHYTHM":feature==3?"SPECTRUM":"ONSETS",64+(feature*32),(a*13+(int)frameCounter)%100);
-    iprintf("STATE %s  CONF %02d%%\n",m<3?"CALM":m<6?"ALERT":"SOCIAL",animalAnalyzing?68+(a%25):0);
-    iprintf("PLAY |");for(int i=0;i<16;i++)iprintf("%c",((i+m)%5==0)?'O':'.');iprintf("|\n");
-    iprintf("TEXT CUE + TONE + VISUAL STATE\n");
-    iprintf("AI GATE %s  PHONE LINK %s\n",save.onlineAI?"ONLINE":"LOCAL PROFILE",animalLink?"READY":"IDLE");
-    iprintf("CONF %02d%% EVENTS %03d OUTPUT %d HIST ",animalConfidence,animalEvents,animalOutput); for(int i=0;i<8;i++) iprintf("%02d ",animalHistory[i]); iprintf("\n");
-    iprintf("Signal classification; not literal animal speech.\n");
-    footer("UP/DOWN SPECIES  A ANALYZE  X FEATURE  Y VOCALIZE  B HOME");
-}
+/* 01 — Quantum Core */
+static void modQuantum(void){page("01 QUANTUM CORE");qFidelity=80+(frame/9)%21;
+ iprintf("LOCAL QUANTUM-INSPIRED SIMULATOR\nSTATE:%d  SHOTS:%d  FIDELITY:%d%%\n",qState,qShots,qFidelity);
+ graph("STATE ",qState*19);iprintf("LANES 8  ENTROPY:%d%%  PHASE:%d deg\n",(frame*3)%101,(frame*7)%360);
+ iprintf("A=measure  X=phase  Y=reset  UP/DOWN=state\n");footer("B HOME | A MEASURE | X PHASE | Y RESET");}
 
-static void rfLab(const char *title){
-    page(title);
-    const char *modes[]={"SURVEY","CHANNEL VIEW","PACKET META","RSSI HISTORY"};
-    const char *bands[]={"2.4GHz ISM","5GHz ISM","CUSTOM GATE"};
-    const char *warnings[]={"CLEAR","LOW SIGNAL","HIGH NOISE","AUTH REQUIRED","EXTERNAL GATE"};
-    int rssi=-32-(int)(frameCounter%48),noise=-78-(int)(frameCounter%17);
-    int snr=rssi-noise; rfSweep=(int)((frameCounter/4)%100); for(int i=0;i<24;i++) rfTrace[i]=(i*7+rfSweep+rfChannel*3)%18;
-    iprintf("AUTHORIZED RF RECEIVE / ANALYZE\n");
-    iprintf("%s  %s  CH %d\n",modes[rfMode&3],bands[rfBand%3],rfChannel);
-    iprintf("RSSI %d dBm  NOISE %d dBm  SNR %d dB\n",rssi,noise,snr);
-    iprintf("SPECTRUM |");for(int i=0;i<24;i++){int v=rfTrace[i];iprintf("%c",v>14?'#':v>9?'*':v>4?'+':'.');}iprintf("|\n");
-    iprintf("META %lu  PACKET %s  PEAK %s\n",(unsigned long)((frameCounter*3)%997),rfPacketView?"ON":"OFF",rfPeakHold?"ON":"OFF");
-    iprintf("WARNING[%d] %s\n",rfWarnIndex,warnings[rfWarnIndex]);
-    iprintf("AUTH GATE %s  PUSH QUEUE %d/8\n",rfAuthGate?"ARMED":"LOCKED",rfPushQueue);
-    iprintf("TEST PUSH %s  LOG %d/32\n",(rfAuthGate&&gatewayState)?"READY":"BLOCKED",rfLogCount);
-    iprintf("JAM/DEAUTH/CREDENTIAL CAPTURE: DISABLED\n");
-    iprintf("Transmit path = authorized test queue only; no radio driver claimed.\n");
-    footer("UP/DOWN MODE  L/R BAND/CH  A ARM/QUEUE  X META  Y WARN  B HOME");
-}
+/* 02 — Geneva Codex */
+static void modCodex(void){page("02 YHWH CODEX / GENEVA 1599");iprintf("BOOK %d/66: %s  PAGE:%d SEARCH:%s\n",codexBook+1,codexBooks[codexBook],codexPage+1,codexSearch?"NAME":"OFF");
+ if(!codexRender())iprintf("GENEVA_%02d.TXT NOT FOUND ON SD\n",codexPartMap[codexBook]);
+ iprintf("\nOFFLINE PUBLIC-DOMAIN CORPUS / SOURCE TEXT ON SD\n");footer("UP/DOWN PAGE | L/R BOOK | A SEARCH | X NAME MODE | Y GENESIS | B HOME");}
 
-static void rfLogEvent(const char *kind, int value){
-    if(rfLogCount<32) rfLogCount++;
-    char p[120]; snprintf(p,sizeof(p),"%sdata/AetherMod/rf_session.log",root);
-    FILE *f=fopen(p,"ab");
-    if(!f) return;
-    fprintf(f,"%lu,%s,%d\n",(unsigned long)frameCounter,kind,value);
-    fclose(f);
-}
+/* 03 — Animal AI */
+static void modAnimal(void){page("03 ANIMAL AI / SIGNAL LAB");int c=animalLive?60+(animal*7+frame)%35:0;
+ iprintf("SPECIES:%s  MODE:%s  CONF:%d%%\n",animalNames[animal],animalLive?"ANALYZE":"READY",c);
+ iprintf("PITCH:%d ENERGY:%d RHYTHM:%d\n",(animal*11+frame)%100,(animal*17+frame/2)%100,(animal*5+frame)%100);
+ graph("FEATURE ",animalFeature*13+animal);iprintf("EVENTS:%d  OUTPUT:%d\n",animalEvents,(animalFeature*7+frame)%8);
+ iprintf("Signal classification/vocalization model; not literal speech.\n");footer("UP/DOWN SPECIES | L/R FEATURE | A ANALYZE | X RUN | Y STOP | B HOME");}
 
-static void tinysa(void){
-    page("TINySA LAB");
-    int stop=saStart+saSpan,markerHz=saStart+saMarker,level=18+(int)((frameCounter/4)%40); for(int i=0;i<24;i++)saTrace[i]=(i*5+(int)(frameCounter/2)+saMarker)%32; saPeak=level+7; saAvg=level-3;
-    const char *views[]={"SPECTRUM","WATERFALL","TEXT STATS","MARKER"};
-    iprintf("TINySA HYBRID VISUAL + TEXT GATEWAY\n");
-    iprintf("VIEW %s  INPUT %s  SWEEP %s\n",views[saView&3],saInputSource?"EXTERNAL":"SIM",saRunning?"RUN":"STOP");
-    iprintf("%4d MHz ",saStart);for(int i=0;i<24;i++)iprintf("%c",i==((saMarker*24)/(saSpan?saSpan:1))?'M':(i%5==0?'|':'.'));iprintf(" %4d\n",stop);
-    iprintf("LEVEL %02d dB  PEAK %02d dB  MARK %d MHz\n",level,saPeak,markerHz);
-    iprintf("SPAN %d MHz RBW %d kHz ATT %d dB\n",saSpan,saRBW,saAtten);
-    iprintf("SWEEP COUNT %lu  POINTS 450  HOLD %s\n",(unsigned long)(frameCounter%10000),saTraceHold?"ON":"OFF");
-    iprintf("STATS MIN %d  MAX %d  AVG %d  PEAKBIN %d\n",level-14,level+7,level-3,(markerHz/5)%90);
-    iprintf("GENERATOR %s  AUTH %s\n",saGenArmed?"TEST READY":"OFF",rfAuthGate?"ARMED":"LOCKED");
-    iprintf("External TinySA requires compatible physical gateway; UI works standalone.\n");
-    footer("UP/DOWN SPAN  L/R START  A SWEEP  X VIEW  Y RBW  TOUCH=MARK  B HOME");
-}
+/* 04 — Marauder/RF: passive/authorized analysis only */
+static void modRF(void){page("04 MARAUDER / RF");const char *b[]={"2.4GHz ISM","5GHz ISM","EXTERNAL GATE"};
+ iprintf("PASSIVE RECEIVE / AUTHORIZED ANALYSIS\nBAND:%s CH:%d VIEW:%d HOLD:%s\n",b[rfBand],rfChannel,rfView,rfHold?"ON":"OFF");
+ int r=-30-(frame%45),n=-80-(frame%12);iprintf("RSSI:%d dBm NOISE:%d dBm SNR:%d dB\n",r,n,r-n);graph("RF ",rfChannel*9);
+ iprintf("META EVENTS:%d  QUEUE:%d\n",rfEvents,(frame/8)%9);
+ iprintf("JAM/DEAUTH/CREDENTIAL CAPTURE: NOT IMPLEMENTED.\n");footer("UP/DOWN VIEW | L/R BAND/CH | A LOG SAMPLE | X HOLD | Y CLEAR | B HOME");}
 
-static void calculator(void){
-    page("AETHER CALCULATOR");
-    calcError=(calcOp==3&&calcB==0)||(calcOp==4&&calcB==0);
-    long long a=calcA,b=calcB,result=0;const char *fn="ADD";
-    switch(calculatorCursor%12){
-      case 0:result=a+b;fn="ADD";break;case 1:result=a-b;fn="SUB";break;case 2:result=a*b;fn="MUL";break;
-      case 3:result=b?a/b:0;fn="DIV";break;case 4:result=b?a%b:0;fn="MOD";break;case 5:result=(a*100)/((b==0)?1:b);fn="PERCENT";break;
-      case 6:result=a*a;fn="SQUARE";break;case 7:result=a*a*a;fn="CUBE";break;case 8:result=a>b?a:b;fn="MAX";break;
-      case 9:result=a<b?a:b;fn="MIN";break;case 10:result=a^b;fn="BIT-XOR";break;default:result=(a*a+b*b)%1000003;fn="Q-NORM";break;
-    }
-    iprintf("A=%lld B=%lld  FN %s\nRESULT %lld\n",a,b,fn,result);
-    iprintf("SCIENTIFIC: MOD / %% / SQUARE / CUBE / BITWISE\n");
-    iprintf("MEM %d/%d  ENTRY %s  %s\n",calcMemory,calcMemory2,calcInput?"B":"A",calcError?"DIV0 GUARD":"VALID");
-    iprintf("Q: phase=%d parity=%d mod256=%lld\n",(int)((a*7+b*3)%360),(int)((a^b)&1),(a*b)%256);
-    footer("UP/DOWN FUNCTION  A EDIT A  X EDIT B  B HOME");
-}
+/* 05 — TinySA */
+static void modTinySA(void){page("05 TINySA LAB");int level=20+(frame/3)%35;
+ iprintf("SOFTWARE SPECTRUM WORKSPACE / EXTERNAL GATE\nSTART:%dMHz SPAN:%dMHz RBW:%dkHz\n",saStart,saSpan,saRbw);
+ iprintf("SWEEP:%s  MARK:%dMHz  PEAK:%ddB\n",saRunning?"RUN":"STOP",saStart+saMarker,level+8);
+ graph("TRACE ",saStart+saSpan);iprintf("VIEW:%d  POINTS:24  HOLD:%s\n",subCursor,rfHold?"ON":"OFF");
+ iprintf("Physical TinySA requires compatible external hardware.\n");footer("UP/DOWN SPAN | L/R START | A SWEEP | X VIEW | Y RBW | B HOME");}
 
-static void daw(void){
-    page("AETHER DAW / GAME STUDIO");
-    iprintf("STEP SEQUENCER BPM %u STEP %02u\n",save.dawBpm,save.dawStep);
-    iprintf("PIANO |");for(int i=0;i<16;i++)iprintf("%c",i==save.dawStep?'^':(i%2?'|':'.'));iprintf("|\n");
-    iprintf("T1 [");for(int i=0;i<16;i++)iprintf("%c",i==save.dawStep?'>':((i%3)==0?'X':'.'));iprintf("]\n");
-    iprintf("T2 [");for(int i=0;i<16;i++)iprintf("%c",(i%4)==0?'O':'.');iprintf("]\n");
-    iprintf("T3 [");for(int i=0;i<16;i++)iprintf("%c",(i%5)==0?'+':'.');iprintf("]\n");
-    iprintf("VIEW %s  TRACK %d  MUTE:%d\n",dawView?"MIXER":"PIANO",dawTrack+1,dawTrackMute);
-    iprintf("OSC PSG+PCM  FX GATE/PAN/LEVEL  AUDIO LOCAL\n");
-    iprintf("PLAY %s  game-loop timing %s\n",dawPlaying?"RUN":"STOP",dawPlaying?"LIVE":"READY");    footer("UP/DOWN STEP  A NOTE  X PLAY  Y BPM  L/R TRACK  SELECT VIEW  B HOME");
-}
+/* 06 — Calculator */
+static long long calc(void){long long a=calcA,b=calcB;switch(calcOp%10){case 0:return a+b;case 1:return a-b;case 2:return a*b;case 3:return b?a/b:0;case 4:return b?a%b:0;case 5:return a*a;case 6:return a*a*a;case 7:return a^b;case 8:return a>b?a:b;default:return a<b?a:b;}}
+static void modCalc(void){const char *op[]={"ADD","SUB","MUL","DIV","MOD","SQR","CUBE","XOR","MAX","MIN"};page("06 CALCULATOR");
+ iprintf("A:%d B:%d OP:%s RESULT:%lld\n",calcA,calcB,op[calcOp%10],calc());iprintf("MEM:%d  VALID:%s\n",calcMemory,(calcOp==3&&calcB==0)?"DIV0 GUARD":"YES");
+ iprintf("A/B are editable with A/X; operation with UP/DOWN.\n");footer("UP/DOWN OP | A APPLY | X SWAP | Y MEMORY | L/R EDIT | B HOME");}
 
-static void dsp(void){
-    page("DSP / FFT LAB");
-    dspFrames++;
-    int mag[16],peak=0,peakv=0;
-    for(int k=0;k<16;k++){long re=0,im=0;for(int n=0;n<32;n++){
-        static const int ctab[16]={127,118,90,49,0,-49,-90,-118,-127,-118,-90,-49,0,49,90,118};
-        static const int stab[16]={0,49,90,118,127,118,90,49,0,-49,-90,-118,-127,-118,-90,-49};
-        int x=((n*7+(int)frameCounter)%32)-16,phase=((k*n*8)%256)>>4;re+=(long)x*ctab[phase&15];im-=(long)x*stab[phase&15];}
-        long m=(re<0?-re:re)+(im<0?-im:im);mag[k]=(int)(m/256);if(mag[k]>63)mag[k]=63;if(mag[k]>peakv){peakv=mag[k];peak=k;}
-    }
-    iprintf("TIME |");for(int i=0;i<32;i++)iprintf("%c",((i+(frameCounter/2))%8<4)?'~':'_');iprintf("|\n");
-    iprintf("FREQ |");for(int i=0;i<16;i++)iprintf("%c",i==peak?'^':(mag[i]>8?'#':'.'));iprintf("| PEAK BIN %d\n",peak);
-    for(int i=0;i<16;i++){int v=mag[i]/4;iprintf("%02d ",i);for(int j=0;j<v;j++)iprintf("#");iprintf("\n");}
-    iprintf("WINDOW %s PEAK-HOLD %s SCALE %d\n",fftWindow?"HAMMING":"RECT",fftPeakHold?"ON":"OFF",dspScale);
-    iprintf("INPUT -> WINDOW -> FFT -> MAGNITUDE -> GRAPH\n");
-    dspPeakBin=peak; dspRms=(int)((frameCounter/5)%100); dspHistory[(frameCounter/16)&7]=dspRms;
-    iprintf("RMS %d%% PEAKBIN %d FRAMES %d HIST ",dspRms,dspPeakBin,dspFrames); for(int i=0;i<8;i++)iprintf("%02d ",dspHistory[i]); iprintf("\n");
-    footer("A REFRESH  X WINDOW  Y PEAK/SCALE  B HOME");
-}
+/* 07 — DAW */
+static void modDAW(void){page("07 DAW / GAME STUDIO");iprintf("BPM:%u STEP:%02d PLAY:%s TRACK:%d VIEW:%d\n",save.bpm,dawStep,dawPlaying?"YES":"NO",dawTrack+1,dawView);
+ for(int t=0;t<4;t++){iprintf("T%d [",t+1);for(int s=0;s<16;s++)iprintf("%c",s==dawStep?'^':dawPattern[t][s]?'X':'.');iprintf("]\n");}
+ iprintf("PSG sequencer / local timing / persistent BPM\n");footer("UP/DOWN STEP | L/R TRACK | A NOTE | X PLAY | Y BPM | B HOME");}
 
-static void telemetry(void){
-    coreTick++; moduleHeartbeat();
-    runDiagnostics();
-    page("TELEMETRY");
-    iprintf("FRAME       %lu\n",(unsigned long)frameCounter);
-    iprintf("BOOT COUNT  %d\n",bootCount);
-    iprintf("DIRTY STATE %s\n",dirtyState?"PENDING":"CLEAN");
-    iprintf("LAUNCHES    %lu\n",(unsigned long)save.launches);
-    iprintf("STORAGE     SD/FAT\n");
-    iprintf("MEMORY      STATIC/BOUNDED\n");
-    iprintf("CPU MODE    DSi ARM9\n");
-    iprintf("TOUCH       ACTIVE\n");
-    iprintf("MIC         AVAILABLE\n");
-    iprintf("CAMERA      SYSTEM GATEWAY\n");
-    iprintf("EXTERNAL    GATEWAY ONLY\n");
-    iprintf("DIAGNOSTICS  %s  ERR:%lu  LAST:%d\n",diagnosticsPass?"PASS":"CHECK",(unsigned long)sessionErrors,lastDiagnosticFrame);
-    iprintf("CAPABILITY HEALTH %d%%  GATE:%s\n",capabilityScore,gatewayState?"ARMED":"GUARDED");
-    iprintf("INPUT EVENTS %lu  REPEAT:%d\n",(unsigned long)inputEvents,keyRepeatFrames);
-    iprintf("RESOURCE FAULTS %d\n",resourceFaults);
-    iprintf("PASS 4 BUS %d PHONE %d QFID %d ANCONF %d DSPF %d\n",busEvents,phonePackets,qFidelity,animalConfidence,dspFrames);
-    iprintf("RF %d SA %d NET %d%%\n",rfSweep,saPeak,netHealth);
-    iprintf("PAGE %d/3  PRESS A TO CYCLE\n",telemetryPage+1);
-    iprintf("BUS Q/A/AN/RF/PH/BOT %d/%d/%d/%d/%d/%d\n",busQuantum,busAudio,busAnimal,busRF,busPhone,busBot);
-    iprintf("HW 2LCD/TCH/BTN/MIC/CAM/SPK/LED %d/%d/%d/%d/%d/%d/%d\n",topFrames>0&&bottomFrames>0,hwTouch,hwButtons?1:0,hwMic,hwCamera,hwSpeaker,hwLed);
-    drawLiveBars(busEvents);
-    if(telemetryPage){
-        iprintf("UPTIME %lu  TOUCH EVENTS %lu  AUTOSAVES %lu\n",(unsigned long)uptimeFrames,(unsigned long)touchEvents,(unsigned long)autosaveCount);
-        iprintf("GUARD TRIPS %lu  MODULE TICKS %lu\n",(unsigned long)guardTrips,(unsigned long)moduleTicks[selectionPin]);
-        iprintf("GATEWAYS: RF=%s TINYSA=%s NET=%s AI=%s\n",gatewayState?"ARM":"SAFE",saRunning?"SWEEP":"IDLE",save.browser?"READY":"OFF",save.ai?"READY":"OFF");
-        iprintf("FRAME BUDGET %d  INPUT BURSTS %d\n",frameBudgetFaults,eventBurst);
-        iprintf("SAVE CHECKSUM %s  LAST SAVE %lu\n",saveIntegrity()?"OK":"BAD",(unsigned long)lastSaveFrame);
-        if(telemetryPage>1) iprintf("QSHOTS %d  AIMODE %d  NETPKT %d  SAFETY %d\n",quantumShots,aiCursor,networkPackets,aiSafetyEvents);
-    }
-    footer("A PAGE  B HOME");
-}
+/* 08 — DSP/FFT */
+static void modDSP(void){page("08 DSP / FFT");dspFrames++;int peak=(frame/3+dspInput*5)%16;
+ iprintf("INPUT:%s GAIN:%d WINDOW:%s HOLD:%s FRAMES:%d\n",dspInput?"MIC-GATE":"SIM",dspGain,dspWindow?"HAMMING":"RECT",dspHold?"ON":"OFF",dspFrames);
+ graph("FFT ",peak*11);iprintf("PEAK BIN:%d RMS:%d%%\n",peak,(frame/5)%100);footer("UP/DOWN GAIN | L/R INPUT | A REFRESH | X WINDOW | Y HOLD | B HOME");}
 
-static void aiHome(void){
-    page("AI HOME / AETHER BOT");
-    const char *modes[]={"CHAT","CODE","SCIENCE","ANIMAL","SYSTEM","WEB GATE"};
-    iprintf("MODE %s  LOCAL-FIRST\n",modes[aiCursor%6]);
-    iprintf("AETHER BOT / DSi AI WORKBENCH\n");
-    iprintf("KNOWLEDGE: device + Codex + local data\n");
-    iprintf("QUERY SLOT %d  STATUS:%s\n",aiQuery,save.ai?"READY":"OFF");
-    iprintf("ONLINE AI %s  PRIVACY %s\n",save.onlineAI?"GATE":"OFF",save.privacy?"LOCK":"OPEN");
-    iprintf("BROWSER GATE %s\n",save.browser?"READY":"OFF");
-    botEvents=(int)((frameCounter/10)%256);
-    iprintf("TOOLS: calculator / graph / animal / RF / web\n");
-    iprintf("BOT ROUTE %d  EVENTS %d  PHONE %s\n",aiCursor,botEvents,phoneRemote?"REMOTE":"LOCAL");
-    iprintf("Local responses are deterministic; cloud AI requires gateway.\n");
-    iprintf("PHONE BOT %s  CODEX %s  REMOTE %s\n",botLink?"ACTIVE":"IDLE",codexSync?"SYNC":"LOCAL",phoneRemote?"ARMED":"SAFE");
-    footer("UP/DOWN MODE  A RUN  X ONLINE  Y PRIVACY  B HOME");
-}
+/* 09 — Telemetry */
+static void modTelemetry(void){page("09 TELEMETRY");iprintf("PAGE %d/3\nFRAME:%d BOOTS:%d LAUNCHES:%lu\n",telemetryPage+1,frame,bootCount,(unsigned long)save.launches);
+ iprintf("DSi:%s TOUCH:%s SD:FAT BAT:%d%%\n",isDSiMode()?"YES":"DS",touchDown?"ACTIVE":"READY",getBatteryLevel());
+ iprintf("QFID:%d RF:%d DSP:%d ANIMAL:%d PHONE:%d\n",qFidelity,rfEvents,dspFrames,animalEvents,phonePackets);
+ iprintf("SAFE:%s DIRTY:%s ACTIONS:%d\n",safeMode?"ON":"OFF",dirty?"YES":"NO",actionCount);footer("A PAGE | B HOME");}
 
-static void network(void){
-    page("NETWORK GATEWAY / BROWSER");
-    iprintf("WIFI %s  GATE %s  SELFTEST %s\n",save.wireless?"ARMED":"GUARDED",gatewayState?"ARMED":"SAFE",networkSelfTest?"PASS":"READY");
-    iprintf("LOCAL LINK / HTTP CLIENT SHELL READY\n");
-    iprintf("BROWSER %s  DNS/HTTP EXTERNAL GATE\n",save.browser?"ENABLED":"DISABLED");
-    iprintf("PHONE BACKHAUL %s  DSi WIFI 2.4G\n",hotspotState?"CONNECTED":"READY");
-    iprintf("SAT BT SDR QPU: EXTERNAL GATEWAYS\n");
-    netLatency=hotspotState?25+(int)(frameCounter%20):0; netHealth=hotspotState?90+(int)(frameCounter%10):55;
-    iprintf("RX QUEUE 16  TX QUEUE 8  CRC32 FRAMING  PKTS %d\n",networkPackets);
-    iprintf("LATENCY %dms  HEALTH %d%%  PHONE PKTS %d\n",netLatency,netHealth,phonePackets);
-    iprintf("URL SLOT %d  SAFE WEB MODE %s\n",browserCursor,save.browser?"ON":"OFF");
-    iprintf("HTTP GET / TEXT / METADATA / SAFE LINKS\n");
-    iprintf("No credential capture or radio disruption.\n");
-    footer("A ARM  X SELFTEST  Y BROWSER  L/R URL SLOT  B HOME");
-}
+/* 10 — AI Home */
+static void modAI(void){page("10 AI HOME");const char *m[]={"CHAT","CODE","SCIENCE","ANIMAL","SYSTEM","WEB GATE"};
+ iprintf("MODE:%s QUERY:%d LOCAL:%s\n",m[aiMode],aiQuery,save.ai?"READY":"OFF");
+ iprintf("PRIVACY:%s ONLINE:%s BROWSER:%s\n",save.privacy?"LOCK":"OPEN",save.onlineAI?"GATE":"OFF",save.browser?"ON":"OFF");
+ iprintf("Deterministic local workspace; online AI requires an external gateway.\n");footer("UP/DOWN MODE | A RUN | X ONLINE | Y PRIVACY | B HOME");}
 
-static void aiSafety(void){
-    page("AI SAFETY / CONTROL");
-    iprintf("LOCAL AI       %s\n",save.ai?"ON":"OFF");
-    iprintf("SAFETY EVENTS  %d  PROFILE %s\n",aiSafetyEvents,save.privacy?"PRIVATE":"OPEN");
-    iprintf("ONLINE AI      %s\n",save.onlineAI?"ON":"OFF");
-    iprintf("PRIVACY        %s\n",save.privacy?"LOCK":"OPEN");
-    iprintf("NSFW FILTER    %s\n",save.nsfw?"ON":"OFF");
-    iprintf("UNSAFE FILTER  %s\n",save.unsafe?"ON":"OFF");
-    iprintf("UNREG FILTER   %s\n",save.unregulated?"ON":"OFF");
-    footer("A LOCAL  X ONLINE  Y PRIVACY  B HOME");
-}
+/* 11 — Network */
+static void modNetwork(void){page("11 NETWORK GATEWAY");iprintf("WIFI:%s SELFTEST:%s PACKETS:%d\n",save.wireless?"ARMED":"GUARDED",networkTest?"PASS":"READY",networkPackets);
+ iprintf("LOCAL HTTP/DNS TEXT GATEWAY\nBrowser:%s  Safe links:%s\n",save.browser?"ON":"OFF",save.privacy?"ON":"OFF");
+ iprintf("No credential capture, disruption, or radio attack path.\n");footer("A WIFI | X SELFTEST | Y BROWSER | L/R SLOT | B HOME");}
 
-static void family(void){
-    page("FAMILY / SAFETY");
-    iprintf("PROFILE %d  CONTROL LAYER ACTIVE\n",familyProfile);
-    iprintf("PARENTAL      %s\n",save.parental?"STRICT":"OPEN");
-    iprintf("NSFW          %s\n",save.nsfw?"BLOCK":"ALLOW");
-    iprintf("UNSAFE        %s\n",save.unsafe?"BLOCK":"ALLOW");
-    iprintf("UNREGULATED   %s\n",save.unregulated?"BLOCK":"ALLOW");
-    iprintf("USER CONTENT  %s\n",save.userContent?"FILTER":"BLOCK");
-    iprintf("BROWSER       %s\n",save.browser?"ALLOW":"BLOCK");
-    iprintf("DOWNLOADS     %s\n",save.downloads?"ALLOW":"BLOCK");
-    footer("A STRICT  X CONTENT  Y NETWORK  B HOME");
-}
+/* 12 — Phone Link */
+static void modPhone(void){page("12 PHONE LINK");iprintf("PAIR:%s SESSION:%d SYNC:%s\n",phoneConnected?"CONNECTED":"READY",phoneConnected?1:0,phoneSync?"LIVE":"IDLE");
+ iprintf("TX:%d RX:%d ACK:%d  DSi Wi-Fi 2.4GHz GATE\n",phonePackets*3,phonePackets*2,phonePackets);
+ iprintf("PHONE REMOTE CONTROL IS A LOCAL UI/GATEWAY CONTRACT.\n");footer("A CONNECT | X SYNC | Y CLEAR | UP/DOWN PROFILE | B HOME");}
 
-static void systemPage(void){
-    selfTestRun=(frameCounter&15)==0; moduleHeartbeat(); page("SYSTEM / SERVICE");
-    iprintf("AETHERMOD 8.5  PASS 6/6  DSi ARM9\n");
-    iprintf("SELFTEST %s SAFE %s DIRTY %s\n",selfTestRun?"RUN":"READY",safeMode?"ON":"OFF",dirtyState?"YES":"NO");
-    iprintf("BRIGHT %u/4 THEME %s LANG %s\n",save.brightness,save.theme?"AETHER":"CLASSIC",langName());
-    iprintf("SOUND %s AI %s WIFI %s BROWSER %s\n",save.sound?"ON":"OFF",save.ai?"ON":"OFF",save.wireless?"ON":"OFF",save.browser?"ON":"OFF");
-    iprintf("SAVE V4 STORAGE %s CAP %d%%\n",diagnosticsPass?"HEALTHY":"CHECK",capabilityScore);
-    iprintf("SERVICE: RESET / SAVE / SAFE / DIAGNOSTICS\n");
-    iprintf("GUARD %lu  ERR %lu  FRAMEFAULT %d\n",(unsigned long)guardTrips,(unsigned long)sessionErrors,frameBudgetFaults);
-    footer("UP/DOWN BRIGHT  A THEME  X SOUND  B HOME");
-}
+/* 13 — Media Studio */
+static void modMedia(void){page("13 MEDIA STUDIO");iprintf("MODE:%s TRACK:%d PLAY:%s VOL:%d\n",mediaMode?"MIXER":"PLAYER",mediaTrack+1,mediaPlaying?"YES":"NO",mediaVolume);
+ graph("WAVE ",mediaTrack*17);iprintf("LOCAL SD MEDIA CONTROL SURFACE\n");footer("UP/DOWN TRACK | L/R VOLUME | A PLAY | X MODE | Y NEXT | B HOME");}
 
-static void generalSettings(void){
-    page("GENERAL SETTINGS");
-    iprintf("DSi CONTROL CENTER / MASTER SETTINGS\n");
-    iprintf("SETTING %d  UNIVERSAL TOUCH %s\n",settingsCursor,touchFocus?"FOCUS":"AUTO");
-    iprintf("BRIGHT %u/4  SOUND %s  THEME %s\n",save.brightness,save.sound?"ON":"OFF",save.theme?"AETHER":"CLASSIC");
-    iprintf("AI %s  ONLINE %s  PRIVACY %s\n",save.ai?"ON":"OFF",save.onlineAI?"ON":"OFF",save.privacy?"LOCK":"OPEN");
-    iprintf("BROWSER %s  DOWNLOADS %s\n",save.browser?"ON":"OFF",save.downloads?"ON":"OFF");
-    iprintf("WIRELESS %s  SAFE %s\n",save.wireless?"ARMED":"GUARDED",safeMode?"ON":"OFF");
-    iprintf("All changes use the existing save system.\n");
-    footer("UP/DOWN SELECT  A TOGGLE  X SAFE  B HOME");
-}
+/* 14 — Sensor Hub */
+static void modSensor(void){page("14 SENSOR HUB");sensorSamples++;sensorPeak=(sensorPeak+frame)%100;
+ iprintf("SOURCE:%s SAMPLES:%d PEAK:%d\n",sensorMode?"EXTERNAL GATE":"DSi LOCAL",sensorSamples,sensorPeak);
+ iprintf("TOUCH:%d BAT:%d%% FRAME:%d\n",touchDown,getBatteryLevel(),frame);graph("SENS ",sensorMode*23);
+ footer("UP/DOWN SOURCE | A SAMPLE | X RESET | Y PEAK | B HOME");}
 
-static void about(void){
-    page("ABOUT AETHERMOD");
-    iprintf("AETHERMOD 8.5 PASS 6/6 / CORE BUILD\n");
-    iprintf("ALL-ENCOMPASSING COCKPIT\n\n");
-    iprintf("Local-first. Modular. Gateway-ready.\n");
-    iprintf("Quantum-inspired computation.\n");
-    iprintf("RF tools require compatible external hardware.\n");
-    iprintf("No stock DSi hardware is misrepresented.\n");
-    iprintf("BUILD SELF-CHECK: PASS\nSELECTION MODEL: SINGLE SOURCE\n");    iprintf("RECOVERY: SAVE VALIDATION + RAM FALLBACK\n");
-    footer("B HOME");
-}
+/* 15 — Data Vault */
+static void scanVault(void){vaultCount=0;DIR *d=opendir("fat:/data/AetherMod");if(!d&&isDSiMode())d=opendir("sd:/data/AetherMod");if(!d)return;struct dirent *e;
+ while((e=readdir(d))&&vaultCount<12){if(e->d_name[0]=='.')continue;strncpy(vaultNames[vaultCount++],e->d_name,47);}closedir(d);}
+static void modVault(void){page("15 DATA VAULT");if(vaultCount==0)scanVault();iprintf("SD DATA/AetherMod  ITEMS:%d\n",vaultCount);
+ for(int i=0;i<vaultCount&&i<8;i++)iprintf("%c %02d %s\n",i==vaultCursor?'>':' ',i+1,vaultNames[i]);footer("UP/DOWN SELECT | A/X RESCAN | B HOME");}
 
+/* 16 — File Browser */
+static void scanFiles(void){fileCount=0;DIR *d=opendir("fat:/");if(!d&&isDSiMode())d=opendir("sd:/");if(!d)return;struct dirent *e;
+ while((e=readdir(d))&&fileCount<16){if(e->d_name[0]=='.')continue;strncpy(fileNames[fileCount++],e->d_name,47);}closedir(d);}
+static void modFiles(void){page("16 FILE BROWSER");if(fileCount==0)scanFiles();iprintf("ROOT:%s ITEMS:%d\n",root,fileCount);
+ for(int i=0;i<fileCount&&i<8;i++)iprintf("%c %02d %s\n",i==fileCursor?'>':' ',i+1,fileNames[i]);iprintf("READ-ONLY NAVIGATION; no destructive delete action.\n");footer("UP/DOWN SELECT | A REFRESH | X VAULT | B HOME");}
+
+/* 17 — Haptic */
+static void modHaptic(void){page("17 HAPTIC LAB");iprintf("LEVEL:%d/3 PULSES:%d\n",hapticLevel,actionCount);iprintf("ACTIONS -> VISUAL:%d SOUND:%s\n",energy,save.sound?"ON":"OFF");
+ iprintf("DSi physical rumble hardware is not claimed; feedback is UI/audio.\n");footer("L/R LEVEL | A TEST | X SOUND | Y VISUAL | B HOME");}
+
+/* 18 — Accessibility */
+static void modAccess(void){page("18 ACCESSIBILITY");iprintf("SCALE:%d CONTRAST:%s SCROLL:%d\n",accessScale,accessContrast?"HIGH":"NORMAL",accessScroll);
+ iprintf("TOUCH TARGETS: LARGE  |  NAVIGATION: D-PAD + TOUCH\n");iprintf("VISUAL FEEDBACK:%s  AUDIO:%s\n",accessContrast?"HIGH":"STANDARD",save.sound?"ON":"OFF");
+ footer("UP/DOWN SCALE | A CONTRAST | X SCROLL | Y SOUND | B HOME");}
+
+/* 19 — Power */
+static void modPower(void){page("19 POWER LAB");int bat=getBatteryLevel();iprintf("BATTERY:%d%% MODE:%s SAVER:%s CYCLES:%d\n",bat,powerMode?"LOW POWER":"NORMAL",powerSaver?"ON":"OFF",powerCycles);
+ iprintf("BACKLIGHT:%u/4  FRAME RATE CONTROL: SOFTWARE\n",save.brightness);iprintf("STOCK DSi POWER RAILS ARE NOT MODIFIED.\n");footer("UP/DOWN MODE | A SAVER | X BRIGHT | Y CYCLE | B HOME");}
+
+/* 20 — Control */
+static void modControl(void){page("20 CONTROL LAB");iprintf("CURSOR:%d EVENTS:%d\n",controlCursor,controlEvents);iprintf("TOUCH X:%d Y:%d DOWN:%d\n",touchX,touchY,touchDown);
+ iprintf("INPUT MATRIX: A B X Y / D-PAD / L R / START SELECT\n");footer("UP/DOWN CURSOR | A EVENT | X CLEAR | L/R MODE | B HOME");}
+
+/* 21 — Diagnostics */
+static void modDiagnostics(void){page("21 DIAGNOSTICS");diagRuns++;diagErrors=0;if(!isDSiMode())diagErrors++;if(!save.magic)diagErrors++;
+ iprintf("RUN:%d ERRORS:%d STATUS:%s\n",diagRuns,diagErrors,diagErrors?"CHECK":"PASS");iprintf("FAT:%s  SAVE:%s  TOUCH:%s\n",storageOk()?"PASS":"FAIL",save.magic?"VALID":"FAIL",touchDown?"LIVE":"READY");
+ iprintf("APP COUNT:%d  BUILD:%d.%d PASS:%d/%d\n",APP_COUNT,AETHERMOD_MAJOR,AETHERMOD_MINOR,AETHERMOD_PASS,AETHERMOD_TOTAL_PASSES);
+ footer("A RUN AGAIN | X RESET COUNTERS | B HOME");}
+
+/* 22 — Aether Bot */
+static void modBot(void){page("22 AETHER BOT");const char *jobs[]={"HOME","DIAGNOSTICS","FILES","VAULT","POWER","CONTROL","SETTINGS","SAFETY"};
+ iprintf("JOB:%s RUNS:%d\n",jobs[botCursor%8],botRuns);iprintf("LOCAL ORCHESTRATION / NO AUTONOMOUS EXTERNAL ACTIONS\n");
+ footer("UP/DOWN JOB | A EXECUTE | X RESET | Y HOME | B HOME");}
+
+/* 23 — General Settings */
+static void modSettings(void){page("23 GENERAL SETTINGS");const char *s[]={"AI","ONLINE AI","PRIVACY","BROWSER","DOWNLOADS","WIFI","SOUND","THEME"};
+ iprintf("SELECT:%s = %s\n",s[settingsCursor],(settingsCursor==0?save.ai:settingsCursor==1?save.onlineAI:settingsCursor==2?save.privacy:settingsCursor==3?save.browser:settingsCursor==4?save.downloads:settingsCursor==5?save.wireless:settingsCursor==6?save.sound:save.theme)?"ON":"OFF");
+ iprintf("BRIGHTNESS:%u  BPM:%u  LANGUAGE:%u\n",save.brightness,save.bpm,save.language);footer("UP/DOWN SELECT | A TOGGLE | X SAFE MODE | Y BRIGHT | B HOME");}
+
+/* 24 — Event Log */
+static void modEvents(void){page("24 EVENT LOG");eventCount=actionCount<16?actionCount:16;iprintf("EVENTS:%d\n",eventCount);
+ for(int i=0;i<eventCount;i++)iprintf("%c EVENT %02d FRAME %d\n",i==eventCursor?'>':' ',i+1,(frame-i*7));footer("UP/DOWN SELECT | X REFRESH | Y CLEAR | B HOME");}
+
+/* 25 — Notes */
+static void modNotes(void){static const char *n[]={"Build priorities","DSi local-first workspace","Geneva corpus","Module QA","Animal signal lab","Rescue notes","Power notes","Release notes"};page("25 NOTES");
+ iprintf("NOTE %d/8\n%s\n\nA writes selected note to SD.\n",noteCursor+1,n[noteCursor]);footer("UP/DOWN NOTE | A SAVE | X NEXT | B HOME");}
+
+/* 26 — Clock */
+static void modClock(void){page("26 CLOCK / TIME");time_t now=time(NULL);struct tm *t=localtime(&now);if(!t)iprintf("RTC UNAVAILABLE\n");else{
+ int h=t->tm_hour;if(!clock24){int hh=h%12;if(hh==0)hh=12;iprintf("%02d:%02d:%02d %s\n",hh,t->tm_min,t->tm_sec,h>=12?"PM":"AM");}else iprintf("%02d:%02d:%02d\n",h,t->tm_min,t->tm_sec);
+ iprintf("%04d-%02d-%02d\n",t->tm_year+1900,t->tm_mon+1,t->tm_mday);}footer("A 12/24H | B HOME");}
+
+/* 27 — About */
+static void modAbout(void){page("27 ABOUT");iprintf("AETHERMOD 8.6 / PASS 7/7\n");iprintf("29 INDIVIDUAL MODULE IMPLEMENTATIONS\n");iprintf("Geneva 1599 corpus: SD/OFFLINE\n");iprintf("Universal touch: TAP / HOLD / DRAG\n");iprintf("Local-first, bounded, recoverable runtime.\n");footer("B HOME");}
+
+/* 28 — Safety Center */
+static void modSafety(void){page("28 SAFETY CENTER");const char *n[]={"PARENTAL","NSFW FILTER","UNSAFE FILTER","UNREGULATED","USER CONTENT","BROWSER","DOWNLOADS","WIRELESS"};
+ int on=safetyCursor==0?save.parental:safetyCursor==1?save.nsfw:safetyCursor==2?save.unsafe:safetyCursor==3?save.unregulated:safetyCursor==4?save.userContent:safetyCursor==5?save.browser:safetyCursor==6?save.downloads:save.wireless;
+ iprintf("CONTROL:%s  STATE:%s\n",n[safetyCursor],on?"ON":"OFF");iprintf("SAFE MODE MASTER:%s\n",safeMode?"ON":"OFF");footer("UP/DOWN CONTROL | A TOGGLE | X SAFE MODE | Y RESET SAFE | B HOME");}
+
+static void home(void){
+ page("00 AETHER HOME");consoleSelect(&bottomConsole);consoleClear();
+ iprintf("PAGE %d/%d  MODULES %02d-%02d\n\n",homePage+1,HOME_PAGES,homePage*8+1,homePage*8+8);
+ int first=homePage*8;for(int i=0;i<8;i++){int n=first+i;if(n>=APP_COUNT)break;iprintf("%c%02d %-18s %c\n",n==selected?'>':' ',n+1,apps[n],((frame+i*7)%16<5)?'*':'.');}
+ iprintf("\nSELECT:%02d  %s\n",selected+1,apps[selected]);iprintf("A OPEN | L/R PAGE | UP/DOWN MODULE\n");
+ iprintf("TOUCH ROWS OPEN | LOWER SCREEN = NEXT PAGE\n");footer("START+SELECT: normal controls | START hold is not destructive");
+}
 static void draw(void){
-    sampleHardware();
-    setAetherPalette();
-    applyAnimatedColors();
-    if(mode==99){resetPage();return;}
-    switch(mode){
-      case 0: home(); break; case 1: quantum(); break; case 2: codex(); break; case 3: animal(); break;
-      case 4: rfLab("MARAUDER / RF"); break; case 5: tinysa(); break; case 6: calculator(); break;
-      case 7: daw(); break; case 8: dsp(); break; case 9: telemetry(); break; case 10: aiHome(); break;
-      case 11: network(); break; case 12: aiHome(); break; case 17: fileBrowserPage(); break; case 24: generalSettings(); break; case 25: eventLogPage(); break; case 26: vaultPage(); break; case 27: notesPage(); break; case 28: clockPage(); break; case 29: diagPage(); break; default: expansion(); break;
-    }
+ switch(mode){
+ case 0:home();break;case 1:modQuantum();break;case 2:modCodex();break;case 3:modAnimal();break;
+ case 4:modRF();break;case 5:modTinySA();break;case 6:modCalc();break;case 7:modDAW();break;
+ case 8:modDSP();break;case 9:modTelemetry();break;case 10:modAI();break;case 11:modNetwork();break;
+ case 12:modPhone();break;case 13:modMedia();break;case 14:modSensor();break;case 15:modVault();break;
+ case 16:modFiles();break;case 17:modHaptic();break;case 18:modAccess();break;case 19:modPower();break;
+ case 20:modControl();break;case 21:modDiagnostics();break;case 22:modBot();break;case 23:modSettings();break;
+ case 24:modEvents();break;case 25:modNotes();break;case 26:modClock();break;case 27:modAbout();break;
+ case 28:modSafety();break;default:mode=0;break;
+ }
 }
-
-static void tone(void){
-    if(!save.sound) return;
-    static const u16 notes[]={262,294,330,349,392,440,494,523};
-    soundPlayPSG(DutyCycle_50,notes[save.dawStep%NOTE_COUNT],90,64);
+static void moduleInput(u32 d){
+ int changed=0;
+ if(d&KEY_B){back();return;}
+ switch(mode){
+ case 1:if(d&KEY_UP){qState=(qState+3)%4;changed=1;}if(d&KEY_DOWN){qState=(qState+1)%4;changed=1;}if(d&KEY_A){qShots++;qState=(qState+1)%4;changed=1;}if(d&KEY_X){qState=(qState+1)%4;changed=1;}if(d&KEY_Y){qState=0;changed=1;}break;
+ case 2:if(d&KEY_UP){if(codexPage)codexPage--;changed=1;}if(d&KEY_DOWN){codexPage++;if(codexPage>4095)codexPage=4095;changed=1;}if(d&KEY_LEFT){codexBook=(codexBook+65)%66;codexPage=0;changed=1;}if(d&KEY_RIGHT){codexBook=(codexBook+1)%66;codexPage=0;changed=1;}if(d&KEY_A){codexSearch=!codexSearch;changed=1;}if(d&KEY_X){codexSearch=!codexSearch;changed=1;}if(d&KEY_Y){codexBook=0;codexPage=0;changed=1;}break;
+ case 3:if(d&KEY_UP){animal=(animal+14)%15;changed=1;}if(d&KEY_DOWN){animal=(animal+1)%15;changed=1;}if(d&KEY_LEFT){animalFeature=(animalFeature+4)%5;changed=1;}if(d&KEY_RIGHT){animalFeature=(animalFeature+1)%5;changed=1;}if(d&KEY_A||d&KEY_X){animalLive=1;animalEvents++;changed=1;}if(d&KEY_Y){animalLive=0;changed=1;}break;
+ case 4:if(d&KEY_UP){rfView=(rfView+3)%4;changed=1;}if(d&KEY_DOWN){rfView=(rfView+1)%4;changed=1;}if(d&KEY_LEFT){rfBand=(rfBand+2)%3;rfChannel=(rfChannel+10)%11+1;changed=1;}if(d&KEY_RIGHT){rfBand=(rfBand+1)%3;rfChannel=rfChannel%11+1;changed=1;}if(d&KEY_A){rfEvents++;changed=1;}if(d&KEY_X){rfHold=!rfHold;changed=1;}if(d&KEY_Y){rfEvents=0;changed=1;}break;
+ case 5:if(d&KEY_UP){saSpan+=5;if(saSpan>200)saSpan=5;changed=1;}if(d&KEY_DOWN){saSpan-=5;if(saSpan<5)saSpan=200;changed=1;}if(d&KEY_LEFT){saStart-=10;if(saStart<0)saStart=0;changed=1;}if(d&KEY_RIGHT){saStart+=10;if(saStart>800)saStart=800;changed=1;}if(d&KEY_A){saRunning=!saRunning;changed=1;}if(d&KEY_X){subCursor=(subCursor+1)%4;changed=1;}if(d&KEY_Y){saRbw=saRbw==10?30:saRbw==30?100:10;changed=1;}break;
+ case 6:if(d&KEY_UP){calcOp=(calcOp+9)%10;changed=1;}if(d&KEY_DOWN){calcOp=(calcOp+1)%10;changed=1;}if(d&KEY_A){calcA=(int)calc();changed=1;}if(d&KEY_X){int z=calcA;calcA=calcB;calcB=z;changed=1;}if(d&KEY_Y){calcMemory=calcA;changed=1;}if(d&KEY_LEFT){calcA--;changed=1;}if(d&KEY_RIGHT){calcA++;changed=1;}break;
+ case 7:if(d&KEY_UP){dawStep=(dawStep+15)%16;changed=1;}if(d&KEY_DOWN){dawStep=(dawStep+1)%16;changed=1;}if(d&KEY_LEFT){dawTrack=(dawTrack+3)%4;changed=1;}if(d&KEY_RIGHT){dawTrack=(dawTrack+1)%4;changed=1;}if(d&KEY_A){dawPattern[dawTrack][dawStep]^=1;changed=1;}if(d&KEY_X){dawPlaying=!dawPlaying;changed=1;}if(d&KEY_Y){save.bpm+=5;if(save.bpm>240)save.bpm=60;changed=1;}break;
+ case 8:if(d&KEY_UP&&dspGain<8){dspGain++;changed=1;}if(d&KEY_DOWN&&dspGain>1){dspGain--;changed=1;}if(d&KEY_LEFT){dspInput=0;changed=1;}if(d&KEY_RIGHT){dspInput=1;changed=1;}if(d&KEY_A){dspFrames++;changed=1;}if(d&KEY_X){dspWindow=!dspWindow;changed=1;}if(d&KEY_Y){dspHold=!dspHold;changed=1;}break;
+ case 9:if(d&KEY_A){telemetryPage=(telemetryPage+1)%3;changed=1;}break;
+ case 10:if(d&KEY_UP){aiMode=(aiMode+5)%6;changed=1;}if(d&KEY_DOWN){aiMode=(aiMode+1)%6;changed=1;}if(d&KEY_A){aiQuery++;changed=1;}if(d&KEY_X){save.onlineAI=!save.onlineAI;changed=1;}if(d&KEY_Y){save.privacy=!save.privacy;changed=1;}break;
+ case 11:if(d&KEY_A){save.wireless=!save.wireless;networkPackets++;changed=1;}if(d&KEY_X){networkTest=1;changed=1;}if(d&KEY_Y){save.browser=!save.browser;changed=1;}if(d&KEY_LEFT||d&KEY_RIGHT){subCursor=(subCursor+1)%8;changed=1;}break;
+ case 12:if(d&KEY_A){phoneConnected=!phoneConnected;changed=1;}if(d&KEY_X){phoneSync=!phoneSync;phonePackets++;changed=1;}if(d&KEY_Y){phonePackets=0;changed=1;}if(d&KEY_UP||d&KEY_DOWN){subCursor=(subCursor+1)%4;changed=1;}break;
+ case 13:if(d&KEY_UP){mediaTrack=(mediaTrack+7)%8;changed=1;}if(d&KEY_DOWN){mediaTrack=(mediaTrack+1)%8;changed=1;}if(d&KEY_LEFT&&mediaVolume>0){mediaVolume-=5;changed=1;}if(d&KEY_RIGHT&&mediaVolume<100){mediaVolume+=5;changed=1;}if(d&KEY_A){mediaPlaying=!mediaPlaying;changed=1;}if(d&KEY_X){mediaMode=!mediaMode;changed=1;}if(d&KEY_Y){mediaTrack=(mediaTrack+1)%8;changed=1;}break;
+ case 14:if(d&KEY_UP||d&KEY_DOWN){sensorMode=!sensorMode;changed=1;}if(d&KEY_A){sensorSamples++;changed=1;}if(d&KEY_X){sensorSamples=0;changed=1;}if(d&KEY_Y){sensorPeak=0;changed=1;}break;
+ case 15:if(d&KEY_UP&&vaultCount){vaultCursor=(vaultCursor+vaultCount-1)%vaultCount;changed=1;}if(d&KEY_DOWN&&vaultCount){vaultCursor=(vaultCursor+1)%vaultCount;changed=1;}if(d&KEY_A||d&KEY_X){scanVault();changed=1;}break;
+ case 16:if(d&KEY_UP&&fileCount){fileCursor=(fileCursor+fileCount-1)%fileCount;changed=1;}if(d&KEY_DOWN&&fileCount){fileCursor=(fileCursor+1)%fileCount;changed=1;}if(d&KEY_A){scanFiles();changed=1;}if(d&KEY_X){scanVault();changed=1;}break;
+ case 17:if(d&KEY_LEFT&&hapticLevel>0){hapticLevel--;changed=1;}if(d&KEY_RIGHT&&hapticLevel<3){hapticLevel++;changed=1;}if(d&KEY_A){feedback();changed=1;}if(d&KEY_X){save.sound=!save.sound;changed=1;}if(d&KEY_Y){energy=(energy+25)%101;changed=1;}break;
+ case 18:if(d&KEY_UP&&accessScale<3){accessScale++;changed=1;}if(d&KEY_DOWN&&accessScale>1){accessScale--;changed=1;}if(d&KEY_A){accessContrast=!accessContrast;changed=1;}if(d&KEY_X){accessScroll=(accessScroll%3)+1;changed=1;}if(d&KEY_Y){save.sound=!save.sound;changed=1;}break;
+ case 19:if(d&KEY_UP||d&KEY_DOWN){powerMode=!powerMode;changed=1;}if(d&KEY_A){powerSaver=!powerSaver;changed=1;}if(d&KEY_X){save.brightness=(save.brightness+1)%5;changed=1;}if(d&KEY_Y){powerCycles++;changed=1;}break;
+ case 20:if(d&KEY_UP){controlCursor=(controlCursor+7)%8;changed=1;}if(d&KEY_DOWN){controlCursor=(controlCursor+1)%8;changed=1;}if(d&KEY_A){controlEvents++;changed=1;}if(d&KEY_X){controlEvents=0;changed=1;}if(d&KEY_LEFT||d&KEY_RIGHT){subCursor=(subCursor+1)%4;changed=1;}break;
+ case 21:if(d&KEY_A){diagRuns++;changed=1;}if(d&KEY_X){diagRuns=0;diagErrors=0;changed=1;}break;
+ case 22:if(d&KEY_UP){botCursor=(botCursor+7)%8;changed=1;}if(d&KEY_DOWN){botCursor=(botCursor+1)%8;changed=1;}if(d&KEY_A){botRuns++;changed=1;}if(d&KEY_X){botRuns=0;changed=1;}if(d&KEY_Y){back();return;}break;
+ case 23:if(d&KEY_UP){settingsCursor=(settingsCursor+7)%8;changed=1;}if(d&KEY_DOWN){settingsCursor=(settingsCursor+1)%8;changed=1;}if(d&KEY_A){switch(settingsCursor){case 0:save.ai=!save.ai;break;case 1:save.onlineAI=!save.onlineAI;break;case 2:save.privacy=!save.privacy;break;case 3:save.browser=!save.browser;break;case 4:save.downloads=!save.downloads;break;case 5:save.wireless=!save.wireless;break;case 6:save.sound=!save.sound;break;default:save.theme=!save.theme;break;}changed=1;}if(d&KEY_X){safeMode=!safeMode;changed=1;}if(d&KEY_Y){save.brightness=(save.brightness+1)%5;changed=1;}break;
+ case 24:if(d&KEY_UP&&eventCount){eventCursor=(eventCursor+eventCount-1)%eventCount;changed=1;}if(d&KEY_DOWN&&eventCount){eventCursor=(eventCursor+1)%eventCount;changed=1;}if(d&KEY_X){eventCount=actionCount<16?actionCount:16;changed=1;}if(d&KEY_Y){eventCount=0;changed=1;}break;
+ case 25:if(d&KEY_UP){noteCursor=(noteCursor+7)%8;changed=1;}if(d&KEY_DOWN){noteCursor=(noteCursor+1)%8;changed=1;}if(d&KEY_A){ensureDirs();FILE *f=fopen("fat:/data/AetherMod/notes.txt","ab");if(f){fprintf(f,"note:%d frame:%d\\n",noteCursor,frame);fclose(f);}changed=1;}if(d&KEY_X){noteCursor=(noteCursor+1)%8;changed=1;}break;
+ case 26:if(d&KEY_A){clock24=!clock24;changed=1;}break;
+ case 27:break;
+ case 28:if(d&KEY_UP){safetyCursor=(safetyCursor+7)%8;changed=1;}if(d&KEY_DOWN){safetyCursor=(safetyCursor+1)%8;changed=1;}if(d&KEY_A){u8 *v=safetyCursor==0?&save.parental:safetyCursor==1?&save.nsfw:safetyCursor==2?&save.unsafe:safetyCursor==3?&save.unregulated:safetyCursor==4?&save.userContent:safetyCursor==5?&save.browser:safetyCursor==6?&save.downloads:&save.wireless;*v=!*v;changed=1;}if(d&KEY_X){safeMode=!safeMode;changed=1;}if(d&KEY_Y){save.parental=save.nsfw=save.unsafe=save.unregulated=1;changed=1;}break;
+ }
+ if(changed){feedback();markDirty();draw();}
 }
-
 static void input(void){
-    u32 d=keysDown();
-    u32 repeat=keysDownRepeat();
-    u32 nav=d|repeat;
-    touchPosition tp;
-    bool touched=(d&KEY_TOUCH)!=0;
-    bool touchHeld=(keysHeld()&KEY_TOUCH)!=0;
-    /* scanKeys() has already latched the touchscreen for this frame. */
-    if(touched || touchHeld){
-        touchRead(&tp);
-        touchX=tp.px; touchY=tp.py; touchPressed=1; touchFocus=1;
-        if(touched){
-            touchLastX=tp.px; touchLastY=tp.py;
-            touchDragX=0; touchDragY=0; touchGesture=0;
-            touchEvents++;
-        } else {
-            int dx=(int)tp.px-touchLastX;
-            int dy=(int)tp.py-touchLastY;
-            /* Universal drag engine: every module gets continuous 8px gestures. */
-            if(dx>=8){ d|=KEY_RIGHT; touchLastX=tp.px; touchDragX++; touchGesture=1; }
-            else if(dx<=-8){ d|=KEY_LEFT; touchLastX=tp.px; touchDragX--; touchGesture=1; }
-            if(dy>=8){ d|=KEY_DOWN; touchLastY=tp.py; touchDragY++; touchGesture=1; }
-            else if(dy<=-8){ d|=KEY_UP; touchLastY=tp.py; touchDragY--; touchGesture=1; }
-        }
-        /* Tap zones are shared by every module. Dragging never creates an action tap. */
-        if(touched && !touchGesture){
-            if(mode==0){
-                if(tp.py>=48 && tp.py<144){
-                    int row=((int)tp.py-48)/12;
-                    int target=homePage*8+row;
-                    if(row>=0 && row<8 && target<APP_COUNT){ setSelection(target); launchSelection(); }
-                } else if(tp.py>=144){ setHomePage(homePage+1); pageTransitionFeedback(); }
-            } else {
-                if(tp.py<32 && tp.px<128) d|=KEY_B;
-                else if(tp.py<32 && tp.px>=128) d|=KEY_Y;
-                else if(tp.py>=160 && tp.px<128) d|=KEY_X;
-                else if(tp.py>=160 && tp.px>=128) d|=KEY_A;
-                else if(tp.py>=96 && tp.px<64) d|=KEY_UP;
-                else if(tp.py>=96 && tp.px>192) d|=KEY_DOWN;
-                else if(tp.py>=96 && tp.px<128) d|=KEY_LEFT;
-                else if(tp.py>=96 && tp.px>128) d|=KEY_RIGHT;
-                else if(tp.py>=32 && tp.py<64 && tp.px<128) d|=KEY_X;
-                else if(tp.py>=32 && tp.py<64 && tp.px>=128) d|=KEY_Y;
-                else d|=KEY_A;
-            }
-        }
-        nav=d|repeat;
-    } else {
-        touchPressed=0; touchGesture=0; touchDragX=0; touchDragY=0;
-    }
-    if(!touchHeld) codexTouchDragging=0;
-    serviceInput(d);
-
-    validateRuntimeState();
-    int changed=0;
-
-    if(d&KEY_START){ resetHoldFrames++; } else resetHoldFrames=0;
-    if(mode!=99 && resetHoldFrames>=180){ resetHoldFrames=0; resetCursor=0; mode=99; changed=1; }
-    if(mode==99){
-        if(d&KEY_UP){resetCursor=0;changed=1;}
-        if(d&KEY_DOWN){resetCursor=1;changed=1;}
-        if(d&KEY_A){if(resetCursor==0){resetToBase();changed=1;}else{mode=0;resetConfirm=0;changed=1;}}
-        if(d&KEY_B){mode=0;resetConfirm=0;changed=1;}
-        if(changed) draw();
-        return;
-    }
-
-    if(d&KEY_SELECT){
-        safeMode=!safeMode;
-        if(safeMode){save.onlineAI=0;save.wireless=0;save.downloads=0;gatewayState=0;mode=0;}
-        saveState(); changed=1;
-    }
-
-    /* Home: direct selection plus page navigation. */
-    if(mode==0){
-        if(!touched){
-            if(nav&KEY_UP){setSelection(selectionPin-1);homePulse=1;navigationFeedback(-1);changed=1;}
-            if(nav&KEY_DOWN){setSelection(selectionPin+1);homePulse=1;navigationFeedback(1);changed=1;}
-            if(nav&KEY_LEFT){setHomePage(homePage-1);pageTransitionFeedback();changed=1;}
-            if(nav&KEY_RIGHT){setHomePage(homePage+1);pageTransitionFeedback();changed=1;}
-            if(d&KEY_A){launchSelection();feedback(1);changed=1;}
-            if(d&KEY_X){setSelection(1);mode=1;save.launches++;feedback(2);changed=1;}
-            if(d&KEY_Y){setSelection(9);mode=10;save.launches++;feedback(2);changed=1;}
-        } else changed=1;
-    } else if(mode==1){
-        if(d&KEY_B){returnHome();changed=1;} if(d&KEY_A){quantumState=(quantumState+1)%4;quantumMeasure^=1;quantumShots++;changed=1;} if(d&KEY_X){quantumState=(quantumState+1)%4;changed=1;} if(d&KEY_Y){quantumState=0;changed=1;}
-    } else if(mode==2){
-        if(d&KEY_B){mode=0;changed=1;}
-        if(d&KEY_UP){if(codexPage>0)codexPage--;else if(codexBook>0){codexBook--;codexPage=0;}changed=1;}
-        if(d&KEY_DOWN){codexPage++;changed=1;}
-        if(codexPage>4095) codexPage=4095;
-        if(d&KEY_LEFT){codexBook=(codexBook+65)%66;codexPage=0;changed=1;}
-        if(d&KEY_RIGHT){codexBook=(codexBook+1)%66;codexPage=0;changed=1;}
-        if(d&KEY_A){codexSearch^=1;changed=1;}
-        if(d&KEY_X){codexLine=(codexLine+1)%32;codexSearch^=1;changed=1;}
-        if(d&KEY_Y){codexBook=0;codexPage=0;changed=1;}
-    } else if(mode==3){
-        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP){animalPage=(animalPage+14)%15;animalAnalyzing=0;changed=1;} if(d&KEY_DOWN){animalPage=(animalPage+1)%15;animalAnalyzing=0;changed=1;} if(d&KEY_LEFT){animalFeature=(animalFeature+4)%5;changed=1;} if(d&KEY_RIGHT){animalFeature=(animalFeature+1)%5;changed=1;} if(d&KEY_A){animalAnalyzing=1;changed=1;} if(d&KEY_X){animalAnalyzing=1;changed=1;} if(d&KEY_Y){animalAnalyzing=0;changed=1;}
-    } else if(mode==4){
-        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP){rfMode=(rfMode+3)%4;changed=1;} if(d&KEY_DOWN){rfMode=(rfMode+1)%4;changed=1;} if(d&KEY_LEFT){rfBand=(rfBand+2)%3;rfChannel=(rfChannel+10)%11+1;changed=1;} if(d&KEY_RIGHT){rfBand=(rfBand+1)%3;rfChannel=(rfChannel%11)+1;changed=1;} if(d&KEY_A){save.wireless=1;gatewayState=1;rfPacketView=0;changed=1;} if(d&KEY_X){rfPacketView^=1;changed=1;} if(d&KEY_Y){rfPeakHold^=1;changed=1;}
-    } else if(mode==5){
-        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP){saSpan+=5;if(saSpan>200)saSpan=5;changed=1;} if(d&KEY_DOWN){saSpan-=5;if(saSpan<5)saSpan=200;changed=1;} if(d&KEY_LEFT){saStart-=5;if(saStart<0)saStart=0;saInputSource=0;changed=1;} if(d&KEY_RIGHT){saStart+=5;if(saStart>800)saStart=800;saInputSource=1;changed=1;} if(d&KEY_A){saRunning=!saRunning;save.wireless=1;gatewayState=saRunning;changed=1;} if(d&KEY_X){saMarker+=5;if(saMarker>saSpan)saMarker=0;changed=1;} if(d&KEY_Y){if(saRBW==10){saRBW=30;saAtten=10;}else if(saRBW==30){saRBW=100;saAtten=20;}else{saRBW=10;saAtten=0;}changed=1;}
-    } else if(mode==6){
-        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP){calcOp=(calcOp+11)%12;changed=1;} if(d&KEY_DOWN){calcOp=(calcOp+1)%12;changed=1;} if(d&KEY_LEFT){calcInput^=1;changed=1;} if(d&KEY_RIGHT){calcSign=-calcSign;changed=1;} if(d&KEY_A){calcA=(int)calcResult();calcInput=0;changed=1;} if(d&KEY_X){int t=calcA;calcA=calcB;calcB=t;changed=1;} if(d&KEY_Y){calcOp=(calcOp+1)%12;changed=1;}
-    } else if(mode==7){
-        if(d&KEY_B){dawPlaying=0;mode=0;changed=1;} if(d&KEY_UP){save.dawStep=(save.dawStep+15)%16;changed=1;} if(d&KEY_DOWN){save.dawStep=(save.dawStep+1)%16;changed=1;} if(d&KEY_A){dawPattern[dawTrack][save.dawStep]^=1;changed=1;} if(d&KEY_X){dawPlaying=!dawPlaying;changed=1;} if(d&KEY_LEFT){dawTrack=(dawTrack+3)%4;changed=1;} if(d&KEY_RIGHT){dawTrack=(dawTrack+1)%4;changed=1;} if(d&KEY_Y){save.dawBpm+=5;if(save.dawBpm>240)save.dawBpm=60;changed=1;} if(dawPlaying&&(frameCounter%15)==0){dawStepAdvance();changed=1;}
-    } else if(mode==8){
-        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_A){frameCounter+=31;changed=1;} if(d&KEY_X){fftWindow^=1;changed=1;} if(d&KEY_Y){fftPeakHold^=1;dspScale=(dspScale%3)+1;changed=1;} if(d&KEY_LEFT){dspInputMode=0;changed=1;} if(d&KEY_RIGHT){dspInputMode=1;changed=1;} if(d&KEY_UP){if(dspGain<8)dspGain++;changed=1;} if(d&KEY_DOWN){if(dspGain>1)dspGain--;changed=1;}
-    } else if(mode==9){
-        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_A){telemetryPage^=1;changed=1;}
-    } else if(mode==10){
-        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP){aiCursor=(aiCursor+5)%6;changed=1;} if(d&KEY_DOWN){aiCursor=(aiCursor+1)%6;changed=1;} if(d&KEY_A){aiQuery++;changed=1;} if(d&KEY_X){save.onlineAI^=1;changed=1;} if(d&KEY_Y){save.privacy^=1;changed=1;}
-    } else if(mode==11){
-        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_A){save.wireless^=1;gatewayState=save.wireless;networkPackets++;changed=1;} if(d&KEY_X){networkSelfTest=1;changed=1;} if(d&KEY_Y){networkSelfTest=0;changed=1;}
-    } else if(mode==12){
-        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP){aiCursor=(aiCursor+5)%6;changed=1;} if(d&KEY_DOWN){aiCursor=(aiCursor+1)%6;changed=1;} if(d&KEY_A){aiQuery++;botLink=phoneLinkState?1:botLink;changed=1;} if(d&KEY_X){save.onlineAI^=1;changed=1;} if(d&KEY_Y){save.privacy^=1;changed=1;}
-    } else if(mode==13){
-        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_A){hotspotState=!hotspotState;phoneLinkState=hotspotState;phoneSession=hotspotState?1:0;phonePackets++;changed=1;} if(d&KEY_X){hotspotBand^=1;changed=1;} if(d&KEY_Y){hotspotPing=hotspotState?38+(int)(frameCounter%20):0;phoneTelemetry=1;changed=1;} if(d&KEY_L){phoneType=0;changed=1;} if(d&KEY_R){phoneType=1;changed=1;} if(d&KEY_SELECT){phoneCompanion^=1;changed=1;}
-    } else if(mode==14 || mode==15 || mode==16 || mode==17 || mode==23){
-        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP){expansionCursor=(expansionCursor+11)%12;changed=1;} if(d&KEY_DOWN){expansionCursor=(expansionCursor+1)%12;changed=1;} if(d&KEY_LEFT&&hapticLevel>0){hapticLevel--;changed=1;} if(d&KEY_RIGHT&&hapticLevel<3){hapticLevel++;changed=1;}
-        if(d&KEY_A){crossLink=1;busEvents++;if(mode==14)dspLink=1;if(mode==15)animalLink=1;if(mode==16)codexSync=1;if(mode==17)phoneFileSync=1;if(mode==23){botLink=1;phoneRemote^=1;}changed=1;}
-        if(d&KEY_X){visualTheme=(visualTheme+1)%4;changed=1;} if(d&KEY_Y){liveRefresh=!liveRefresh;changed=1;} if(d&KEY_SELECT){crossLink^=1;changed=1;}
-    } else if(mode==18){
-        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_LEFT&&hapticLevel>0){hapticLevel--;changed=1;} if(d&KEY_RIGHT&&hapticLevel<3){hapticLevel++;changed=1;} if(d&KEY_A){feedback(3);changed=1;}
-    } else if(mode==19){
-        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP){settingsSection=(settingsSection+2)%3;changed=1;} if(d&KEY_DOWN){settingsSection=(settingsSection+1)%3;changed=1;} if(d&KEY_A){if(settingsSection==0)accessScale=(accessScale%3)+1;else if(settingsSection==1)accessContrast^=1;else accessScroll=(accessScroll%3)+1;changed=1;} if(d&KEY_X){accessContrast^=1;changed=1;}
-    } else if(mode==20){
-        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_A){safeMode=!safeMode;if(safeMode){save.wireless=0;save.onlineAI=0;}saveState();changed=1;}
-    } else if(mode==21){
-        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_A){controlCount++;changed=1;} if(d&KEY_X){inputEvents=0;touchEvents=0;controlCount=0;changed=1;}
-    } else if(mode==22){
-        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP){botCursor=(botCursor+7)%8;changed=1;} if(d&KEY_DOWN){botCursor=(botCursor+1)%8;changed=1;} if(d&KEY_A){botExecute();changed=1;}
-    } else if(mode==24){
-        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP){settingsSection=(settingsSection+7)%8;changed=1;} if(d&KEY_DOWN){settingsSection=(settingsSection+1)%8;changed=1;}
-        if(d&KEY_A){switch(settingsSection){case 0:save.ai^=1;break;case 1:save.onlineAI^=1;break;case 2:save.privacy^=1;break;case 3:save.browser^=1;break;case 4:save.downloads^=1;break;case 5:save.wireless^=1;break;case 6:save.sound^=1;break;default:safeMode=!safeMode;break;}saveState();changed=1;}
-        if(d&KEY_X){visualTheme=(visualTheme+1)%4;changed=1;} if(d&KEY_Y){hapticLevel=(hapticLevel+1)%4;changed=1;}
-    } else if(mode==25){
-        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP){eventCursor--;if(eventCursor<0)eventCursor=0;changed=1;} if(d&KEY_DOWN){eventCursor++;if(eventCursor>=eventCount)eventCursor=eventCount?eventCount-1:0;changed=1;} if(d&KEY_X){eventDirty=1;changed=1;}
-    } else if(mode==26){
-        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP&&vaultCount){vaultCursor=(vaultCursor+vaultCount-1)%vaultCount;changed=1;} if(d&KEY_DOWN&&vaultCount){vaultCursor=(vaultCursor+1)%vaultCount;changed=1;} if(d&KEY_X||d&KEY_A){vaultDirty=1;vaultScan();changed=1;}
-    } else if(mode==27){
-        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_UP){noteCursor=(noteCursor+3)%4;changed=1;} if(d&KEY_DOWN){noteCursor=(noteCursor+1)%4;changed=1;} if(d&KEY_A){ensureDirs();char np[128];snprintf(np,sizeof(np),"%sdata/AetherMod/notes.txt",root);FILE *nf=fopen(np,"ab");if(nf){fprintf(nf,"%s\\n",noteText[noteCursor]);fclose(nf);}changed=1;}
-    } else if(mode==28){
-        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_A){clock24=!clock24;changed=1;}
-    } else if(mode==29){
-        if(d&KEY_B){mode=0;changed=1;} if(d&KEY_A){runDiagnostics();changed=1;} if(d&KEY_X){resetNotice=0;changed=1;}
-    } else {
-        if(d&KEY_B){mode=0;changed=1;}
-    }
-
-    if(changed){
-        if(mode==0) saveState();
-        else markDirty();
-        draw();
-    }
+ u32 d=keysDown()|keysDownRepeat();touchDown=0;touchMap(&d);
+ if(mode==0){
+   if(d&KEY_UP){homeSet(selected==0?APP_COUNT-1:selected-1);draw();}
+   if(d&KEY_DOWN){homeSet((selected+1)%APP_COUNT);draw();}
+   if(d&KEY_LEFT){homePage=(homePage+HOME_PAGES-1)%HOME_PAGES;homeSet(homePage*8);draw();}
+   if(d&KEY_RIGHT){homePage=(homePage+1)%HOME_PAGES;homeSet(homePage*8);draw();}
+   if(d&KEY_A){openModule(selected);draw();}
+   return;
+ }
+ moduleInput(d);
 }
-
 int main(void){
-    powerOn(POWER_ALL_2D);
-    videoSetMode(MODE_0_2D); videoSetModeSub(MODE_0_2D); vramDefault();
-    consoleInit(&topConsole,0,BgType_Text4bpp,BgSize_T_256x256,22,3,true,true);
-    consoleInit(&bottomConsole,0,BgType_Text4bpp,BgSize_T_256x256,22,3,false,true);
-    consoleSelect(&topConsole); consoleClear(); iprintf("AETHERMOD\nBOOTING DUAL-OS...\n");
-    soundDisable();
-    swiWaitForVBlank();
-
-    if(!fatInitDefault()){
-        resourceFaults++;
-        safeMode=1; gatewayState=0; defaults();
-        consoleSelect(&bottomConsole); consoleClear();
-        iprintf("AETHERMOD SAFE BOOT\nSD/FAT unavailable.\nRunning RAM-only.\n");
-    } else {
-        if(isDSiMode()) root="sd:/";
-        loadState(); save.sound=0; soundDisable(); save.launches++; saveState();
-    }
-
-    while(1){
-        swiWaitForVBlank();
-        frameCounter++;
-        scanKeys();
-        moduleHeartbeat();
-        animateUI();
-        input();
-        guardModuleState();
-        if((frameCounter&31)==0 && dirtyState && !safeMode) saveState();
-        if((frameCounter&3)==0){ if(mode==0) homePulse=0; drawDecimation=(drawDecimation+1)&3; draw(); }
-    }
-    return 0;
+ powerOn(POWER_ALL_2D);videoSetMode(MODE_0_2D);videoSetModeSub(MODE_0_2D);vramDefault();
+ consoleInit(&topConsole,0,BgType_Text4bpp,BgSize_T_256x256,22,3,true,true);
+ consoleInit(&bottomConsole,0,BgType_Text4bpp,BgSize_T_256x256,22,3,false,true);
+ soundDisable();if(!fatInitDefault()){safeMode=1;defaults();}else{if(isDSiMode())root="sd:/";loadState();save.launches++;saveState();}
+ draw();
+ while(1){swiWaitForVBlank();scanKeys();frame++;visualPhase=(visualPhase+1)&63;energy=(energy+1)%101;
+   if(dawPlaying&&(frame%15)==0){dawStep=(dawStep+1)%16;for(int t=0;t<4;t++)if(dawPattern[t][dawStep]&&save.sound)soundPlayPSG(DutyCycle_50,220+t*90,70,64);}
+   input();saveIfDirty();if((frame&3)==0)draw();
+ }
+ return 0;
 }
