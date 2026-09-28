@@ -4,12 +4,12 @@ ifeq ($(strip $(DEVKITARM)),)
 $(error "Please set DEVKITARM in your environment. export DEVKITARM=<path to>devkitARM")
 endif
 
-GAME_TITLE := AetherMod8.6
-GAME_SUBTITLE1 := DSi AetherOS 8.6
+GAME_TITLE := AetherOS8.8
+GAME_SUBTITLE1 := DSi AetherOS 8.8
 GAME_SUBTITLE2 := Quantum Systems
 include $(DEVKITARM)/ds_rules
 
-TARGET := AetherMod8.5
+TARGET := AetherOS8.8
 BUILD := build
 SOURCES := source
 INCLUDES := include
@@ -21,15 +21,15 @@ CXXFLAGS := $(CFLAGS) -fno-rtti -fno-exceptions
 ASFLAGS := -g $(ARCH)
 LDFLAGS = -specs=ds_arm9.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
 
-LIBS := -lfat -lnds9
+LIBS := -lfat -ldswifi9 -lnds9
 LIBDIRS := $(LIBNDS)
 
 ifneq ($(BUILD),$(notdir $(CURDIR)))
 export OUTPUT := $(CURDIR)/$(TARGET)
-export VPATH := $(foreach dir,$(SOURCES),$(CURDIR)/$(dir))
+export VPATH := $(shell find $(SOURCES) -type d -print | sed "s|^|$(CURDIR)/|")
 export DEPSDIR := $(CURDIR)/$(BUILD)
-CFILES := $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
-CPPFILES := $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
+CFILES := $(shell find $(SOURCES) -type f -name '*.c' -printf '%f\n')
+CPPFILES := $(shell find $(SOURCES) -type f -name '*.cpp' -printf '%f\n')
 ifeq ($(strip $(CPPFILES)),)
 export LD := $(CC)
 else
