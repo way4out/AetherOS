@@ -113,7 +113,7 @@ static void bottomDesktop(const SystemState&s){
     // a real touchscreen target instead of drawing targets only on the top LCD.
     for(int n=0;n<MOD_COUNT;n++){
         bool active=(n==s.selectedModule); const int col=n&3,row=n>>2;
-        const int x=10+col*61,y=8+row*30;
+        const int x=10+col*61,y=38+row*30;
         u16 fill=active?ARGB16(1,0,18,30):ARGB16(1,2,8,16);
         rect(bottomPixels,x,y,x+55,y+24,fill);
         iprintf("\x1b[%d;%dH%s%s %s%s",1+y/8,1+x/8,active?"\x1b[33m>":"\x1b[36m",glyphs[n],names[n],active?" *":"\x1b[37m");
