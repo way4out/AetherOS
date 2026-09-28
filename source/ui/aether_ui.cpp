@@ -181,6 +181,8 @@ static void actionPanel(int m){
     case MOD_MARAUDER: iprintf("A Sample + analyze\nX Analyze\nY Consent/acknowledge\nL Passive RF\nR Lab Simulation\nSELECT Reset"); break;
     case MOD_STUDIO: iprintf("A Play/trigger\nX Performance hit\nY Stop\nL/R View/step\nSELECT Reset"); break;
     case MOD_SYSTEM: iprintf("A Mission refresh\nX Cycle OS profile\nY Recovery heartbeat\nSELECT Safe mode"); break;
+    case MOD_CODEX: iprintf("A NEXT PAGE\nX SEARCH\nY RESET\nL/R BOOK\n"); break;
+    case MOD_HARMONIC: iprintf("A TICK\nX NEXT PRIME\nY VOID\nL/R DAMP/AMP\n"); break;
     case MOD_ANIMAL: iprintf("A Analyze animal signal\nX Animal > Human\nY Human > Animal\nL/R Species\nSELECT Reset"); break;
     case MOD_SETTINGS: iprintf("A Apply\nX Save config\nY Reset layout\nL/R Choose\nSELECT Save\nLANG %s",i18n::languageName()); break;
     }
@@ -205,6 +207,7 @@ static void module(const SystemState&s){
     case MOD_RF: iprintf("RF LAB\nRECEIVE-ONLY / AUTHORIZED\nSPECTRUM / WATERFALL\nPEAKS / RSSI / BANDWIDTH\nSDR/TINYSA GATEWAY\nSAMPLES %lu",(unsigned long)s.rfSamples);break;
     case MOD_MARAUDER:{auto sr=securitylab::report();iprintf("AETHER MARAUDER / SECURITY LAB\nMODE %s\nCONSENT %s\nTX LOCKED %s\nCRED CAPTURE LOCKED %s\n\nPASSIVE RF: RSSI / CHANNEL / WATERFALL\nAUTHORIZED NET: OWNED/LAB TRAFFIC METADATA\nLAB SIM: SAFE ATTACK-CONCEPT SIMULATION\nGATEWAY HARDEN: PROTOCOL / AUTH / CRC\n\nSAMPLES %lu DEVICES %lu PACKETS %lu\nALERTS %lu LAB RUNS %lu\n\n%s",securitylab::modeName(sr.mode),sr.consent?"YES":"REQUIRED",sr.txLocked?"YES":"NO",sr.credentialCaptureLocked?"YES":"NO",(unsigned long)sr.samples,(unsigned long)sr.devices,(unsigned long)sr.packets,(unsigned long)sr.alerts,(unsigned long)sr.labRuns,securitylab::warning());break;}
     case MOD_STUDIO:{auto st=studio::state();iprintf("AETHER STUDIO\nDAW / TRACKER / PERFORMANCE\nBPM %u STEP %u/16 NOTE %u\nVOICES %u\nQUANTUM -> MUSIC\nLAB -> AUDIO",st.bpm,st.step,st.note,st.voices);break;}
+    case MOD_CODEX:{ auto r=codex::report(); iprintf("YHWH CODEX / GENEVA 1599\nBOOK %u/66 %s\nPAGE %u\nSOURCE %s\nSEARCH %s\nTEXT CORPUS: SD/NITROFS\nA NEXT PAGE  X SEARCH  Y RESET",r.book+1,codex::bookName(),r.page+1,r.sourceReady?"READY":"GATE",r.search?"ON":"OFF"); break; }
     case MOD_ANIMAL:{
         auto ar=animal::report();
         iprintf("AETHER UNIVERSAL COMMUNICATION");
@@ -219,6 +222,7 @@ static void module(const SystemState&s){
         iprintf(" TRANSLATE > VERIFY > SYNTHESIZE");
         break;
     }
+    case MOD_HARMONIC:{ auto n=harmonic::node(); iprintf("PRIME HARMONIC LAB\nPRIME %lu\nVOID %u DAMP %u AMP %u\nOUTPUT %lu mHz\nA TICK  X NEXT PRIME  Y VOID\nL/R DAMP/AMP", (unsigned long)n.prime,n.voidVector,n.dampener,n.amplifier,(unsigned long)harmonic::outputMilliHz()); break; }
     case MOD_SYSTEM:{auto hr=hil::report();auto dg=diag::report();auto mr=mission::report();iprintf("SYSTEM HEALTH / MISSION CONTROL\nREADY SCORE %u%%\nCORE %s  SD %s  CFG %s\nQ %s  AUD %s  DSP %s  LAB %s\nAI %s  NET %s  SEC %s  REC %s\nGATEWAY %s\nHIL %u%%  DIAG %u  FAULTS %u\nGRAPH %u  ONLINE %u\nTX/CREDS/DESTRUCTIVE LOCKED",mr.score,mission::state(mr.boot),mission::state(mr.sd),mission::state(mr.config),mission::state(mr.quantum),mission::state(mr.audio),mission::state(mr.dsp),mission::state(mr.lab),mission::state(mr.ai),mission::state(mr.network),mission::state(mr.security),mission::state(mr.recovery),mission::state(mr.gateway),hr.score,dg.score,dg.faults,dg.graphTicks,dg.gatewayOnline);break;}
     }
     actionPanel(m);
