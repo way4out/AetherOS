@@ -1,4 +1,5 @@
 name: Build AetherOS 8.8 for Nintendo DSi
+# Touch-glitch verification build
 on:
   workflow_dispatch:
   push:
