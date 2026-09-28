@@ -16,6 +16,8 @@
 #include "../core/capacity_engine.h"
 #include "../i18n/aether_i18n.h"
 #include "../animal/aether_animal.h"
+#include "../codex/aether_yhwh_codex.h"
+#include "../harmonic/aether_prime_harmonic.h"
 #include "../os/aether_os_fabric.h"
 #include <nds.h>
 
