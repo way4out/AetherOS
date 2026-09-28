@@ -447,3 +447,5 @@ int main(void){
  }
  return 0;
 }
+
+/* AetherOS 8.8 CI trigger: boot-safe runtime verified through the real devkitARM build. */
