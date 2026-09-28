@@ -109,16 +109,21 @@ static void topDesktop(const SystemState&s){
 }
 static void bottomDesktop(const SystemState&s){
     clearBottom(); selectBottom(); auto p=settings::current();
-    iprintf("\x1b[36mAETHEROS1.1+ CONTROL DECK\x1b[37m\n");
-    iprintf("TOUCH MODULE  •  A OPEN  •  B HOME\n");
-    iprintf("PROFILE  YOU     THEME  %s\n",settings::themeName(theme::active()));
-    iprintf("LAYOUT  %s     DENSITY  %s\n",settings::layoutName(p.layout),p.density==0?"LOW":p.density==1?"MED":p.density==2?"HIGH":"MAX");
+    // The DSi touchscreen is the bottom screen: make every visible module
+    // a real touchscreen target instead of drawing targets only on the top LCD.
+    for(int n=0;n<MOD_COUNT;n++){
+        bool active=(n==s.selectedModule); const int col=n&3,row=n>>2;
+        const int x=10+col*61,y=8+row*30;
+        u16 fill=active?ARGB16(1,0,18,30):ARGB16(1,2,8,16);
+        rect(bottomPixels,x,y,x+55,y+24,fill);
+        iprintf("\x1b[%d;%dH%s%s %s%s",1+y/8,1+x/8,active?"\x1b[33m>":"\x1b[36m",glyphs[n],names[n],active?" *":"\x1b[37m");
+    }
+    iprintf("\x1b[1;1H\x1b[36mAETHEROS TOUCH DECK\x1b[37m  A OPEN  B HOME\n");
+    iprintf("SWIPE = MODULE   TAP = OPEN/ACTION\n");
+    iprintf("PROFILE YOU  THEME %s  DENSITY %s\n",settings::themeName(theme::active()),p.density==0?"LOW":p.density==1?"MED":p.density==2?"HIGH":"MAX");
     iprintf("%s\n",settings::locationLabel());
-    iprintf("\n\x1b[36mQUICK CONTROL\n");
-    iprintf("A  Open / Enter\nD  Navigate\nTOUCH  Direct\nB  Back\nSTART Safe Mode\n");
-    iprintf("\n%s\n",theme::ground());
+    iprintf("START SAFE MODE  SELECT RESET\n");
     iprintf("SD:%s WS:%s BENCH:%s\n",s.sdReady?"OK":"--",s.sdWriteReady?"OK":"--",s.benchmarkComplete?"OK":"RUN");
-    iprintf("QBIT > DSP > SOUND > PROJECTS");
 }
 static void settingLine(u8 i,const char*label,const char*value,bool selected){
     iprintf("%s%s %-10s %s%s\n",selected?"\x1b[33m>":"\x1b[37m",label,value,selected?" *":"","\x1b[37m");
