@@ -32,7 +32,7 @@
 #include "../heritage/aether_heritage.h"
 #include "../os/aether_os_fabric.h"
 
-namespace { aether::quantum::Simulator q; bool servicesStarted=false; bool touchWasDown=false; int touchStartX=-1,touchStartY=-1; }
+namespace { aether::quantum::Simulator q; bool servicesStarted=false; bool touchWasDown=false; bool touchGestureConsumed=false; int touchStartX=-1,touchStartY=-1; }
 
 namespace aether {
 void init(SystemState&s){
@@ -56,10 +56,14 @@ static void startDeferredServices(SystemState&s){
     s.networkReady=network::status(network::LINK_WIFI).available; s.gatewayConfigured=radio::configured(); s.projectSaved=engine::projectExists();
 }
 static void touchHome(SystemState&s,touchPosition&t){
-    if(t.px<256 && t.py<192){
-        const int col=t.px/64, row=t.py/48;
-        const int m=row*4+col;
-        if(m>=0 && m<MOD_COUNT){ s.selectedModule=m; s.screen=m+1; }
+    // Match the rendered 4x4 cards: x=10..253, y=58..172.
+    // Ignore the header/status area so a tap there cannot open an arbitrary module.
+    if(t.px>=10 && t.px<254 && t.py>=58 && t.py<178){
+        const int col=(t.px-10)/61, row=(t.py-58)/30;
+        if(col<4 && row<4){
+            const int m=row*4+col;
+            if(m>=0 && m<MOD_COUNT){ s.selectedModule=m; s.screen=m+1; }
+        }
     }
 }
 static void doAction(SystemState&s){
@@ -93,17 +97,19 @@ void update(SystemState&s){
         if(d&KEY_A)s.screen=s.selectedModule+1;
         touchPosition t; touchRead(&t);
         const bool td=(d&KEY_TOUCH)!=0;
-        if(td && !touchWasDown){ touchStartX=t.px; touchStartY=t.py; }
+        if(td && !touchWasDown){ touchStartX=t.px; touchStartY=t.py; touchGestureConsumed=false; }
         if(td && t.px<256 && t.py<192){
             const int dx=(touchStartX>=0)?(int)t.px-touchStartX:0;
             const int dy=(touchStartY>=0)?(int)t.py-touchStartY:0;
-            if((dx>28||dx<-28||dy>28||dy<-28)){
+            if(!touchGestureConsumed && (dx>28||dx<-28||dy>28||dy<-28)){
                 if(dx>28) s.selectedModule=(s.selectedModule+1)%MOD_COUNT;
                 else if(dx<-28) s.selectedModule=(s.selectedModule+MOD_COUNT-1)%MOD_COUNT;
                 else if(dy>28) s.selectedModule=(s.selectedModule+4)%MOD_COUNT;
                 else if(dy<-28) s.selectedModule=(s.selectedModule+MOD_COUNT-4)%MOD_COUNT;
+                touchGestureConsumed=true;
             } else if(!touchWasDown) touchHome(s,t);
         }
+        if(!td){ touchGestureConsumed=false; touchStartX=-1; touchStartY=-1; }
         touchWasDown=td;
     } else {
         if(d&KEY_B)s.screen=0;
@@ -152,13 +158,13 @@ void update(SystemState&s){
         }
         touchPosition t; touchRead(&t);
         const bool td=(d&KEY_TOUCH)!=0;
-        if(td && !touchWasDown){ touchStartX=t.px; touchStartY=t.py; }
+        if(td && !touchWasDown){ touchStartX=t.px; touchStartY=t.py; touchGestureConsumed=false; }
         if(td){
             const int dx=(touchStartX>=0)?(int)t.px-touchStartX:0;
             const int dy=(touchStartY>=0)?(int)t.py-touchStartY:0;
-            if(dy>28){ s.screen=0; }
-            else if(dx<-28){ s.selectedModule=(s.selectedModule+MOD_COUNT-1)%MOD_COUNT; }
-            else if(dx>28){ s.selectedModule=(s.selectedModule+1)%MOD_COUNT; }
+            if(!touchGestureConsumed && dy>28){ s.screen=0; touchGestureConsumed=true; }
+            else if(!touchGestureConsumed && dx<-28){ s.selectedModule=(s.selectedModule+MOD_COUNT-1)%MOD_COUNT; touchGestureConsumed=true; }
+            else if(!touchGestureConsumed && dx>28){ s.selectedModule=(s.selectedModule+1)%MOD_COUNT; touchGestureConsumed=true; }
             else if(!touchWasDown){
                 if(t.py>150) s.screen=0;
                 else if(t.px<85){
@@ -173,6 +179,7 @@ void update(SystemState&s){
                 }
             }
         }
+        if(!td){ touchGestureConsumed=false; touchStartX=-1; touchStartY=-1; }
         touchWasDown=td;
         if(!s.safeMode) quantum::tick(q);
         dsp::tick(); lab::tick(); ai::tick(); studio::tick(); hil::tick(); engine::tick();
