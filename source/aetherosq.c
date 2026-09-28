@@ -8,7 +8,7 @@
 #include <dirent.h>
 #include "config.h"
 
-/* AetherMod 8.6 — DSi-native modular cockpit.
+/* AetherOS 8.8 — DSi-native modular cockpit.
  * Every home entry maps to an independent implementation.
  * Hardware claims remain honest: external RF/TinySA/camera/AI/phone/QPU
  * capabilities are represented as software workspaces/gateways, not invented
@@ -16,9 +16,9 @@
  */
 #define APP_COUNT 29
 #define AETHERMOD_MAJOR 8
-#define AETHERMOD_MINOR 7
-#define AETHERMOD_PASS 3
-#define AETHERMOD_TOTAL_PASSES 3
+#define AETHERMOD_MINOR 8
+#define AETHERMOD_PASS 1
+#define AETHERMOD_TOTAL_PASSES 1
 #define HOME_PAGES 4
 #define AETHER_SAVE_VERSION 6
 
@@ -35,7 +35,7 @@ static PrintConsole topConsole,bottomConsole;
 static const char *root="fat:/";
 static int mode=0,selected=0,homePage=0,cursor=0;
 static int dirty=0, safeMode=0, frame=0, actionCount=0;
-static int touchX=0,touchY=0,touchDown=0,touchStartY=-1,touchPrevY=-1,touchMoved=0;
+static int touchX=0,touchY=0,touchDown=0,touchStartX=-1,touchStartY=-1,touchPrevY=-1,touchMoved=0;
 static int pageCursor=0, subCursor=0, moduleValue=0, touchActionLatch=0;
 static int qState=0,qShots=0,qFidelity=0;
 static int codexBook=0,codexPage=0,codexSearch=0;
@@ -109,7 +109,7 @@ static void persistSelection(void){save.selected=(u16)selected;markDirty();}
 static void homeSet(int n){if(n<0)n=APP_COUNT-1;if(n>=APP_COUNT)n=0;selected=n;cursor=n;homePage=n/8;persistSelection();}
 static void page(const char *title){
  consoleSelect(&topConsole);consoleClear();
- iprintf("\x1b[36;1mAETHEROS 8.7 / PASS 2/3\x1b[37;1m\n");
+ iprintf("\x1b[36;1mAETHEROS 8.8 / DSi BOOT-SAFE\x1b[37;1m\n");
  iprintf("\x1b[35;1m==============================\x1b[37;1m\n");
  iprintf("%s\n",title);
  iprintf("DSi:%s  SAFE:%s  AI:%s  WIFI:%s\n",isDSiMode()?"YES":"DS",safeMode?"ON":"OFF",save.ai?"ON":"OFF",save.wireless?"ON":"OFF");
@@ -126,7 +126,7 @@ static void touchMap(u32 *d){
  int held=(keysHeld()&KEY_TOUCH)!=0;
  touchPosition t; touchRead(&t); touchX=t.px; touchY=t.py; touchDown=held;
  if(held){
-   if(!lastHeld){touchStartY=t.py;touchPrevY=t.py;touchMoved=0;touchActionLatch=0;}
+   if(!lastHeld){touchStartX=t.px;touchStartY=t.py;touchPrevY=t.py;touchMoved=0;touchActionLatch=0;}
    if(touchPrevY>=0 && (t.py>touchPrevY+10 || t.py+10<touchPrevY)) touchMoved=1;
    touchPrevY=t.py;
    if(mode==0){
@@ -161,7 +161,7 @@ static void touchMap(u32 *d){
      if(*d & (KEY_A|KEY_B|KEY_X|KEY_Y|KEY_UP|KEY_DOWN|KEY_LEFT|KEY_RIGHT)) touchActionLatch=1;
    }
  } else {
-   lastHeld=0; touchPrevY=-1; touchStartY=-1; touchMoved=0; touchActionLatch=0;
+   lastHeld=0; touchPrevY=-1; touchStartX=-1; touchStartY=-1; touchMoved=0; touchActionLatch=0;
  }
 }
 static void touchModuleActions(u32 *d){ (void)d; }
@@ -318,7 +318,7 @@ static void modClock(void){page("26 CLOCK / TIME");time_t now=time(NULL);struct 
  iprintf("%04d-%02d-%02d\n",t->tm_year+1900,t->tm_mon+1,t->tm_mday);}footer("A 12/24H | B HOME");}
 
 /* 27 — About */
-static void modAbout(void){page("27 ABOUT");iprintf("AETHEROS 8.7 / PASS 3/3\n");iprintf("29 INDIVIDUAL MODULE IMPLEMENTATIONS\n");iprintf("Geneva 1599 corpus: SD/OFFLINE\n");iprintf("Universal touch: TAP / SWIPE / DRAG\n");iprintf("Local-first, bounded, recoverable runtime.\n");footer("B HOME");}
+static void modAbout(void){page("27 ABOUT");iprintf("AETHEROS 8.8 / DSi BOOT-SAFE\n");iprintf("29 INDIVIDUAL MODULE IMPLEMENTATIONS\n");iprintf("Geneva 1599 corpus: SD/OFFLINE\n");iprintf("Universal touch: TAP / SWIPE / DRAG\n");iprintf("Local-first, bounded, recoverable runtime.\n");footer("B HOME");}
 
 /* 28 — Safety Center */
 static void modSafety(void){page("28 SAFETY CENTER");const char *n[]={"PARENTAL","NSFW FILTER","UNSAFE FILTER","UNREGULATED","USER CONTENT","BROWSER","DOWNLOADS","WIRELESS"};
@@ -392,14 +392,58 @@ static void input(void){
  moduleInput(d);
 }
 int main(void){
- powerOn(POWER_ALL_2D);videoSetMode(MODE_0_2D);videoSetModeSub(MODE_0_2D);vramDefault();
+ powerOn(POWER_ALL_2D);
+ videoSetMode(MODE_0_2D);
+ videoSetModeSub(MODE_0_2D);
+ vramDefault();
  consoleInit(&topConsole,0,BgType_Text4bpp,BgSize_T_256x256,22,3,true,true);
  consoleInit(&bottomConsole,0,BgType_Text4bpp,BgSize_T_256x256,22,3,false,true);
- soundDisable();if(!fatInitDefault()){safeMode=1;defaults();}else{if(isDSiMode())root="sd:/";loadState();save.launches++;saveState();}
+ soundDisable();
+
+ /* Boot-critical rule: the display must be live before any SD/FAT work.
+  * A bad/slow/unmounted DSi SD must never leave the user staring at black. */
+ consoleSelect(&topConsole);
+ consoleClear();
+ iprintf("\x1b[36;1mAETHEROS 8.8 / DSi\x1b[37;1m\n");
+ iprintf("\x1b[35;1mBOOT-SAFE INITIALIZATION\x1b[37;1m\n");
+ iprintf("DISPLAY: ONLINE\n");
+ consoleSelect(&bottomConsole);
+ consoleClear();
+ iprintf("Initializing local runtime...\n");
+ iprintf("SD access is optional; UI starts first.\n");
+ swiWaitForVBlank();
+
+ int fatReady=fatInitDefault();
+ if(fatReady){
+   loadState();
+   save.launches++;
+   saveState();
+ }else{
+   safeMode=1;
+   defaults();
+   selected=0; cursor=0; homePage=0;
+   consoleSelect(&topConsole);
+   iprintf("SD: NOT AVAILABLE / SAFE MODE\n");
+   consoleSelect(&bottomConsole);
+   iprintf("Continuing without storage.\n");
+ }
  draw();
- while(1){swiWaitForVBlank();scanKeys();frame++;visualPhase=(visualPhase+1)&63;energy=(energy+1)%101;
-   if(dawPlaying&&(frame%15)==0){dawStep=(dawStep+1)%16;for(int t=0;t<4;t++)if(dawPattern[t][dawStep]&&save.sound)soundPlayPSG(DutyCycle_50,220+t*90,70,64);}
-   input();saveIfDirty();if((frame&3)==0)draw();
+
+ while(1){
+   swiWaitForVBlank();
+   scanKeys();
+   frame++;
+   visualPhase=(visualPhase+1)&63;
+   energy=(energy+1)%101;
+   if(dawPlaying&&(frame%15)==0){
+     dawStep=(dawStep+1)%16;
+     for(int t=0;t<4;t++)
+       if(dawPattern[t][dawStep]&&save.sound)
+         soundPlayPSG(DutyCycle_50,220+t*90,70,64);
+   }
+   input();
+   saveIfDirty();
+   if((frame&3)==0)draw();
  }
  return 0;
 }
