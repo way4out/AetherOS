@@ -1,11 +1,11 @@
-name: Build AetherOS 8.8 for Nintendo DSi
+name: Build AetherOS 8.9 for Nintendo DSi
 # Touch-glitch verification build
 on:
   workflow_dispatch:
   push:
-    branches: [ main, aetheros8.8-black-screen-fix ]
+    branches: [ main, aetheros8.9-black-screen-fix ]
   pull_request:
-    branches: [ main, aetheros8.8-black-screen-fix ]
+    branches: [ main, aetheros8.9-black-screen-fix ]
 
 jobs:
   build:
@@ -24,16 +24,16 @@ jobs:
           grep -R "VRAM_A_MAIN_BG\|BgType_Bmp16\|bgInitSub" "$DEVKITPRO/libnds/include/nds" | head -20 || true
           test -f "$DEVKITARM/ds_rules"
 
-      - name: Build AetherOS 8.8
+      - name: Build AetherOS 8.9
         run: |
           export PATH="$DEVKITARM/bin:$DEVKITPRO/tools/bin:$PATH"
           make clean
           make
-          test -s AetherOS8.8.nds
-          ndstool -t AetherOS8.8.nds
+          test -s AetherOS8.9.nds
+          ndstool -t AetherOS8.9.nds
           python3 - <<'PY'
           from pathlib import Path
-          p=Path("AetherOS8.8.nds")
+          p=Path("AetherOS8.9.nds")
           b=p.read_bytes()
           assert len(b)>0, "ROM is empty"
           assert b[0x0C:0x10] == b"####", "unexpected game code"
@@ -44,8 +44,8 @@ jobs:
           print(f"VERIFIED_DSI_UNIT_CODE={b[0x12]}")
           print("VERIFIED_ARM9_HEADER=present")
           PY
-          sha256sum AetherOS8.8.nds
-          ls -lh AetherOS8.8.nds
+          sha256sum AetherOS8.9.nds
+          ls -lh AetherOS8.9.nds
 
       - name: Emulator availability check
         run: |
@@ -56,16 +56,16 @@ jobs:
         run: |
           mkdir -p deploy/apps/AetherMod
           mkdir -p deploy/data/AetherMod
-          cp AetherOS8.8.nds deploy/apps/AetherMod/AetherOS8.8.nds
+          cp AetherOS8.9.nds deploy/apps/AetherMod/AetherOS8.9.nds
           cp -r data/AetherMod/. deploy/data/AetherMod/
           cp AETHERMOD.md deploy/AETHERMOD.md
-          printf '%s\n' 'Copy apps/AetherMod and data/AetherMod to the DSi SD card. Launch AetherOS8.8.nds.' > deploy/INSTALL.txt
+          printf '%s\n' 'Copy apps/AetherMod and data/AetherMod to the DSi SD card. Launch AetherOS8.9.nds.' > deploy/INSTALL.txt
           cd deploy
-          zip -r ../AetherOS8.8-DSi-Public.zip .
+          zip -r ../AetherOS8.9-DSi-Public.zip .
 
       - uses: actions/upload-artifact@v4
         with:
-          name: AetherOS8.8-DSi-Public
+          name: AetherOS8.9-DSi-Public
           path: |
-            AetherOS8.8.nds
-            AetherOS8.8-DSi-Public.zip
+            AetherOS8.9.nds
+            AetherOS8.9-DSi-Public.zip
