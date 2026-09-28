@@ -26,7 +26,7 @@ LIBDIRS := $(LIBNDS)
 
 ifneq ($(BUILD),$(notdir $(CURDIR)))
 export OUTPUT := $(CURDIR)/$(TARGET)
-export VPATH := $(foreach dir,$(SOURCES),$(CURDIR)/$(dir))
+export VPATH := $(shell find $(SOURCES) -type d -print | sed "s|^|$(CURDIR)/|")
 export DEPSDIR := $(CURDIR)/$(BUILD)
 CFILES := $(shell find $(SOURCES) -type f -name '*.c' -printf '%f\n')
 CPPFILES := $(shell find $(SOURCES) -type f -name '*.cpp' -printf '%f\n')
