@@ -1,8 +1,8 @@
-name: Build AetherOS 8.7 Pass 3 for Nintendo DSi
+name: Build AetherOS 8.8 for Nintendo DSi
 on:
   workflow_dispatch:
   push:
-    branches: [ main, aetheros8.7-pass1, aetheros8.7-pass3 ]
+    branches: [ main, aetheros8.8-black-screen-fix ]
 
 jobs:
   build:
@@ -10,27 +10,59 @@ jobs:
     container: devkitpro/devkitarm:latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build AetherOS 8.7
+
+      - name: Inspect actual devkitARM/libnds environment
+        run: |
+          export PATH="$DEVKITARM/bin:$DEVKITPRO/tools/bin:$PATH"
+          echo "DEVKITPRO=$DEVKITPRO"
+          echo "DEVKITARM=$DEVKITARM"
+          "$DEVKITARM/bin/arm-none-eabi-gcc" --version | head -1
+          grep -R "MicWaveBuf\|micStartRecording\|MicFormat_8Bit" "$DEVKITPRO/libnds/include/nds/arm9/mic.h" || true
+          grep -R "VRAM_A_MAIN_BG\|BgType_Bmp16\|bgInitSub" "$DEVKITPRO/libnds/include/nds" | head -20 || true
+          test -f "$DEVKITARM/ds_rules"
+
+      - name: Build AetherOS 8.8
         run: |
           export PATH="$DEVKITARM/bin:$DEVKITPRO/tools/bin:$PATH"
           make clean
           make
-          test -s AetherOS8.7.nds
-          file AetherOS8.7.nds || true
-          ls -lh AetherOS8.7.nds
+          test -s AetherOS8.8.nds
+          ndstool -t AetherOS8.8.nds
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("AetherOS8.8.nds")
+          b=p.read_bytes()
+          assert len(b)>0, "ROM is empty"
+          assert b[0x0C:0x10] == b"####", "unexpected game code"
+          assert b[0x12] == 2, f"expected DSi unit code 2, got {b[0x12]}"
+          assert int.from_bytes(b[0x20:0x24],"little") != 0, "ARM9 offset missing"
+          assert int.from_bytes(b[0x2C:0x30],"little") != 0, "ARM9 size missing"
+          print(f"VERIFIED_NDS_SIZE={len(b)}")
+          print(f"VERIFIED_DSI_UNIT_CODE={b[0x12]}")
+          print("VERIFIED_ARM9_HEADER=present")
+          PY
+          sha256sum AetherOS8.8.nds
+          ls -lh AetherOS8.8.nds
+
+      - name: Emulator availability check
+        run: |
+          command -v desmume-cli || command -v desmume || command -v melonDS || true
+          echo "A headless emulator is optional; absence is not treated as build failure."
+
       - name: Package complete SD bundle
         run: |
           mkdir -p deploy/apps/AetherMod
           mkdir -p deploy/data/AetherMod
-          cp AetherOS8.7.nds deploy/apps/AetherMod/AetherOS8.7.nds
+          cp AetherOS8.8.nds deploy/apps/AetherMod/AetherOS8.8.nds
           cp -r data/AetherMod/. deploy/data/AetherMod/
           cp AETHERMOD.md deploy/AETHERMOD.md
-          printf '%s\n' 'Copy apps/AetherMod and data/AetherMod to the DSi SD card. Launch AetherOS8.7.nds.' > deploy/INSTALL.txt
+          printf '%s\n' 'Copy apps/AetherMod and data/AetherMod to the DSi SD card. Launch AetherOS8.8.nds.' > deploy/INSTALL.txt
           cd deploy
-          zip -r ../AetherOS8.7-Pass3-DSi-Public.zip .
+          zip -r ../AetherOS8.8-DSi-Public.zip .
+
       - uses: actions/upload-artifact@v4
         with:
-          name: AetherOS8.7-Pass3-DSi-Public
+          name: AetherOS8.8-DSi-Public
           path: |
-            AetherOS8.7.nds
-            AetherOS8.7-Pass3-DSi-Public.zip
+            AetherOS8.8.nds
+            AetherOS8.8-DSi-Public.zip
