@@ -4,12 +4,12 @@ ifeq ($(strip $(DEVKITARM)),)
 $(error "Please set DEVKITARM in your environment. export DEVKITARM=<path to>devkitARM")
 endif
 
-GAME_TITLE := AetherOS8.7
-GAME_SUBTITLE1 := DSi AetherOS 8.7
+GAME_TITLE := AetherOS8.8
+GAME_SUBTITLE1 := DSi AetherOS 8.8
 GAME_SUBTITLE2 := Quantum Systems
 include $(DEVKITARM)/ds_rules
 
-TARGET := AetherOS8.7
+TARGET := AetherOS8.8
 BUILD := build
 SOURCES := source
 INCLUDES := include
