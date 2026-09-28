@@ -4,6 +4,8 @@ on:
   workflow_dispatch:
   push:
     branches: [ main, aetheros8.8-black-screen-fix ]
+  pull_request:
+    branches: [ main, aetheros8.8-black-screen-fix ]
 
 jobs:
   build:
