@@ -32,7 +32,7 @@
 #include "../heritage/aether_heritage.h"
 #include "../os/aether_os_fabric.h"
 
-namespace { aether::quantum::Simulator q; bool servicesStarted=false; bool touchWasDown=false; bool touchGestureConsumed=false; int touchStartX=-1,touchStartY=-1; }
+namespace { aether::quantum::Simulator q; bool servicesStarted=false; bool touchWasDown=false; bool touchGestureConsumed=false; int touchStartX=-1,touchStartY=-1; int touchStartScreen=0,touchStartModule=0; }
 
 namespace aether {
 void init(SystemState&s){
@@ -72,52 +72,107 @@ static void doAction(SystemState&s){
     s.projectSaved=engine::projectExists();
 }
 void update(SystemState&s){
-    scanKeys(); ++s.frame; if(s.frame==30) startDeferredServices(s);
+    scanKeys(); ++s.frame;
+    if(s.frame==30) startDeferredServices(s);
     const u16 down=keysDown();
-    if(down&KEY_START){ s.safeMode=!s.safeMode; s.screen=0; }
-    touchPosition t; touchRead(&t); const bool touchDownNow=(keysHeld()&KEY_TOUCH)!=0;
-    if(touchDownNow && !touchWasDown){ touchStartX=t.px; touchStartY=t.py; touchGestureConsumed=false; }
-    if(touchDownNow && !touchGestureConsumed){
-        const int dx=(touchStartX>=0)?(int)t.px-touchStartX:0, dy=(touchStartY>=0)?(int)t.py-touchStartY:0;
-        if(dx>28||dx<-28||dy>28||dy<-28){
-            if(s.screen==0){ if(dx>28)s.selectedModule=(s.selectedModule+1)%MOD_COUNT; else if(dx<-28)s.selectedModule=(s.selectedModule+MOD_COUNT-1)%MOD_COUNT; else if(dy>28)s.selectedModule=(s.selectedModule+4)%MOD_COUNT; else s.selectedModule=(s.selectedModule+MOD_COUNT-4)%MOD_COUNT; }
-            else { if(dx>28)s.selectedModule=(s.selectedModule+1)%MOD_COUNT; else if(dx<-28)s.selectedModule=(s.selectedModule+MOD_COUNT-1)%MOD_COUNT; else s.screen=0; }
+    const bool touchDownNow=(keysHeld()&KEY_TOUCH)!=0;
+    touchPosition touch; touchRead(&touch);
+
+    // Single authoritative touchscreen state machine.
+    if(touchDownNow && !touchWasDown){
+        touchStartX=touch.px; touchStartY=touch.py;
+        touchStartScreen=s.screen; touchStartModule=s.selectedModule;
+        touchGestureConsumed=false;
+    }
+    if(touchDownNow && !touchGestureConsumed && touchStartX>=0){
+        const int dx=(int)touch.px-touchStartX, dy=(int)touch.py-touchStartY;
+        const int ax=dx<0?-dx:dx, ay=dy<0?-dy:dy;
+        if(ax>=32 || ay>=32){
+            if(touchStartScreen==0){
+                if(ax>=ay) s.selectedModule=(s.selectedModule+(dx>0?1:MOD_COUNT-1))%MOD_COUNT;
+                else s.selectedModule=(s.selectedModule+(dy>0?4:MOD_COUNT-4))%MOD_COUNT;
+            }else{
+                if(ax>=ay) s.selectedModule=(s.selectedModule+(dx>0?1:MOD_COUNT-1))%MOD_COUNT;
+                else s.screen=0;
+            }
             touchGestureConsumed=true;
         }
     }
-    if(!touchDownNow && touchWasDown && !touchGestureConsumed){
-        if(s.screen==0){ touchPosition tap=t; tap.px=(touchStartX>=0)?touchStartX:t.px; tap.py=(touchStartY>=0)?touchStartY:t.py; touchHome(s,tap); }
-        else if(t.py>180) s.screen=0;
-        else if(s.selectedModule==MOD_SETTINGS){ if(t.px<85)settings::previousSetting(); else if(t.px>170)settings::nextSetting(); else settings::adjust(1); }
-        else doAction(s);
+    if(!touchDownNow && touchWasDown){
+        if(!touchGestureConsumed){
+            const int px=touchStartX, py=touchStartY;
+            if(touchStartScreen==0 && px>=10 && px<254 && py>=38 && py<158){
+                const int col=(px-10)/61, row=(py-38)/30, m=row*4+col;
+                if(col>=0&&col<4&&row>=0&&row<4&&m>=0&&m<MOD_COUNT){s.selectedModule=m;s.screen=m+1;}
+            }else if(touchStartScreen!=0){
+                if(py>=160) s.screen=0;
+                else if(s.selectedModule==MOD_SETTINGS){
+                    if(px<85) settings::previousSetting(); else if(px>170) settings::nextSetting(); else settings::adjust(1);
+                }else if(s.screen==touchStartScreen && s.selectedModule==touchStartModule) doAction(s);
+            }
+        }
+        touchGestureConsumed=false; touchStartX=-1; touchStartY=-1;
     }
-    if(!touchDownNow){ touchGestureConsumed=false; touchStartX=-1; touchStartY=-1; }
     touchWasDown=touchDownNow;
+
+    if(down&KEY_START){s.safeMode=!s.safeMode;s.screen=0;}
     if(s.screen==0){
-        if(down&KEY_LEFT)s.selectedModule=(s.selectedModule+MOD_COUNT-1)%MOD_COUNT; if(down&KEY_RIGHT)s.selectedModule=(s.selectedModule+1)%MOD_COUNT;
-        if(down&KEY_UP)s.selectedModule=(s.selectedModule+MOD_COUNT-4)%MOD_COUNT; if(down&KEY_DOWN)s.selectedModule=(s.selectedModule+4)%MOD_COUNT;
+        if(down&KEY_LEFT)s.selectedModule=(s.selectedModule+MOD_COUNT-1)%MOD_COUNT;
+        if(down&KEY_RIGHT)s.selectedModule=(s.selectedModule+1)%MOD_COUNT;
+        if(down&KEY_UP)s.selectedModule=(s.selectedModule+MOD_COUNT-4)%MOD_COUNT;
+        if(down&KEY_DOWN)s.selectedModule=(s.selectedModule+4)%MOD_COUNT;
         if(down&KEY_A)s.screen=s.selectedModule+1;
-    }
-    if(s.screen!=0){
+    }else{
         if(down&KEY_B)s.screen=0;
         if(s.selectedModule==MOD_SETTINGS){
-            if(down&KEY_UP||down&KEY_LEFT)settings::previousSetting(); if(down&KEY_DOWN||down&KEY_RIGHT)settings::nextSetting(); if(down&KEY_A)settings::adjust(1); if(down&KEY_X)settings::save();
-            if(down&KEY_Y){settings::profile().theme=settings::THEME_AUTO;settings::profile().layout=settings::LAYOUT_MYSPACE;settings::save();} if(down&KEY_SELECT)settings::save();
-        } else {
-            if(down&KEY_LEFT)s.selectedModule=(s.selectedModule+MOD_COUNT-1)%MOD_COUNT; if(down&KEY_RIGHT)s.selectedModule=(s.selectedModule+1)%MOD_COUNT; if(down&KEY_A)doAction(s);
-            if(down&KEY_X&&s.selectedModule==MOD_QUANTUM)quantum::runGrover2(q); if(down&KEY_X&&s.selectedModule==MOD_DSP){++s.dspTicks;(void)dsp::metrics();} if(down&KEY_X&&s.selectedModule==MOD_RF)++s.rfSamples;
-            if(down&KEY_X&&s.selectedModule==MOD_NETWORK){network::tick();gate::tick();} if(down&KEY_X&&s.selectedModule==MOD_AI)ai::generate(); if(down&KEY_X&&s.selectedModule==MOD_PROJECTS)engine::saveProject();
-            if(down&KEY_Y&&s.selectedModule==MOD_QUANTUM)quantum::measure(q); if(down&KEY_Y&&s.selectedModule==MOD_MARAUDER)securitylab::acknowledge(); if(down&KEY_L&&s.selectedModule==MOD_QUANTUM)quantum::runDeutschJozsa(q); if(down&KEY_R&&s.selectedModule==MOD_QUANTUM)quantum::runQFT2(q);
-            if(down&KEY_L&&s.selectedModule==MOD_MARAUDER)securitylab::setMode(securitylab::PASSIVE_RF); if(down&KEY_R&&s.selectedModule==MOD_MARAUDER)securitylab::setMode(securitylab::LAB_SIMULATION); if(down&KEY_X&&s.selectedModule==MOD_STUDIO){audio::tone(660,180);++s.studioTicks;} if(down&KEY_Y&&s.selectedModule==MOD_SOUND)audio::stop();
-            if(down&KEY_Y&&s.selectedModule==MOD_SYSTEM)recovery::heartbeat(); if(down&KEY_X&&s.selectedModule==MOD_SYSTEM)osfabric::cycle(); if(down&KEY_Y&&s.selectedModule==MOD_CORE)recovery::heartbeat(); if(down&KEY_Y&&s.selectedModule==MOD_AI)ai::generate(); if(down&KEY_Y&&s.selectedModule==MOD_LAB)lab::tick();
-            if(down&KEY_X&&s.selectedModule==MOD_ANIMAL){animal::setDirection(animal::ANIMAL_TO_HUMAN);animal::analyze();} if(down&KEY_Y&&s.selectedModule==MOD_ANIMAL){animal::setDirection(animal::HUMAN_TO_ANIMAL);animal::synthesize();}
-            if(down&KEY_L&&s.selectedModule==MOD_ANIMAL)animal::setSpecies((animal::Species)((animal::report().species+animal::SPECIES_COUNT-1)%animal::SPECIES_COUNT)); if(down&KEY_R&&s.selectedModule==MOD_ANIMAL)animal::setSpecies((animal::Species)((animal::report().species+1)%animal::SPECIES_COUNT));
-            if(down&KEY_X&&s.selectedModule==MOD_HARMONIC)harmonic::nextPrime(); if(down&KEY_Y&&s.selectedModule==MOD_HARMONIC)harmonic::setVoid((s16)(harmonic::node().voidVector+1)); if(down&KEY_L&&s.selectedModule==MOD_HARMONIC)harmonic::setDampener(harmonic::node().dampener>100?harmonic::node().dampener-100:0); if(down&KEY_R&&s.selectedModule==MOD_HARMONIC)harmonic::setAmplifier(harmonic::node().amplifier+100);
-            if(down&KEY_X&&s.selectedModule==MOD_CODEX)codex::init(); if(down&KEY_Y&&s.selectedModule==MOD_DSP)(void)dsp::metrics(); if(down&KEY_Y&&s.selectedModule==MOD_PROJECTS)engine::resetProject(); if(down&KEY_SELECT){quantum::reset(q);audio::stop();}
+            if(down&KEY_UP||down&KEY_LEFT)settings::previousSetting();
+            if(down&KEY_DOWN||down&KEY_RIGHT)settings::nextSetting();
+            if(down&KEY_A)settings::adjust(1);
+            if(down&KEY_X||down&KEY_SELECT)settings::save();
+            if(down&KEY_Y){settings::profile().theme=settings::THEME_AUTO;settings::profile().layout=settings::LAYOUT_MYSPACE;settings::save();}
+        }else{
+            if(down&KEY_LEFT)s.selectedModule=(s.selectedModule+MOD_COUNT-1)%MOD_COUNT;
+            if(down&KEY_RIGHT)s.selectedModule=(s.selectedModule+1)%MOD_COUNT;
+            if(down&KEY_A)doAction(s);
+            if(down&KEY_X&&s.selectedModule==MOD_QUANTUM)quantum::runGrover2(q);
+            if(down&KEY_X&&s.selectedModule==MOD_DSP){++s.dspTicks;(void)dsp::metrics();}
+            if(down&KEY_X&&s.selectedModule==MOD_RF)++s.rfSamples;
+            if(down&KEY_X&&s.selectedModule==MOD_NETWORK){network::tick();gate::tick();}
+            if(down&KEY_X&&s.selectedModule==MOD_AI)ai::generate();
+            if(down&KEY_X&&s.selectedModule==MOD_PROJECTS)engine::saveProject();
+            if(down&KEY_Y&&s.selectedModule==MOD_QUANTUM)quantum::measure(q);
+            if(down&KEY_Y&&s.selectedModule==MOD_MARAUDER)securitylab::acknowledge();
+            if(down&KEY_L&&s.selectedModule==MOD_QUANTUM)quantum::runDeutschJozsa(q);
+            if(down&KEY_R&&s.selectedModule==MOD_QUANTUM)quantum::runQFT2(q);
+            if(down&KEY_L&&s.selectedModule==MOD_MARAUDER)securitylab::setMode(securitylab::PASSIVE_RF);
+            if(down&KEY_R&&s.selectedModule==MOD_MARAUDER)securitylab::setMode(securitylab::LAB_SIMULATION);
+            if(down&KEY_X&&s.selectedModule==MOD_STUDIO){audio::tone(660,180);++s.studioTicks;}
+            if(down&KEY_Y&&s.selectedModule==MOD_SOUND)audio::stop();
+            if(down&KEY_Y&&s.selectedModule==MOD_SYSTEM)recovery::heartbeat();
+            if(down&KEY_X&&s.selectedModule==MOD_SYSTEM)osfabric::cycle();
+            if(down&KEY_Y&&s.selectedModule==MOD_CORE)recovery::heartbeat();
+            if(down&KEY_Y&&s.selectedModule==MOD_AI)ai::generate();
+            if(down&KEY_Y&&s.selectedModule==MOD_LAB)lab::tick();
+            if(down&KEY_X&&s.selectedModule==MOD_ANIMAL){animal::setDirection(animal::ANIMAL_TO_HUMAN);animal::analyze();}
+            if(down&KEY_Y&&s.selectedModule==MOD_ANIMAL){animal::setDirection(animal::HUMAN_TO_ANIMAL);animal::synthesize();}
+            if(down&KEY_L&&s.selectedModule==MOD_ANIMAL)animal::setSpecies((animal::Species)((animal::report().species+animal::SPECIES_COUNT-1)%animal::SPECIES_COUNT));
+            if(down&KEY_R&&s.selectedModule==MOD_ANIMAL)animal::setSpecies((animal::Species)((animal::report().species+1)%animal::SPECIES_COUNT));
+            if(down&KEY_X&&s.selectedModule==MOD_HARMONIC)harmonic::nextPrime();
+            if(down&KEY_Y&&s.selectedModule==MOD_HARMONIC)harmonic::setVoid((s16)(harmonic::node().voidVector+1));
+            if(down&KEY_L&&s.selectedModule==MOD_HARMONIC)harmonic::setDampener(harmonic::node().dampener>100?harmonic::node().dampener-100:0);
+            if(down&KEY_R&&s.selectedModule==MOD_HARMONIC)harmonic::setAmplifier(harmonic::node().amplifier+100);
+            if(down&KEY_X&&s.selectedModule==MOD_CODEX)codex::init();
+            if(down&KEY_Y&&s.selectedModule==MOD_DSP)(void)dsp::metrics();
+            if(down&KEY_Y&&s.selectedModule==MOD_PROJECTS)engine::resetProject();
+            if(down&KEY_SELECT){quantum::reset(q);audio::stop();}
         }
-        if(!s.safeMode)quantum::tick(q); dsp::tick();lab::tick();ai::tick();studio::tick();hil::tick();engine::tick(); if((s.frame&63)==0){(void)dsp::metrics();ai::generate();} if(s.selectedModule==MOD_NETWORK&&(s.frame&127)==0)network::tick();
-        gate::tick();session::tick();graph::tick();governor::tick();recovery::heartbeat();diag::tick(s.frame);securitylab::tick();mission::tick();capacity::tick();++s.securityTicks;++s.missionTicks;settings::tick();i18n::tick();animal::tick();codex::tick();harmonic::tick();heritage::tick();osfabric::tick();
+        if(!s.safeMode)quantum::tick(q); dsp::tick();lab::tick();ai::tick();studio::tick();hil::tick();engine::tick();
+        if((s.frame&63)==0){(void)dsp::metrics();ai::generate();}
+        if(s.selectedModule==MOD_NETWORK&&(s.frame&127)==0)network::tick();
+        gate::tick();session::tick();graph::tick();governor::tick();recovery::heartbeat();diag::tick(s.frame);securitylab::tick();mission::tick();capacity::tick();
+        ++s.securityTicks;++s.missionTicks;settings::tick();i18n::tick();animal::tick();codex::tick();harmonic::tick();heritage::tick();osfabric::tick();
     }
+    s.projectSaved=engine::projectExists();
     ui::update(s);
 }
 void render(const SystemState&s){ui::render(s);} void shutdown(){audio::stop();consoleClear();} quantum::Simulator& simulator(){return q;}
