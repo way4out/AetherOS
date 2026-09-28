@@ -88,106 +88,130 @@ static void doAction(SystemState&s){
     s.projectSaved=engine::projectExists();
 }
 void update(SystemState&s){
-    scanKeys(); s.frame++; if(s.frame==30) startDeferredServices(s);
-    u16 d=keysDown();
-    if(d&KEY_START){s.safeMode=!s.safeMode;s.screen=0;}
-    if(s.screen==0){
-        if(d&KEY_LEFT||d&KEY_UP)s.selectedModule=(s.selectedModule+MOD_COUNT-1)%MOD_COUNT;
-        if(d&KEY_RIGHT||d&KEY_DOWN)s.selectedModule=(s.selectedModule+1)%MOD_COUNT;
-        if(d&KEY_A)s.screen=s.selectedModule+1;
-        touchPosition t; touchRead(&t);
-        const bool td=(d&KEY_TOUCH)!=0;
-        if(td && !touchWasDown){ touchStartX=t.px; touchStartY=t.py; touchGestureConsumed=false; }
-        if(td && t.px<256 && t.py<192){
-            const int dx=(touchStartX>=0)?(int)t.px-touchStartX:0;
-            const int dy=(touchStartY>=0)?(int)t.py-touchStartY:0;
-            if(!touchGestureConsumed && (dx>28||dx<-28||dy>28||dy<-28)){
+    scanKeys();
+    ++s.frame;
+    if(s.frame==30) startDeferredServices(s);
+
+    const u16 down=keysDown();
+
+    // Physical START always returns to the home surface and toggles safe mode.
+    if(down&KEY_START){ s.safeMode=!s.safeMode; s.screen=0; }
+
+    touchPosition t;
+    touchRead(&t);
+    const bool touchDownNow=(keysHeld()&KEY_TOUCH)!=0;
+
+    // Touch is handled as a complete gesture: press -> track -> release.
+    // This prevents held touches from firing the same action every frame.
+    if(touchDownNow && !touchWasDown){
+        touchStartX=t.px;
+        touchStartY=t.py;
+        touchGestureConsumed=false;
+    }
+
+    if(touchDownNow && !touchGestureConsumed){
+        const int dx=(touchStartX>=0)?(int)t.px-touchStartX:0;
+        const int dy=(touchStartY>=0)?(int)t.py-touchStartY:0;
+        if(dx>28 || dx<-28 || dy>28 || dy<-28){
+            if(s.screen==0){
                 if(dx>28) s.selectedModule=(s.selectedModule+1)%MOD_COUNT;
                 else if(dx<-28) s.selectedModule=(s.selectedModule+MOD_COUNT-1)%MOD_COUNT;
                 else if(dy>28) s.selectedModule=(s.selectedModule+4)%MOD_COUNT;
                 else if(dy<-28) s.selectedModule=(s.selectedModule+MOD_COUNT-4)%MOD_COUNT;
-                touchGestureConsumed=true;
-            } else if(!touchWasDown) touchHome(s,t);
-        }
-        if(!td){ touchGestureConsumed=false; touchStartX=-1; touchStartY=-1; }
-        touchWasDown=td;
-    } else {
-        if(d&KEY_B)s.screen=0;
-        if(s.selectedModule==MOD_SETTINGS){
-            if(d&KEY_UP||d&KEY_LEFT)settings::previousSetting();
-            if(d&KEY_DOWN||d&KEY_RIGHT)settings::nextSetting();
-            if(d&KEY_A)settings::adjust(1);
-            if(d&KEY_X)settings::save();
-            if(d&KEY_Y){settings::profile().theme=settings::THEME_AUTO;settings::profile().layout=settings::LAYOUT_MYSPACE;settings::save();}
-            if(d&KEY_SELECT)settings::save();
-        } else {
-            if(d&KEY_LEFT)s.selectedModule=(s.selectedModule+MOD_COUNT-1)%MOD_COUNT;
-            if(d&KEY_RIGHT)s.selectedModule=(s.selectedModule+1)%MOD_COUNT;
-            if(d&KEY_A)doAction(s);
-            if(d&KEY_X&&s.selectedModule==MOD_QUANTUM) quantum::runGrover2(q);
-            if(d&KEY_X&&s.selectedModule==MOD_DSP){ ++s.dspTicks; (void)dsp::metrics(); }
-            if(d&KEY_X&&s.selectedModule==MOD_RF){ ++s.rfSamples; }
-            if(d&KEY_X&&s.selectedModule==MOD_NETWORK){ network::tick(); gate::tick(); }
-            if(d&KEY_X&&s.selectedModule==MOD_AI) ai::generate();
-            if(d&KEY_X&&s.selectedModule==MOD_PROJECTS) engine::saveProject();
-            if(d&KEY_Y&&s.selectedModule==MOD_QUANTUM) quantum::measure(q);
-            if(d&KEY_Y&&s.selectedModule==MOD_MARAUDER) securitylab::acknowledge();
-            if(d&KEY_L&&s.selectedModule==MOD_QUANTUM) quantum::runDeutschJozsa(q);
-            if(d&KEY_R&&s.selectedModule==MOD_QUANTUM) quantum::runQFT2(q);
-            if(d&KEY_L&&s.selectedModule==MOD_MARAUDER) securitylab::setMode(securitylab::PASSIVE_RF);
-            if(d&KEY_R&&s.selectedModule==MOD_MARAUDER) securitylab::setMode(securitylab::LAB_SIMULATION);
-            if(d&KEY_X&&s.selectedModule==MOD_STUDIO){audio::tone(660,180);++s.studioTicks;}
-            if(d&KEY_Y&&s.selectedModule==MOD_SOUND) audio::stop();
-            if(d&KEY_Y&&s.selectedModule==MOD_SYSTEM) recovery::heartbeat();
-            if(d&KEY_X&&s.selectedModule==MOD_SYSTEM) osfabric::cycle();
-            if(d&KEY_Y&&s.selectedModule==MOD_CORE) recovery::heartbeat();
-            if(d&KEY_Y&&s.selectedModule==MOD_AI) ai::generate();
-            if(d&KEY_Y&&s.selectedModule==MOD_LAB) lab::tick();
-            if(d&KEY_X&&s.selectedModule==MOD_ANIMAL){ animal::setDirection(animal::ANIMAL_TO_HUMAN); animal::analyze(); }
-            if(d&KEY_Y&&s.selectedModule==MOD_ANIMAL){ animal::setDirection(animal::HUMAN_TO_ANIMAL); animal::synthesize(); }
-            if(d&KEY_L&&s.selectedModule==MOD_ANIMAL) animal::setSpecies((animal::Species)((animal::report().species+animal::SPECIES_COUNT-1)%animal::SPECIES_COUNT));
-            if(d&KEY_R&&s.selectedModule==MOD_ANIMAL) animal::setSpecies((animal::Species)((animal::report().species+1)%animal::SPECIES_COUNT));
-            if(d&KEY_X&&s.selectedModule==MOD_HARMONIC) harmonic::nextPrime();
-            if(d&KEY_Y&&s.selectedModule==MOD_HARMONIC) harmonic::setVoid((s16)(harmonic::node().voidVector+1));
-            if(d&KEY_L&&s.selectedModule==MOD_HARMONIC) harmonic::setDampener(harmonic::node().dampener>100?harmonic::node().dampener-100:0);
-            if(d&KEY_R&&s.selectedModule==MOD_HARMONIC) harmonic::setAmplifier(harmonic::node().amplifier+100);
-            if(d&KEY_X&&s.selectedModule==MOD_CODEX) codex::init();
-            if(d&KEY_Y&&s.selectedModule==MOD_DSP) (void)dsp::metrics();
-            if(d&KEY_Y&&s.selectedModule==MOD_PROJECTS) engine::resetProject();
-            if(d&KEY_SELECT){quantum::reset(q);audio::stop();}
-        }
-        touchPosition t; touchRead(&t);
-        const bool td=(d&KEY_TOUCH)!=0;
-        if(td && !touchWasDown){ touchStartX=t.px; touchStartY=t.py; touchGestureConsumed=false; }
-        if(td){
-            const int dx=(touchStartX>=0)?(int)t.px-touchStartX:0;
-            const int dy=(touchStartY>=0)?(int)t.py-touchStartY:0;
-            if(!touchGestureConsumed && dy>28){ s.screen=0; touchGestureConsumed=true; }
-            else if(!touchGestureConsumed && dx<-28){ s.selectedModule=(s.selectedModule+MOD_COUNT-1)%MOD_COUNT; touchGestureConsumed=true; }
-            else if(!touchGestureConsumed && dx>28){ s.selectedModule=(s.selectedModule+1)%MOD_COUNT; touchGestureConsumed=true; }
-            else if(!touchWasDown){
-                if(t.py>150) s.screen=0;
-                else if(t.px<85){
-                    if(s.selectedModule==MOD_SETTINGS)settings::previousSetting();
-                    else s.selectedModule=(s.selectedModule+MOD_COUNT-1)%MOD_COUNT;
-                } else if(t.px>170){
-                    if(s.selectedModule==MOD_SETTINGS)settings::nextSetting();
-                    else s.selectedModule=(s.selectedModule+1)%MOD_COUNT;
-                } else {
-                    if(s.selectedModule==MOD_SETTINGS)settings::adjust(1);
-                    else doAction(s);
-                }
+            } else {
+                if(dx>28) s.selectedModule=(s.selectedModule+1)%MOD_COUNT;
+                else if(dx<-28) s.selectedModule=(s.selectedModule+MOD_COUNT-1)%MOD_COUNT;
+                else if(dy<-28) s.screen=0;
+                else if(dy>28) s.screen=0;
             }
+            touchGestureConsumed=true;
         }
-        if(!td){ touchGestureConsumed=false; touchStartX=-1; touchStartY=-1; }
-        touchWasDown=td;
+    }
+
+    // A tap is committed only on release, after movement has been ruled out.
+    if(!touchDownNow && touchWasDown && !touchGestureConsumed){
+        if(s.screen==0){
+            touchHome(s,t);
+        } else if(t.py>150){
+            s.screen=0;
+        } else if(s.selectedModule==MOD_SETTINGS){
+            if(t.px<85) settings::previousSetting();
+            else if(t.px>170) settings::nextSetting();
+            else settings::adjust(1);
+        } else {
+            doAction(s);
+        }
+    }
+
+    if(!touchDownNow){
+        touchGestureConsumed=false;
+        touchStartX=-1;
+        touchStartY=-1;
+    }
+    touchWasDown=touchDownNow;
+
+    if(s.screen!=0){
+        if(down&KEY_B) s.screen=0;
+
+        if(s.selectedModule==MOD_SETTINGS){
+            if(down&KEY_UP||down&KEY_LEFT) settings::previousSetting();
+            if(down&KEY_DOWN||down&KEY_RIGHT) settings::nextSetting();
+            if(down&KEY_A) settings::adjust(1);
+            if(down&KEY_X) settings::save();
+            if(down&KEY_Y){
+                settings::profile().theme=settings::THEME_AUTO;
+                settings::profile().layout=settings::LAYOUT_MYSPACE;
+                settings::save();
+            }
+            if(down&KEY_SELECT) settings::save();
+        } else {
+            if(down&KEY_LEFT) s.selectedModule=(s.selectedModule+MOD_COUNT-1)%MOD_COUNT;
+            if(down&KEY_RIGHT) s.selectedModule=(s.selectedModule+1)%MOD_COUNT;
+            if(down&KEY_A) doAction(s);
+            if(down&KEY_X&&s.selectedModule==MOD_QUANTUM) quantum::runGrover2(q);
+            if(down&KEY_X&&s.selectedModule==MOD_DSP){ ++s.dspTicks; (void)dsp::metrics(); }
+            if(down&KEY_X&&s.selectedModule==MOD_RF){ ++s.rfSamples; }
+            if(down&KEY_X&&s.selectedModule==MOD_NETWORK){ network::tick(); gate::tick(); }
+            if(down&KEY_X&&s.selectedModule==MOD_AI) ai::generate();
+            if(down&KEY_X&&s.selectedModule==MOD_PROJECTS) engine::saveProject();
+            if(down&KEY_Y&&s.selectedModule==MOD_QUANTUM) quantum::measure(q);
+            if(down&KEY_Y&&s.selectedModule==MOD_MARAUDER) securitylab::acknowledge();
+            if(down&KEY_L&&s.selectedModule==MOD_QUANTUM) quantum::runDeutschJozsa(q);
+            if(down&KEY_R&&s.selectedModule==MOD_QUANTUM) quantum::runQFT2(q);
+            if(down&KEY_L&&s.selectedModule==MOD_MARAUDER) securitylab::setMode(securitylab::PASSIVE_RF);
+            if(down&KEY_R&&s.selectedModule==MOD_MARAUDER) securitylab::setMode(securitylab::LAB_SIMULATION);
+            if(down&KEY_X&&s.selectedModule==MOD_STUDIO){ audio::tone(660,180); ++s.studioTicks; }
+            if(down&KEY_Y&&s.selectedModule==MOD_SOUND) audio::stop();
+            if(down&KEY_Y&&s.selectedModule==MOD_SYSTEM) recovery::heartbeat();
+            if(down&KEY_X&&s.selectedModule==MOD_SYSTEM) osfabric::cycle();
+            if(down&KEY_Y&&s.selectedModule==MOD_CORE) recovery::heartbeat();
+            if(down&KEY_Y&&s.selectedModule==MOD_AI) ai::generate();
+            if(down&KEY_Y&&s.selectedModule==MOD_LAB) lab::tick();
+            if(down&KEY_X&&s.selectedModule==MOD_ANIMAL){ animal::setDirection(animal::ANIMAL_TO_HUMAN); animal::analyze(); }
+            if(down&KEY_Y&&s.selectedModule==MOD_ANIMAL){ animal::setDirection(animal::HUMAN_TO_ANIMAL); animal::synthesize(); }
+            if(down&KEY_L&&s.selectedModule==MOD_ANIMAL) animal::setSpecies((animal::Species)((animal::report().species+animal::SPECIES_COUNT-1)%animal::SPECIES_COUNT));
+            if(down&KEY_R&&s.selectedModule==MOD_ANIMAL) animal::setSpecies((animal::Species)((animal::report().species+1)%animal::SPECIES_COUNT));
+            if(down&KEY_X&&s.selectedModule==MOD_HARMONIC) harmonic::nextPrime();
+            if(down&KEY_Y&&s.selectedModule==MOD_HARMONIC) harmonic::setVoid((s16)(harmonic::node().voidVector+1));
+            if(down&KEY_L&&s.selectedModule==MOD_HARMONIC) harmonic::setDampener(harmonic::node().dampener>100?harmonic::node().dampener-100:0);
+            if(down&KEY_R&&s.selectedModule==MOD_HARMONIC) harmonic::setAmplifier(harmonic::node().amplifier+100);
+            if(down&KEY_X&&s.selectedModule==MOD_CODEX) codex::init();
+            if(down&KEY_Y&&s.selectedModule==MOD_DSP) (void)dsp::metrics();
+            if(down&KEY_Y&&s.selectedModule==MOD_PROJECTS) engine::resetProject();
+            if(down&KEY_SELECT){ quantum::reset(q); audio::stop(); }
+        }
+
         if(!s.safeMode) quantum::tick(q);
         dsp::tick(); lab::tick(); ai::tick(); studio::tick(); hil::tick(); engine::tick();
-        if((s.frame&63)==0){(void)dsp::metrics();ai::generate();}
-        if(s.selectedModule==MOD_NETWORK&&(s.frame&127)==0)network::tick();
-        gate::tick(); session::tick(); graph::tick(); governor::tick(); recovery::heartbeat(); diag::tick(s.frame); securitylab::tick(); mission::tick(); capacity::tick(); ++s.securityTicks; ++s.missionTicks;
-        settings::tick(); i18n::tick(); animal::tick(); codex::tick(); harmonic::tick(); heritage::tick(); osfabric::tick();
+        if((s.frame&63)==0){ (void)dsp::metrics(); ai::generate(); }
+        if(s.selectedModule==MOD_NETWORK&&(s.frame&127)==0) network::tick();
+        gate::tick(); session::tick(); graph::tick(); governor::tick();
+        recovery::heartbeat(); diag::tick(s.frame); securitylab::tick(); mission::tick();
+        capacity::tick(); ++s.securityTicks; ++s.missionTicks;
+        settings::tick(); i18n::tick(); animal::tick(); codex::tick(); harmonic::tick();
+        heritage::tick(); osfabric::tick();
     }
+
     ui::update(s);
 }
 void render(const SystemState&s){ui::render(s);}
