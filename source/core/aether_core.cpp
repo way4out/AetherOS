@@ -53,8 +53,8 @@ static void startDeferredServices(SystemState&s){
     s.networkReady=network::status(network::LINK_WIFI).available; s.gatewayConfigured=radio::configured(); s.projectSaved=engine::projectExists();
 }
 static void touchHome(SystemState&s,touchPosition&t){
-    if(t.px>=10 && t.px<254 && t.py>=58 && t.py<178){
-        const int col=(t.px-10)/61, row=(t.py-58)/30;
+    if(t.px>=10 && t.px<254 && t.py>=38 && t.py<158){
+        const int col=(t.px-10)/61, row=(t.py-38)/30;
         if(col<4 && row<4){ const int m=row*4+col; if(m>=0 && m<MOD_COUNT){ s.selectedModule=m; s.screen=m+1; } }
     }
 }
