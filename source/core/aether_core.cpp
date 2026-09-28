@@ -32,7 +32,7 @@
 #include "../heritage/aether_heritage.h"
 #include "../os/aether_os_fabric.h"
 
-namespace { aether::quantum::Simulator q; bool servicesStarted=false; }
+namespace { aether::quantum::Simulator q; bool servicesStarted=false; bool touchWasDown=false; int touchStartX=-1,touchStartY=-1; }
 
 namespace aether {
 void init(SystemState&s){
@@ -91,7 +91,20 @@ void update(SystemState&s){
         if(d&KEY_LEFT||d&KEY_UP)s.selectedModule=(s.selectedModule+MOD_COUNT-1)%MOD_COUNT;
         if(d&KEY_RIGHT||d&KEY_DOWN)s.selectedModule=(s.selectedModule+1)%MOD_COUNT;
         if(d&KEY_A)s.screen=s.selectedModule+1;
-        touchPosition t; touchRead(&t); if((d&KEY_TOUCH)&&t.px<256&&t.py<192)touchHome(s,t);
+        touchPosition t; touchRead(&t);
+        const bool td=(d&KEY_TOUCH)!=0;
+        if(td && !touchWasDown){ touchStartX=t.px; touchStartY=t.py; }
+        if(td && t.px<256 && t.py<192){
+            const int dx=(touchStartX>=0)?(int)t.px-touchStartX:0;
+            const int dy=(touchStartY>=0)?(int)t.py-touchStartY:0;
+            if((dx>28||dx<-28||dy>28||dy<-28)){
+                if(dx>28) s.selectedModule=(s.selectedModule+1)%MOD_COUNT;
+                else if(dx<-28) s.selectedModule=(s.selectedModule+MOD_COUNT-1)%MOD_COUNT;
+                else if(dy>28) s.selectedModule=(s.selectedModule+4)%MOD_COUNT;
+                else if(dy<-28) s.selectedModule=(s.selectedModule+MOD_COUNT-4)%MOD_COUNT;
+            } else if(!touchWasDown) touchHome(s,t);
+        }
+        touchWasDown=td;
     } else {
         if(d&KEY_B)s.screen=0;
         if(s.selectedModule==MOD_SETTINGS){
@@ -138,19 +151,29 @@ void update(SystemState&s){
             if(d&KEY_SELECT){quantum::reset(q);audio::stop();}
         }
         touchPosition t; touchRead(&t);
-        if(d&KEY_TOUCH){
-            if(t.py>150)s.screen=0;
-            else if(t.px<85){
-                if(s.selectedModule==MOD_SETTINGS)settings::previousSetting();
-                else s.selectedModule=(s.selectedModule+MOD_COUNT-1)%MOD_COUNT;
-            } else if(t.px>170){
-                if(s.selectedModule==MOD_SETTINGS)settings::nextSetting();
-                else s.selectedModule=(s.selectedModule+1)%MOD_COUNT;
-            } else {
-                if(s.selectedModule==MOD_SETTINGS)settings::adjust(1);
-                else doAction(s);
+        const bool td=(d&KEY_TOUCH)!=0;
+        if(td && !touchWasDown){ touchStartX=t.px; touchStartY=t.py; }
+        if(td){
+            const int dx=(touchStartX>=0)?(int)t.px-touchStartX:0;
+            const int dy=(touchStartY>=0)?(int)t.py-touchStartY:0;
+            if(dy>28){ s.screen=0; }
+            else if(dx<-28){ s.selectedModule=(s.selectedModule+MOD_COUNT-1)%MOD_COUNT; }
+            else if(dx>28){ s.selectedModule=(s.selectedModule+1)%MOD_COUNT; }
+            else if(!touchWasDown){
+                if(t.py>150) s.screen=0;
+                else if(t.px<85){
+                    if(s.selectedModule==MOD_SETTINGS)settings::previousSetting();
+                    else s.selectedModule=(s.selectedModule+MOD_COUNT-1)%MOD_COUNT;
+                } else if(t.px>170){
+                    if(s.selectedModule==MOD_SETTINGS)settings::nextSetting();
+                    else s.selectedModule=(s.selectedModule+1)%MOD_COUNT;
+                } else {
+                    if(s.selectedModule==MOD_SETTINGS)settings::adjust(1);
+                    else doAction(s);
+                }
             }
         }
+        touchWasDown=td;
         if(!s.safeMode) quantum::tick(q);
         dsp::tick(); lab::tick(); ai::tick(); studio::tick(); hil::tick(); engine::tick();
         if((s.frame&63)==0){(void)dsp::metrics();ai::generate();}
