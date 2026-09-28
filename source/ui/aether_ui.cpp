@@ -44,8 +44,11 @@ static void selectBottom(){consoleSelect(&bottomConsole);}
 static void clearTop(){selectTop();consoleClear();}
 static void clearBottom(){selectBottom();consoleClear();}
 
+static int lastTitleView=-1;
 static void title(const char* t,const SystemState&s){
-    clearTop(); selectTop();
+    int view=(s.screen==0)?0:(100+s.selectedModule);
+    if(view!=lastTitleView){ clearTop(); lastTitleView=view; }
+    selectTop();
     char stamp[40]; settings::timestamp(stamp,sizeof(stamp));
     iprintf("%sAETHEROS O2S%s // %s\n","\x1b[36m","\x1b[37m",t);
     iprintf("%s%s%s\n",theme::accent(),theme::sky(),"\x1b[37m");
@@ -82,7 +85,8 @@ static void statusRibbon(const SystemState&s){
     iprintf("HIL %u%% GW %u/6 HP %u BPM %u\n",hr.score,(unsigned)gate::onlineCount(),dg.score,st.bpm);
 }
 static void topDesktop(const SystemState&s){
-    auto p=settings::current(); scenery(topPixels,theme::active(),s.frame); scenery(bottomPixels,theme::active(),s.frame);
+    auto p=settings::current();
+    if((s.frame&3u)==0u) scenery(topPixels,theme::active(),s.frame);
     title("AETHER HOME",s); selectTop();
     iprintf("\x1b[1;1H\x1b[36mAETHEROS O2S\x1b[37m   UNIVERSAL DSi WORKSTATION\n");
     iprintf("\x1b[2;1H\x1b[33mOS FABRIC: %s\x1b[37m  %s\n",osfabric::name(),osfabric::mode());
