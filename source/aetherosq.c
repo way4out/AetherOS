@@ -391,7 +391,7 @@ static void input(void){
  }
  moduleInput(d);
 }
-int main(void){
+int legacy_shell_main(void){
  powerOn(POWER_ALL_2D);
  videoSetMode(MODE_0_2D);
  videoSetModeSub(MODE_0_2D);
