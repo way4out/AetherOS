@@ -32,7 +32,17 @@
 #include "../heritage/aether_heritage.h"
 #include "../os/aether_os_fabric.h"
 
-namespace { aether::quantum::Simulator q; bool servicesStarted=false; bool touchWasDown=false; bool touchGestureConsumed=false; int touchStartX=-1,touchStartY=-1; int touchStartScreen=0,touchStartModule=0; }
+namespace {
+aether::quantum::Simulator q;
+bool servicesStarted=false;
+bool touchWasDown=false;
+bool touchGestureConsumed=false;
+int touchStartX=-1,touchStartY=-1;
+int touchStartScreen=0,touchStartModule=0;
+u8 touchRawFrames=0;
+u8 touchReleaseFrames=0;
+u8 touchLockFrames=0;
+}
 
 namespace aether {
 void init(SystemState&s){
@@ -52,12 +62,6 @@ static void startDeferredServices(SystemState&s){
     s.quantumReady=true; s.audioReady=audio::init(); dsp::init(); lab::init(); ai::init(); studio::init(); network::init();
     s.networkReady=network::status(network::LINK_WIFI).available; s.gatewayConfigured=radio::configured(); s.projectSaved=engine::projectExists();
 }
-static void touchHome(SystemState&s,touchPosition&t){
-    if(t.px>=10 && t.px<254 && t.py>=38 && t.py<158){
-        const int col=(t.px-10)/61, row=(t.py-38)/30;
-        if(col<4 && row<4){ const int m=row*4+col; if(m>=0 && m<MOD_COUNT){ s.selectedModule=m; s.screen=m+1; } }
-    }
-}
 static void doAction(SystemState&s){
     switch(s.selectedModule){
     case MOD_QUANTUM: quantum::runBell(q); break; case MOD_SOUND: audio::tone(440,250); break;
@@ -75,11 +79,24 @@ void update(SystemState&s){
     scanKeys(); ++s.frame;
     if(s.frame==30) startDeferredServices(s);
     const u16 down=keysDown();
-    const bool touchDownNow=(keysHeld()&KEY_TOUCH)!=0;
+    const bool touchRaw=(keysHeld()&KEY_TOUCH)!=0;
     touchPosition touch; touchRead(&touch);
 
-    // Single authoritative touchscreen state machine.
-    if(touchDownNow && !touchWasDown){
+    // DSi touch panels can briefly bounce between held/released while a finger/stylus
+    // is stationary. Require two consecutive frames for each edge and ignore a few
+    // frames after release so one physical contact produces exactly one event.
+    if(touchLockFrames) --touchLockFrames;
+    if(touchRaw){
+        touchReleaseFrames=0;
+        if(touchRawFrames<3) ++touchRawFrames;
+    }else{
+        touchRawFrames=0;
+        if(touchReleaseFrames<3) ++touchReleaseFrames;
+    }
+    const bool touchDownNow = touchRawFrames>=2;
+    const bool touchReleasedNow = touchReleaseFrames>=2 && touchWasDown;
+
+    if(touchDownNow && !touchWasDown && touchLockFrames==0){
         touchStartX=touch.px; touchStartY=touch.py;
         touchStartScreen=s.screen; touchStartModule=s.selectedModule;
         touchGestureConsumed=false;
@@ -87,7 +104,7 @@ void update(SystemState&s){
     if(touchDownNow && !touchGestureConsumed && touchStartX>=0){
         const int dx=(int)touch.px-touchStartX, dy=(int)touch.py-touchStartY;
         const int ax=dx<0?-dx:dx, ay=dy<0?-dy:dy;
-        if(ax>=32 || ay>=32){
+        if(ax>=40 || ay>=40){
             if(touchStartScreen==0){
                 if(ax>=ay) s.selectedModule=(s.selectedModule+(dx>0?1:MOD_COUNT-1))%MOD_COUNT;
                 else s.selectedModule=(s.selectedModule+(dy>0?4:MOD_COUNT-4))%MOD_COUNT;
@@ -98,8 +115,8 @@ void update(SystemState&s){
             touchGestureConsumed=true;
         }
     }
-    if(!touchDownNow && touchWasDown){
-        if(!touchGestureConsumed){
+    if(touchReleasedNow){
+        if(!touchGestureConsumed && touchStartX>=0){
             const int px=touchStartX, py=touchStartY;
             if(touchStartScreen==0 && px>=10 && px<254 && py>=38 && py<158){
                 const int col=(px-10)/61, row=(py-38)/30, m=row*4+col;
@@ -112,6 +129,7 @@ void update(SystemState&s){
             }
         }
         touchGestureConsumed=false; touchStartX=-1; touchStartY=-1;
+        touchLockFrames=6;
     }
     touchWasDown=touchDownNow;
 
