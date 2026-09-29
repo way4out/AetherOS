@@ -34,12 +34,12 @@ jobs:
           make
           test -s AetherCore3.nds
           "$BLOCKSDS/tools/ndstool/ndstool" -t AetherCore3.nds
-          NDS_SIZE=$(stat -c '%s' AetherCore2.nds)
+          NDS_SIZE=$(stat -c '%s' AetherCore3.nds)
           test "$NDS_SIZE" -gt 65536
-          UNIT_CODE=$(dd if=AetherCore2.nds bs=1 skip=18 count=1 2>/dev/null | od -An -tu1 | tr -d ' ')
+          UNIT_CODE=$(dd if=AetherCore3.nds bs=1 skip=18 count=1 2>/dev/null | od -An -tu1 | tr -d ' ')
           test "$UNIT_CODE" = "2"
-          ARM9_OFFSET=$(dd if=AetherCore2.nds bs=1 skip=32 count=4 2>/dev/null | od -An -tu4 -N1 | tr -d ' ')
-          ARM9_SIZE=$(dd if=AetherCore2.nds bs=1 skip=44 count=4 2>/dev/null | od -An -tu4 -N1 | tr -d ' ')
+          ARM9_OFFSET=$(dd if=AetherCore3.nds bs=1 skip=32 count=4 2>/dev/null | od -An -tu4 -N1 | tr -d ' ')
+          ARM9_SIZE=$(dd if=AetherCore3.nds bs=1 skip=44 count=4 2>/dev/null | od -An -tu4 -N1 | tr -d ' ')
           test -n "$ARM9_OFFSET"
           test -n "$ARM9_SIZE"
           echo "VERIFIED_NDS_SIZE=$NDS_SIZE"
@@ -71,18 +71,30 @@ jobs:
           grep -q "emulation::init" source/core/aether_core.cpp
           grep -q "emulation::tick" source/core/aether_core.cpp
           echo "VERIFIED_PASS_4_9_EMULATION_FACADE=present"
-          grep -q "AETHERCORE_PASS 60" source/aetherosq.c
+          grep -q "AETHERCORE_PASS 70" source/aetherosq.c
           echo "VERIFIED_PASS_4_9_RUNTIME_MARKER=present"
           test -f source/core/aether_core2.cpp
           test -f source/core/aether_core2.h
           grep -q "core2::init" source/core/aether_core.cpp
           grep -q "core2::tick" source/core/aether_core.cpp
-          echo "VERIFIED_AETHERCORE2_INTEGRATION=present"\n          test -f source/core/aether_core3.cpp\n          test -f source/core/aether_core3.h\n          grep -q "core3::init" source/core/universal_guard.cpp\n          grep -q "aether_core3_tick" source/aetherosq.c\n          grep -q "AETHERCORE_PASS 70" source/aetherosq.c\n          echo "VERIFIED_AETHERCORE3_RUNTIME_HEALTH=present"
+          echo "VERIFIED_AETHERCORE2_INTEGRATION=present"
+          test -f source/core/aether_core3.cpp
+          test -f source/core/aether_core3.h
+          grep -q "core3::init" source/core/universal_guard.cpp
+          grep -q "aether_core3_tick" source/aetherosq.c
+          grep -q "AETHERCORE_PASS 70" source/aetherosq.c
+          echo "VERIFIED_AETHERCORE3_RUNTIME_HEALTH=present"
+          test -f source/core/aether_core3.cpp
+          test -f source/core/aether_core3.h
+          grep -q "core3::init" source/core/universal_guard.cpp
+          grep -q "aether_core3_tick" source/aetherosq.c
+          grep -q "AETHERCORE_PASS 70" source/aetherosq.c
+          echo "VERIFIED_AETHERCORE3_RUNTIME_HEALTH=present"
           echo "VERIFIED_PASS_CORE2_BASE_PRODUCTION_DEPLOY=present"
-          grep -q "AETHERCORE_PASS 60" source/aetherosq.c
-          sha256sum AetherCore2.nds
-          cp AetherCore2.nds AetherOS-AetherCore3.nds
-          ls -lh AetherCore2.nds AetherOS-AetherCore2.nds
+          grep -q "AETHERCORE_PASS 70" source/aetherosq.c
+          sha256sum AetherCore3.nds
+          cp AetherCore3.nds AetherOS-AetherCore3.nds
+          ls -lh AetherCore3.nds AetherOS-AetherCore3.nds
 
       - name: Static source sanity
         run: |
@@ -95,7 +107,7 @@ jobs:
           grep -Fq 'AETHERCORE_PASS 70' source/aetherosq.c
           grep -Fq '#define APP_COUNT 77' source/aetherosq.c
           grep -Fq 'mode>=30&&mode<=77' source/aetherosq.c
-          echo "VERIFIED_PASS_CORE2_SOURCE_SANITY=present"
+          echo "VERIFIED_AETHERCORE3_SOURCE_SANITY=present"
 
       - name: Emulator availability check
         run: |
@@ -105,11 +117,12 @@ jobs:
         run: |
           set -eu
           mkdir -p deploy/apps/AetherMod deploy/data/AetherMod
-          cp AetherCore2.nds deploy/apps/AetherMod/AetherCore2.nds
+          cp AetherCore3.nds deploy/apps/AetherMod/AetherCore3.nds
           cp -r data/AetherMod/. deploy/data/AetherMod/
           cp AETHERMOD.md deploy/AETHERMOD.md
-          printf '%s\n' '4GB SD INSTALL: copy apps/AetherMod and data/AetherMod to the SD root, then launch apps/AetherMod/AetherCore2.nds.' > deploy/INSTALL.txt
-          cp AetherCore2.nds deploy/AetherOS-AetherCore2.nds
+          printf '%s
+' '4GB SD INSTALL: copy apps/AetherMod and data/AetherMod to the SD root, then launch apps/AetherMod/AetherCore3.nds.' > deploy/INSTALL.txt
+          cp AetherCore3.nds deploy/AetherOS-AetherCore3.nds
           tar -czf AetherCore3-DSi-Public.tar.gz -C deploy .
 
       - uses: actions/upload-artifact@v4
@@ -117,6 +130,6 @@ jobs:
           name: AetherCore3-DSi-Public
           if-no-files-found: error
           path: |
-            AetherCore2.nds
-            AetherOS-AetherCore2.nds
-            AetherCore2-Pass6-DSi-Public.tar.gz
+            AetherCore3.nds
+            AetherOS-AetherCore3.nds
+            AetherCore3-DSi-Public.tar.gz
