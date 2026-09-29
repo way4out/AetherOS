@@ -71,7 +71,8 @@ static int execMastery[48]={0};
 static int execStreak[48]={0};
 static int execReward[48]={0};
 static int execAction[48]={0};
-static int hardwareActionCount=0;\nextern void aether_core3_tick(void);
+static int hardwareActionCount=0;
+extern void aether_core3_tick(void);
 static char fileNames[16][48],vaultNames[12][48],eventNames[16][48];
 
 static const char *apps[APP_COUNT]={
@@ -651,7 +652,8 @@ int legacy_shell_main(void){
  while(1){
    swiWaitForVBlank();
    scanKeys();
-   frame++;\n   aether_core3_tick();
+   frame++;
+   aether_core3_tick();
    visualPhase=(visualPhase+1)&63;
    energy=(energy+1)%101;
    if(dawPlaying&&(frame%15)==0){
