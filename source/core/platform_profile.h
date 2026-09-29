@@ -7,7 +7,10 @@ enum class Family : u8 {
     NDS = 0,
     DSi = 1,
     ThreeDS = 2,
-    ModernNintendo = 3
+    Wii = 3,
+    N64 = 4,
+    GameBoy = 5,
+    ModernNintendo = 6
 };
 
 struct Capabilities {
