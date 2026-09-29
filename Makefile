@@ -2,10 +2,10 @@ ifeq ($(strip $(BLOCKSDS)),)
 $(error "Environment variable BLOCKSDS not found")
 endif
 
-NAME := AetherOS5
-GAME_TITLE := AetherOS5
+NAME := AetherCore5
+GAME_TITLE := AetherCore5
 GAME_SUBTITLE1 := DSi AetherOS 5
-GAME_SUBTITLE2 := AetherOS DSi Production
+GAME_SUBTITLE2 := AetherCore 5 DSi Production
 
 SOURCEDIRS := source
 INCLUDEDIRS := include
