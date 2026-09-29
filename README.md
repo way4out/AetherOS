@@ -20,8 +20,8 @@ The official build is produced by GitHub Actions from the repository source usin
 
 ## Memory and storage tier
 
-- Retail Nintendo DSi main RAM is 16 MiB; the DSi also provides additional WRAM, but a retail unit cannot safely provide 44 MiB of RAM to a homebrew application. citeturn0search0turn0search1
-- AetherCore 4 therefore does **not** fake a 44 MiB RAM allocation. The rollout now provisions a lazy 44 MiB SD-backed resource cache at `REVF/CACHE/AETHER44.BIN`, keeping the RAM budget hardware-safe while giving the full package a larger persistent working tier.
+- Retail Nintendo DSi main RAM is 16 MiB; a retail unit cannot safely provide 44 MiB of RAM to a homebrew application.
+- AetherCore 4 does not fake a 44 MiB RAM allocation. The rollout provisions an SD-backed resource cache at REVF/CACHE/AETHER44.BIN while keeping the runtime RAM budget hardware-safe.
 
 ## Hardware truth
 
@@ -51,6 +51,5 @@ See [AETHERCORE4_USER_GUIDE.md](AETHERCORE4_USER_GUIDE.md) for the complete touc
 ## AetherCore 4 release naming
 
 The production workflow now emits AetherCore4.nds and AetherOS-AetherCore4.nds. RF interference/jamming and unauthorized interception remain disabled; interstellar/interdimensional surfaces are conceptual or external-gateway contracts only.
-
 
 <!-- AetherCore4 CI release trigger -->
