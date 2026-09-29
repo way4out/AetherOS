@@ -1,0 +1,16 @@
+#pragma once
+#include <nds.h>
+#include <stdbool.h>
+void aetherHardwareInit(void);
+void aetherHardwareShutdown(void);
+bool aetherCameraAvailable(void);
+bool aetherMicAvailable(void);
+int aetherCameraDevice(void);
+int aetherCameraPreview(void);
+int aetherCameraCapture(void);
+int aetherCameraPreviewCount(void);
+int aetherCameraCaptureCount(void);
+int aetherMicStartStop(void);
+bool aetherMicActive(void);
+int aetherMicPeak(void);
+int aetherMicRms(void);
