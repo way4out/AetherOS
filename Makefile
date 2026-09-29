@@ -3,7 +3,7 @@ $(error "Environment variable BLOCKSDS not found")
 endif
 
 NAME := AetherCore7
-GAME_TITLE := AetherCore5
+GAME_TITLE := AetherCore7
 GAME_SUBTITLE1 := DSi AetherOS 7
 GAME_SUBTITLE2 := AetherCore 7 DSi Production
 
