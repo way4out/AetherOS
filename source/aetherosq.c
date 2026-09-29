@@ -17,7 +17,7 @@
  * stock-DSi hardware.
  */
 #define APP_COUNT 79
-#define AETHERCORE_MAJOR 7
+#define AETHERCORE_MAJOR 707
 #define AETHERCORE_PASS 1
 #define AETHERCORE_TOTAL_PASSES 7
 #define AETHERMOD_MAJOR 9
@@ -54,7 +54,7 @@ static u8 dawPattern[4][16];
 static int dspWindow=0,dspHold=0,dspGain=1,dspInput=0,dspFrames=0;
 static int telemetryPage=0,networkTest=0,networkPackets=0;
 static int aiMode=0,aiQuery=0,phoneConnected=0,phonePackets=0,phoneSync=0;
-static int mediaTrack=0,mediaPlaying=0,mediaVolume=70,mediaMode=0;
+static int mediaTrack=0,mediaPlaying=0,mediaVolume=70,mediaMode=0,mediaSource=0,mediaPage=0,mediaLegalOnly=1;
 static int sensorMode=0,sensorSamples=0,sensorPeak=0;
 static int vaultCursor=0,vaultCount=0,fileCursor=0,fileCount=0;
 static int hapticLevel=2,accessScale=1,accessContrast=0,accessScroll=1;
@@ -323,8 +323,17 @@ static void modPhone(void){
 }
 
 /* 13 — Media Studio */
-static void modMedia(void){page("13 MEDIA STUDIO");printf("MODE:%s TRACK:%d PLAY:%s VOL:%d\n",mediaMode?"MIXER":"PLAYER",mediaTrack+1,mediaPlaying?"YES":"NO",mediaVolume);
- graph("WAVE ",mediaTrack*17);printf("LOCAL SD MEDIA CONTROL SURFACE\n");footer("UP/DOWN TRACK | L/R VOLUME | A PLAY | X MODE | Y NEXT | B HOME");}
+static void modMedia(void){
+ page("13 MEDIA / GLOBAL HUB");
+ static const char *kind[]={"PUBLIC DOMAIN","OFFICIAL FREE","RADIO","LOCAL TV","GLOBAL TV","CURRENT INFO"};
+ printf("SOURCE:%s ITEM:%d PLAY:%s VOL:%d\\n",kind[mediaSource%6],mediaTrack+1,mediaPlaying?"YES":"NO",mediaVolume);
+ printf("PAGE:%d LEGAL FILTER:%s SD CACHE: ENABLED\\n",mediaPage+1,mediaLegalOnly?"ON":"OFF");
+ printf("LAWFUL DIRECTORY + STREAM CONTRACT; FEED MUST BE COMPATIBLE.\\n");
+ printf("CURRENT INFO REQUIRES NETWORK REFRESH; NOT CLAIMED OFFLINE.\\n");
+ printf("AETHEROS DOES NOT BUNDLE UNLICENSED COPYRIGHTED PROGRAMS.\\n");
+ graph("MEDIA ",mediaTrack*17+mediaSource*9+mediaPage);
+ footer("UP/DOWN ITEM | L/R SOURCE | A OPEN | X PAGE | Y LEGAL | B HOME");
+}
 
 /* 14 — Sensor Hub */
 static void modSensor(void){page("14 SENSOR HUB");sensorSamples++;sensorPeak=(sensorPeak+frame)%100;
