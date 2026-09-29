@@ -18,6 +18,11 @@ The official build is produced by GitHub Actions from the repository source usin
 - RF/security surfaces remain passive/authorized analysis and lab simulation only.
 - External camera, microphone, network, TinySA, satellite, modern cellular, AI, QPU and projection capabilities are exposed only where compatible hardware/backend support actually exists.
 
+## Memory and storage tier
+
+- Retail Nintendo DSi main RAM is 16 MiB; the DSi also provides additional WRAM, but a retail unit cannot safely provide 44 MiB of RAM to a homebrew application. citeturn0search0turn0search1
+- AetherCore 4 therefore does **not** fake a 44 MiB RAM allocation. The rollout now provisions a lazy 44 MiB SD-backed resource cache at `REVF/CACHE/AETHER44.BIN`, keeping the RAM budget hardware-safe while giving the full package a larger persistent working tier.
+
 ## Hardware truth
 
 A stock Nintendo DSi cannot become modern Xbox, PlayStation, Apple, satellite, SDR, holographic or quantum hardware through software alone. AetherCore 4 therefore treats those systems as adapters/workspaces and keeps unsupported capabilities explicitly gated.
