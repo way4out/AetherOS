@@ -5,7 +5,7 @@ endif
 NAME := AetherCore2
 GAME_TITLE := AetherCore2
 GAME_SUBTITLE1 := DSi AetherCore 2
-GAME_SUBTITLE2 := AetherOS 9 Runtime
+GAME_SUBTITLE2 := AetherOS DSi Memory-Max
 
 SOURCEDIRS := source
 INCLUDEDIRS := include
@@ -14,7 +14,7 @@ BINDIRS := data
 AUDIODIRS :=
 NITROFATDIR :=
 
-DEFINES := -D__NDS__ -DARM9
+DEFINES := -D__NDS__ -DARM9 -DAETHER_DSI_MEMORY_MAX
 LIBS := -ldswifi9 -lnds9 -lc
 LIBDIRS := $(BLOCKSDS)/libs/dswifi $(BLOCKSDS)/libs/libnds $(BLOCKSDS)/libs/libc9
 
@@ -56,7 +56,10 @@ INCLUDEFLAGS := $(foreach path,$(INCLUDEDIRS),-I$(path)) $(foreach path,$(LIBDIR
 LIBDIRSFLAGS := $(foreach path,$(LIBDIRS),-L$(path)/lib)
 CFLAGS := -std=gnu11 $(WARNFLAGS) $(DEFINES) $(ARCH) -mthumb -mthumb-interwork $(INCLUDEFLAGS) -O2 -ffunction-sections -fdata-sections -fomit-frame-pointer
 CXXFLAGS := -std=gnu++14 $(WARNFLAGS) $(DEFINES) $(ARCH) -mthumb -mthumb-interwork $(INCLUDEFLAGS) -O2 -ffunction-sections -fdata-sections -fno-exceptions -fno-rtti -fomit-frame-pointer
-LDFLAGS := -mthumb -mthumb-interwork $(LIBDIRSFLAGS) -Wl,-Map,$(MAP) -Wl,--gc-sections -nostdlib -T$(BLOCKSDS)/sys/crts/ds_arm9.mem -T$(BLOCKSDS)/sys/crts/ds_arm9.ld -Wl,--start-group $(LIBS) -lgcc -Wl,--end-group
+# DSi linker memory map: use the retail DSi 16 MiB main-RAM layout while
+# retaining the standard ARM9 linker script/CRT. libnds then sizes the heap
+# from the DSi main-RAM limit instead of the 4 MiB DS layout.
+LDFLAGS := -mthumb -mthumb-interwork $(LIBDIRSFLAGS) -Wl,-Map,$(MAP) -Wl,--gc-sections -nostdlib -T$(BLOCKSDS)/sys/crts/dsi_arm9.mem -T$(BLOCKSDS)/sys/crts/ds_arm9.ld -Wl,--start-group $(LIBS) -lgcc -Wl,--end-group
 
 OBJS_SOURCES := $(addsuffix .o,$(addprefix $(BUILDDIR)/,$(SOURCES_S))) $(addsuffix .o,$(addprefix $(BUILDDIR)/,$(SOURCES_C))) $(addsuffix .o,$(addprefix $(BUILDDIR)/,$(SOURCES_CPP)))
 DEPS := $(OBJS_SOURCES:.o=.d)
