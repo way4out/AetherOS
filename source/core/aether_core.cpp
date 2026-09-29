@@ -77,7 +77,7 @@ static void startDeferredServices(SystemState&s){
     if(servicesStarted) return;
     servicesStarted=true;
     s.sdReady=hardware::sdAvailable(); hardware::hardwareTick();
-    if(s.sdReady) { s.sdWriteReady=hardware::ensureDirectories()&&hardware::writeBootMarker(); if(s.sdWriteReady) settings::load(); }
+    if(s.sdReady) { s.sdWriteReady=hardware::ensureDirectories()&&hardware::writeBootMarker(); if(s.sdWriteReady) { (void)hardware::ensure44MiBCache(); settings::load(); } }
     benchmark::runQuick(s.benchmarkComplete); radio::init(); session::init(); securitylab::init();
     s.quantumReady=true; s.audioReady=audio::init(); dsp::init(); lab::init(); ai::init(); studio::init(); network::init();
     s.networkReady=network::status(network::LINK_WIFI).available; s.gatewayConfigured=radio::configured(); s.projectSaved=engine::projectExists();
