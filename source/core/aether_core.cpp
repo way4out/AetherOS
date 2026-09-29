@@ -25,6 +25,7 @@
 #include "mission_control.h"
 #include "capacity_engine.h"
 #include "pass46_runtime.h"
+#include "platform_profile.h"
 #include "../studio/aether_studio.h"
 #include "../settings/aether_settings.h"
 #include "../theme/aether_theme.h"
@@ -46,6 +47,7 @@ u8 touchRawFrames=0;
 u8 touchReleaseFrames=0;
 u8 touchLockFrames=0;
 aether::pass46::Health runtimeHealth;
+aether::platform::Capabilities platformCaps;
 }
 
 namespace aether {
@@ -54,10 +56,11 @@ void init(SystemState&s){
     touchWasDown=false; touchGestureConsumed=false;
     touchStartX=-1; touchStartY=-1; touchRawFrames=0; touchReleaseFrames=0; touchLockFrames=0;
     pass46::init(runtimeHealth);
+    platformCaps = platform::detect();
     s={false,false,false,false,false,false,false,false,0,0,0,false,false,0,0,0,0,0,0,0,0,0,0,0};
     videoSetMode(MODE_0_2D); videoSetModeSub(MODE_0_2D);
     vramSetBankA(VRAM_A_MAIN_BG); vramSetBankC(VRAM_C_SUB_BG);
-    consoleDemoInit(); consoleClear(); s.touchReady=true; hardware::hardwareTick();
+    consoleDemoInit(); consoleClear(); s.touchReady=platformCaps.touch; hardware::hardwareTick();
     quantum::init(q); engine::init(); web::init(); device::init(); graph::init(); recovery::init(); governor::init(); diag::init(); hil::init(); mission::init(); capacity::init();
     studio::init(); gate::init(); compute::init(); settings::init(); i18n::init(); codex::init(); harmonic::init(); osfabric::init(); i18n::adjust((int)settings::current().language-1); theme::init(); securitylab::init(); animal::init(); heritage::init(); ui::init();
 }
