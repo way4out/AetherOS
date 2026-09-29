@@ -84,7 +84,13 @@ static const char *apps[APP_COUNT]={
  "EXECUTIVE HUB","MISSION CONTROL","RESOURCE COMMAND","SECURITY COMMAND","COMMS COMMAND",
  "OPERATIONS CENTER","DEVELOPMENT CENTER","CREATOR ECONOMY","KNOWLEDGE CENTER","HEALTH & WELLNESS",
  "ACCESS COMMAND","FINANCE LEDGER","INVENTORY COMMAND","FIELD COMMAND","AUTOMATION DESK",
- "ANALYTICS CENTER","ARCHIVE COMMAND","USER PROFILE","SYSTEMS MONITOR"
+ "ANALYTICS CENTER","ARCHIVE COMMAND","USER PROFILE","SYSTEMS MONITOR",
+ "STRATEGY DESK","PROJECT COMMAND","TASK COMMAND","SCHEDULE CENTER","RESOURCE PLANNER",
+ "RISK DESK","QUALITY COMMAND","RESEARCH DESK","DESIGN COMMAND","CONTENT COMMAND",
+ "COMMUNITY COMMAND","PARTNERSHIP DESK","SERVICE COMMAND","SUPPORT COMMAND","LOGISTICS COMMAND",
+ "ASSET COMMAND","DATA COMMAND","INSIGHTS DESK","PERFORMANCE COMMAND","COMPLIANCE DESK",
+ "POLICY CENTER","CHANGE COMMAND","RELEASE COMMAND","TEST COMMAND","RELIABILITY CENTER",
+ "CONTINUITY DESK","GROWTH COMMAND","IMPACT CENTER","AETHERCORE CONTROL"
 };
 static const char *animalNames[]={"Horse","Dog","Cat","Cow","Bison","Camel","Zebra","Ostrich","Bird","Wolf","Fox","Deer","Bear","Big Cat","Other"};
 static const char *codexBooks[66]={
@@ -607,7 +613,7 @@ int legacy_shell_main(void){
  videoSetModeSub(MODE_0_2D);
  vramDefault();
  consoleInit(&topConsole,0,BgType_Text4bpp,BgSize_T_256x256,22,3,true,true);
- consoleInit(&bottomConsole,0,BgType_Text4bpp,BgSize_T_256x256,22,3,false,true);
+ consoleInit(&bottomConsole,0,BgType_Text4bpp,BgSize_T_256x256,30,0,false,true);
  soundEnable();
 
  /* Boot-critical rule: the display must be live before any SD/FAT work.
@@ -638,7 +644,8 @@ int legacy_shell_main(void){
    consoleSelect(&bottomConsole);
    printf("Continuing without storage.\n");
  }
- mode=29;
+ /* Always land on the deterministic home renderer after boot. AetherCore remains module 29. */
+ mode=0;
  draw();
 
  while(1){
