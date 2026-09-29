@@ -5,13 +5,14 @@ static FabricState gState{};
 namespace {
 static const char* kNames[] = {
     "PlayStation 1","PlayStation 2","PlayStation 3","PlayStation 4","PlayStation 5",
-    "PlayStation 6","Xbox","Xbox 360","Xbox One","Xbox Series"
+    "PlayStation 6","PlayStation 6-1","Xbox","Xbox 360","Xbox One","Xbox Series"
 };
 static const char* kCaps[] = {
+    "Local-profile / metadata compatibility layer",
+    "Local-profile / metadata compatibility layer",
     "Remote profile / media + game metadata gateway",
     "Remote profile / media + game metadata gateway",
-    "Remote profile / media + game metadata gateway",
-    "Remote profile / media + game metadata gateway",
+    "Remote profile / cloud/session gateway",
     "Remote profile / cloud/session gateway",
     "Remote profile / cloud/session gateway",
     "Remote profile / cloud/session gateway",
@@ -41,9 +42,10 @@ void tick(FabricState& s,u32 frame) {
 }
 void cycle(FabricState& s) {
     u8 n=(u8)s.target;
-    n=(u8)((n+1u)%10u);
+    n=(u8)((n+1u)%11u);
     s.target=(Target)n;
     s.authenticated=false;
+    s.jamReady=false;
     gState=s;
 }
 const char* name(Target t) { return kNames[(u8)t]; }
