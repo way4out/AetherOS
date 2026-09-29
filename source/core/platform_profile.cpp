@@ -19,6 +19,12 @@ Capabilities detect() {
 const char* integrationTarget() {
 #if defined(AETHER_TARGET_3DS)
     return "Nintendo 3DS native integration";
+#elif defined(AETHER_TARGET_WII)
+    return "Nintendo Wii native integration";
+#elif defined(AETHER_TARGET_N64)
+    return "Nintendo 64 native integration";
+#elif defined(AETHER_TARGET_GAMEBOY)
+    return "Game Boy native integration";
 #elif defined(AETHER_TARGET_MODERN_NINTENDO)
     return "Later Nintendo native integration";
 #else
