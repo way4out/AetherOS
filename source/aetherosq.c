@@ -14,7 +14,7 @@
  * capabilities are represented as software workspaces/gateways, not invented
  * stock-DSi hardware.
  */
-#define APP_COUNT 48
+#define APP_COUNT 77
 #define AETHERCORE_MAJOR 1
 #define AETHERCORE_PASS 3
 #define AETHERCORE_TOTAL_PASSES 5
@@ -22,7 +22,7 @@
 #define AETHERMOD_MINOR 0
 #define AETHERMOD_PASS 1
 #define AETHERMOD_TOTAL_PASSES 1
-#define HOME_PAGES 6
+#define HOME_PAGES 10
 #define AETHER_SAVE_VERSION 7
 
 typedef struct {
@@ -65,8 +65,8 @@ static int coreQuest=0,coreSocial=0,corePulse=0,coreCredits=75,coreWins=0,coreSe
 static int coreDay=1,coreEnergy=100,coreCoins=40,coreInventory=0,coreAchievements=0,coreEvent=0,coreNpc=0;
 static int coreQuestDone[6]={0,0,0,0,0,0},coreAchDone[6]={0,0,0,0,0,0};
 static int coreExecCursor=0;
-static int execState[19]={0};
-static int execAction[19]={0};
+static int execState[48]={0};
+static int execAction[48]={0};
 static char fileNames[16][48],vaultNames[12][48],eventNames[16][48];
 
 static const char *apps[APP_COUNT]={
