@@ -51,6 +51,11 @@ void aetherHardwareShutdown(void){
 bool aetherCameraAvailable(void){return cameraReady;}
 bool aetherMicAvailable(void){return micReady;}
 int aetherCameraDevice(void){return cameraDevice;}
+void aetherCameraToggle(void){
+ if(!cameraReady || cameraTransferActive() || ndmaBusy(AETHER_CAMERA_NDMA)) return;
+ cameraDevice=(cameraDevice==CAMERA_INNER)?CAMERA_OUTER:CAMERA_INNER;
+ cameraSelect((CameraDevice)cameraDevice);
+}
 int aetherCameraPreviewCount(void){return previewCount;}
 int aetherCameraCaptureCount(void){return captureCount;}
 bool aetherMicActive(void){return micRunning;}
