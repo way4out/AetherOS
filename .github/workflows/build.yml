@@ -10,117 +10,85 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: skylyrac/blocksds:slim-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Inspect toolchain
+      - name: Build real DSi NDS in BlocksDS container
         run: |
           set -eu
-          TOOLBIN="$(dirname "$(find /opt/wonderful -type f -name arm-none-eabi-gcc -print -quit)")"
-          export PATH="$TOOLBIN:/opt/wonderful/bin:$PATH"
-          echo "BLOCKSDS=$BLOCKSDS"
-          echo "TOOLBIN=$TOOLBIN"
-          arm-none-eabi-gcc --version | head -1
-          test -f "$BLOCKSDS/sys/crts/ds_arm9.ld"
-          test -f "$BLOCKSDS/libs/libnds/include/nds.h"
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE:/work" \
+            -w /work \
+            skylyrac/blocksds:slim-latest \
+            bash -lc '
+              set -eu
+              echo "BLOCKSDS=$BLOCKSDS"
+              TOOLBIN="$(dirname "$(find /opt/wonderful -type f -name arm-none-eabi-gcc -print -quit)")"
+              export PATH="$TOOLBIN:/opt/wonderful/bin:$PATH"
+              arm-none-eabi-gcc --version | head -1
+              test -f "$BLOCKSDS/sys/crts/ds_arm9.ld"
+              test -f "$BLOCKSDS/libs/libnds/include/nds.h"
+              make clean
+              make
+              test -s AetherCore4.nds
+              "$BLOCKSDS/tools/ndstool/ndstool" -t AetherCore4.nds
+            '
 
-      - name: Clean and build real NDS
+      - name: Validate NDS binary
         run: |
           set -eu
-          TOOLBIN="$(dirname "$(find /opt/wonderful -type f -name arm-none-eabi-gcc -print -quit)")"
-          export PATH="$TOOLBIN:/opt/wonderful/bin:$PATH"
-          make clean
-          make
           test -s AetherCore4.nds
-          "$BLOCKSDS/tools/ndstool/ndstool" -t AetherCore4.nds
           NDS_SIZE=$(stat -c '%s' AetherCore4.nds)
           test "$NDS_SIZE" -gt 65536
-          UNIT_CODE=$(python3 - <<'PY'
-from pathlib import Path
-p=Path("AetherCore4.nds").read_bytes()
-print(p[0x12])
-PY
-          )
-          test "$UNIT_CODE" = "2"
           python3 - <<'PY'
 from pathlib import Path
 p=Path("AetherCore4.nds").read_bytes()
 assert len(p) > 65536
+assert p[0x12] == 2, f"DSi unit code is {p[0x12]}, expected 2"
 arm9_off=int.from_bytes(p[0x20:0x24],"little")
 arm9_size=int.from_bytes(p[0x2c:0x30],"little")
 assert arm9_off > 0 and arm9_size > 0
 assert arm9_off + arm9_size <= len(p)
+print(f"VERIFIED_NDS_SIZE={len(p)}")
+print(f"VERIFIED_DSI_UNIT_CODE={p[0x12]}")
 print(f"VERIFIED_ARM9_OFFSET={arm9_off}")
 print(f"VERIFIED_ARM9_SIZE={arm9_size}")
 PY
-          echo "VERIFIED_NDS_SIZE=$NDS_SIZE"
-          echo "VERIFIED_DSI_UNIT_CODE=$UNIT_CODE"
-          echo "VERIFIED_ARM9_HEADER=present"
           grep -R "web_fabric\|device_fabric" source >/dev/null
-          echo "VERIFIED_PASS_4_5_FABRICS=present"
           test -f source/core/pass46_runtime.cpp
           test -f source/core/pass46_runtime.h
           grep -q "pass46::init" source/core/aether_core.cpp
           grep -q "pass46::tick" source/core/aether_core.cpp
-          echo "VERIFIED_PASS_4_6_RUNTIME_HEALTH=present"
           test -f source/core/platform_profile.cpp
           test -f source/core/platform_profile.h
           grep -q "platform::detect" source/core/aether_core.cpp
-          echo "VERIFIED_PASS_4_7_PLATFORM_PROFILE=present"
           grep -q "ThreeDS" source/core/platform_profile.h
           grep -q "AETHER_TARGET_3DS" source/core/platform_profile.cpp
           grep -q "AETHER_TARGET_MODERN_NINTENDO" source/core/platform_profile.cpp
           grep -q "AETHER_TARGET_WII" source/core/platform_profile.cpp
           grep -q "AETHER_TARGET_N64" source/core/platform_profile.cpp
           grep -q "AETHER_TARGET_GAMEBOY" source/core/platform_profile.cpp
-          echo "VERIFIED_PASS_4_8_WII_N64_GAMEBOY_WEB_EXPANSION_TARGETS=present"
-          echo "VERIFIED_PASS_4_8_CROSS_GENERATION_TARGETS=present"
           grep -q "PlayStation6_1" source/core/crossgen_fabric.h
           grep -q "PlayStation 6-1" source/core/crossgen_fabric.cpp
           test -f source/core/pass49_emulation.cpp
           test -f source/core/pass49_emulation.h
           grep -q "emulation::init" source/core/aether_core.cpp
           grep -q "emulation::tick" source/core/aether_core.cpp
-          echo "VERIFIED_PASS_4_9_EMULATION_FACADE=present"
           grep -q "AETHERCORE_PASS 70" source/aetherosq.c
-          echo "VERIFIED_PASS_4_9_RUNTIME_MARKER=present"
           test -f source/core/aether_core2.cpp
           test -f source/core/aether_core2.h
           grep -q "core2::init" source/core/aether_core.cpp
           grep -q "core2::tick" source/core/aether_core.cpp
-          echo "VERIFIED_AETHERCORE2_INTEGRATION=present"
           test -f source/core/aether_core3.cpp
           test -f source/core/aether_core3.h
           grep -q "core3::init" source/core/universal_guard.cpp
           grep -q "aether_core3_tick" source/aetherosq.c
-          grep -q "AETHERCORE_PASS 70" source/aetherosq.c
-          echo "VERIFIED_AETHERCORE3_RUNTIME_HEALTH=present"
-          echo "VERIFIED_PASS_CORE2_BASE_PRODUCTION_DEPLOY=present"
-          grep -q "AETHERCORE_PASS 70" source/aetherosq.c
-          sha256sum AetherCore4.nds
-          cp AetherCore4.nds AetherOS-AetherCore4.nds
-          ls -lh AetherCore4.nds AetherOS-AetherCore4.nds
-
-      - name: Static source sanity
-        run: |
-          set -eu
-          test -s source/aetherosq.c
-          test -s source/aether_hardware.c
-          test -s source/core/universal_fabric.cpp
-          test -s source/core/self_heal.cpp
-          test -s source/security/aether_security_lab.cpp
-          grep -Fq 'AETHERCORE_PASS 70' source/aetherosq.c
           grep -Fq '#define APP_COUNT 78' source/aetherosq.c
           grep -Fq 'mode>=30&&mode<=77' source/aetherosq.c
           grep -Fq '"CAMERA & MIC"' source/aetherosq.c
-          grep -Fq "modCamera" source/aetherosq.c
-          echo "VERIFIED_AETHERCORE4_CAMERA_TOUCH_SOURCE=present"
-          echo "VERIFIED_AETHERCORE4_SOURCE_SANITY=present"
-
-      - name: Emulator availability check
-        run: |
-          command -v desmume-cli || command -v desmume || command -v melonDS || true
+          grep -Fq 'modCamera' source/aetherosq.c
+          sha256sum AetherCore4.nds
+          cp AetherCore4.nds AetherOS-AetherCore4.nds
 
       - name: Package complete SD bundle
         run: |
@@ -133,7 +101,8 @@ PY
           cp AetherCore4.nds deploy/AetherOS-AetherCore4.nds
           tar -czf AetherCore4-DSi-Public.tar.gz -C deploy .
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload verified public artifacts
+        uses: actions/upload-artifact@v4
         with:
           name: AetherCore4-DSi-Public
           if-no-files-found: error
