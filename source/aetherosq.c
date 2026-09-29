@@ -565,12 +565,12 @@ static void draw(void);
 /* Universal blank-page recovery arcade: asset-free, deterministic, and always escapable. */
 static int arcadeGame=0, arcadeX=12, arcadeY=7, arcadeScore=0, arcadeTickCount=0, arcadePaused=0;
 static int arcadeBallX=12, arcadeBallY=7, arcadeVX=1, arcadeVY=1, arcadePaddle=12;
-static int arcadeSnakeLen=3, arcadeSnakeDir=1, arcadeSnakeX[32], arcadeSnakeY[32];
+static int arcadeSnakeLen=3, arcadeSnakeDir=1, arcadeSnakeX[32], arcadeSnakeY[32], arcadeSnakeBoost=0, arcadeStarPhase=0;
 
 static void arcadeReset(void){
   arcadeX=12; arcadeY=7; arcadeScore=0; arcadeTickCount=0; arcadePaused=0;
   arcadeBallX=12; arcadeBallY=7; arcadeVX=1; arcadeVY=1; arcadePaddle=12;
-  arcadeSnakeLen=3; arcadeSnakeDir=1;
+  arcadeSnakeLen=3; arcadeSnakeDir=1; arcadeSnakeBoost=0; arcadeStarPhase=0;
   for(int i=0;i<32;i++){arcadeSnakeX[i]=12-i;arcadeSnakeY[i]=7;}
 }
 static void arcadeHeader(const char *name){
@@ -586,7 +586,23 @@ static void arcadeRender(void){
   }else if(arcadeGame==1){
     for(int y=0;y<12;y++){for(int x=0;x<24;x++){char c='.';if(x==arcadeX&&y==arcadeY)c='A';else if(((x*7+y*13+arcadeTickCount*3)%37)==0)c='*';printf("%c",c);}printf("\n");}
   }else if(arcadeGame==2){
-    for(int y=0;y<12;y++){for(int x=0;x<24;x++){char c='.';for(int i=0;i<arcadeSnakeLen;i++)if(arcadeSnakeX[i]==x&&arcadeSnakeY[i]==y)c=(i==0?'O':'o');printf("%c",c);}printf("\n");}
+    printf("SECTOR: NEBULA-%02d   HULL: %s   WARP: %s\n", (arcadeTickCount/80)%24,
+      arcadeSnakeLen>12?"REINFORCED":"NOMINAL", arcadeSnakeBoost?"ENGAGED":"READY");
+    printf("Collect stars (\\*) and grow. Avoid nothing but your own wake.\n\n");
+    for(int y=0;y<12;y++){
+      for(int x=0;x<24;x++){
+        char c='.';
+        int star=((x*17+y*31+arcadeStarPhase*7)%53)==0;
+        if(star)c='*';
+        if(((x-18)*(x-18)+(y-3)*(y-3))<5)c='O';
+        if(((x-5)*(x-5)+(y-9)*(y-9))<3)c='o';
+        for(int i=0;i<arcadeSnakeLen;i++)if(arcadeSnakeX[i]==x&&arcadeSnakeY[i]==y)c=(i==0?'@':'o');
+        printf("%c",c);
+      }
+      printf("\n");
+    }
+    printf("\nNAV: D-PAD   A=boost   X=pause   Y=next game   L/R=warp sector\n");
+    printf("SPACE SNAKE: stars extend your hull; screen wraps around the galaxy.\n");
   }else if(arcadeGame==3){
     for(int y=0;y<12;y++){for(int x=0;x<24;x++){char c=' ';if(y==0||y==11)c='-';if(x==arcadeBallX&&y==arcadeBallY)c='o';if(y==10&&x>=arcadePaddle-2&&x<=arcadePaddle+2)c='=';printf("%c",c);}printf("\n");}
   }else{
@@ -603,13 +619,18 @@ static void arcadeTick(void){
   }else if(arcadeGame==1){
     if((arcadeTickCount&3)==0){arcadeY=(arcadeY+1)%12;if(((arcadeX*7+arcadeY*13+arcadeTickCount)%37)==0)arcadeScore++;}
   }else if(arcadeGame==2){
-    if((arcadeTickCount&3)==0){
+    arcadeStarPhase=(arcadeStarPhase+1)&255;
+    if((arcadeTickCount& (arcadeSnakeBoost?1:3))==0){
       int nx=arcadeSnakeX[0]+(arcadeSnakeDir==1?1:arcadeSnakeDir==3?-1:0);
       int ny=arcadeSnakeY[0]+(arcadeSnakeDir==2?1:arcadeSnakeDir==0?-1:0);
       if(nx<0)nx=23;if(nx>23)nx=0;if(ny<0)ny=11;if(ny>11)ny=0;
+      int star=((nx*17+ny*31+arcadeStarPhase*7)%53)==0;
       for(int i=arcadeSnakeLen-1;i>0;i--){arcadeSnakeX[i]=arcadeSnakeX[i-1];arcadeSnakeY[i]=arcadeSnakeY[i-1];}
-      arcadeSnakeX[0]=nx;arcadeSnakeY[0]=ny;arcadeScore++;
+      arcadeSnakeX[0]=nx;arcadeSnakeY[0]=ny;
+      if(star && arcadeSnakeLen<32)arcadeSnakeLen++;
+      arcadeScore+=star?10:1;
     }
+    if(arcadeSnakeBoost && (arcadeTickCount%6)==0)arcadeSnakeBoost=0;
   }else{
     if((arcadeTickCount&1)==0){arcadeBallX+=arcadeVX;arcadeBallY+=arcadeVY;
       if(arcadeBallX<=0||arcadeBallX>=23){arcadeVX=-arcadeVX;arcadeBallX+=arcadeVX;}
@@ -628,7 +649,7 @@ static void arcadeInput(u32 d){
   if(d&KEY_RIGHT){arcadeX=(arcadeX+1)%24;arcadePaddle=(arcadePaddle+1)%24;arcadeSnakeDir=1;arcadeScore++;draw();}
   if(d&KEY_UP){arcadeY=(arcadeY+11)%12;arcadeSnakeDir=0;arcadeScore++;draw();}
   if(d&KEY_DOWN){arcadeY=(arcadeY+1)%12;arcadeSnakeDir=2;arcadeScore++;draw();}
-  if(d&KEY_A){arcadeScore++;arcadePaused=0;draw();}
+  if(d&KEY_A){arcadeScore++;arcadePaused=0;if(arcadeGame==2)arcadeSnakeBoost=1;draw();}
 }
 
 static void home(void){
