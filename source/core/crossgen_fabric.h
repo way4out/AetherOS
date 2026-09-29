@@ -32,5 +32,6 @@ const char* name(Target);
 const char* capability(Target);
 bool targetAvailable(Target);
 bool productionGateOpen(const FabricState&);
+const FabricState& state();
 
 }
