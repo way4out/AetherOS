@@ -57,7 +57,7 @@ jobs:
           grep -q 'AETHER_SAVE_VERSION 7' source/aetherosq.c
           grep -q 'touchStartX' source/aetherosq.c
           grep -q 'diagStorageKnown' source/aetherosq.c
-          grep -q 'AetherCore 1 / PASS 3' source/aetherosq.c
+          grep -q 'AETHERCORE 1 / PASS 3' source/aetherosq.c
           grep -q '#define APP_COUNT 48' source/aetherosq.c
           grep -q 'EXECUTIVE SYSTEM' source/aetherosq.c
 
