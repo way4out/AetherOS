@@ -16,6 +16,8 @@
 #include "../core/capacity_engine.h"
 #include "../i18n/aether_i18n.h"
 #include "../animal/aether_animal.h"
+#include "../codex/aether_yhwh_codex.h"
+#include "../harmonic/aether_prime_harmonic.h"
 #include "../os/aether_os_fabric.h"
 #include <nds.h>
 
@@ -42,8 +44,11 @@ static void selectBottom(){consoleSelect(&bottomConsole);}
 static void clearTop(){selectTop();consoleClear();}
 static void clearBottom(){selectBottom();consoleClear();}
 
+static int lastTitleView=-1;
 static void title(const char* t,const SystemState&s){
-    clearTop(); selectTop();
+    int view=(s.screen==0)?0:(100+s.selectedModule);
+    if(view!=lastTitleView){ clearTop(); lastTitleView=view; }
+    selectTop();
     char stamp[40]; settings::timestamp(stamp,sizeof(stamp));
     iprintf("%sAETHEROS O2S%s // %s\n","\x1b[36m","\x1b[37m",t);
     iprintf("%s%s%s\n",theme::accent(),theme::sky(),"\x1b[37m");
@@ -80,7 +85,8 @@ static void statusRibbon(const SystemState&s){
     iprintf("HIL %u%% GW %u/6 HP %u BPM %u\n",hr.score,(unsigned)gate::onlineCount(),dg.score,st.bpm);
 }
 static void topDesktop(const SystemState&s){
-    auto p=settings::current(); scenery(topPixels,theme::active(),s.frame); scenery(bottomPixels,theme::active(),s.frame);
+    auto p=settings::current();
+    if((s.frame&3u)==0u) scenery(topPixels,theme::active(),s.frame);
     title("AETHER HOME",s); selectTop();
     iprintf("\x1b[1;1H\x1b[36mAETHEROS O2S\x1b[37m   UNIVERSAL DSi WORKSTATION\n");
     iprintf("\x1b[2;1H\x1b[33mOS FABRIC: %s\x1b[37m  %s\n",osfabric::name(),osfabric::mode());
@@ -107,16 +113,21 @@ static void topDesktop(const SystemState&s){
 }
 static void bottomDesktop(const SystemState&s){
     clearBottom(); selectBottom(); auto p=settings::current();
-    iprintf("\x1b[36mAETHEROS1.1+ CONTROL DECK\x1b[37m\n");
-    iprintf("TOUCH MODULE  •  A OPEN  •  B HOME\n");
-    iprintf("PROFILE  YOU     THEME  %s\n",settings::themeName(theme::active()));
-    iprintf("LAYOUT  %s     DENSITY  %s\n",settings::layoutName(p.layout),p.density==0?"LOW":p.density==1?"MED":p.density==2?"HIGH":"MAX");
+    // The DSi touchscreen is the bottom screen: make every visible module
+    // a real touchscreen target instead of drawing targets only on the top LCD.
+    for(int n=0;n<MOD_COUNT;n++){
+        bool active=(n==s.selectedModule); const int col=n&3,row=n>>2;
+        const int x=10+col*61,y=38+row*30;
+        u16 fill=active?ARGB16(1,0,18,30):ARGB16(1,2,8,16);
+        rect(bottomPixels,x,y,x+55,y+24,fill);
+        iprintf("\x1b[%d;%dH%s%s %s%s",1+y/8,1+x/8,active?"\x1b[33m>":"\x1b[36m",glyphs[n],names[n],active?" *":"\x1b[37m");
+    }
+    iprintf("\x1b[1;1H\x1b[36mAETHEROS TOUCH DECK\x1b[37m  A OPEN  B HOME\n");
+    iprintf("SWIPE = MODULE   TAP = OPEN/ACTION\n");
+    iprintf("PROFILE YOU  THEME %s  DENSITY %s\n",settings::themeName(theme::active()),p.density==0?"LOW":p.density==1?"MED":p.density==2?"HIGH":"MAX");
     iprintf("%s\n",settings::locationLabel());
-    iprintf("\n\x1b[36mQUICK CONTROL\n");
-    iprintf("A  Open / Enter\nD  Navigate\nTOUCH  Direct\nB  Back\nSTART Safe Mode\n");
-    iprintf("\n%s\n",theme::ground());
+    iprintf("START SAFE MODE  SELECT RESET\n");
     iprintf("SD:%s WS:%s BENCH:%s\n",s.sdReady?"OK":"--",s.sdWriteReady?"OK":"--",s.benchmarkComplete?"OK":"RUN");
-    iprintf("QBIT > DSP > SOUND > PROJECTS");
 }
 static void settingLine(u8 i,const char*label,const char*value,bool selected){
     iprintf("%s%s %-10s %s%s\n",selected?"\x1b[33m>":"\x1b[37m",label,value,selected?" *":"","\x1b[37m");
@@ -181,6 +192,8 @@ static void actionPanel(int m){
     case MOD_MARAUDER: iprintf("A Sample + analyze\nX Analyze\nY Consent/acknowledge\nL Passive RF\nR Lab Simulation\nSELECT Reset"); break;
     case MOD_STUDIO: iprintf("A Play/trigger\nX Performance hit\nY Stop\nL/R View/step\nSELECT Reset"); break;
     case MOD_SYSTEM: iprintf("A Mission refresh\nX Cycle OS profile\nY Recovery heartbeat\nSELECT Safe mode"); break;
+    case MOD_CODEX: iprintf("A NEXT ENTRY\nX REINIT\nY RESET\nL/R ENTRY\n"); break;
+    case MOD_HARMONIC: iprintf("A TICK\nX NEXT PRIME\nY VOID\nL/R DAMP/AMP\n"); break;
     case MOD_ANIMAL: iprintf("A Analyze animal signal\nX Animal > Human\nY Human > Animal\nL/R Species\nSELECT Reset"); break;
     case MOD_SETTINGS: iprintf("A Apply\nX Save config\nY Reset layout\nL/R Choose\nSELECT Save\nLANG %s",i18n::languageName()); break;
     }
@@ -205,6 +218,7 @@ static void module(const SystemState&s){
     case MOD_RF: iprintf("RF LAB\nRECEIVE-ONLY / AUTHORIZED\nSPECTRUM / WATERFALL\nPEAKS / RSSI / BANDWIDTH\nSDR/TINYSA GATEWAY\nSAMPLES %lu",(unsigned long)s.rfSamples);break;
     case MOD_MARAUDER:{auto sr=securitylab::report();iprintf("AETHER MARAUDER / SECURITY LAB\nMODE %s\nCONSENT %s\nTX LOCKED %s\nCRED CAPTURE LOCKED %s\n\nPASSIVE RF: RSSI / CHANNEL / WATERFALL\nAUTHORIZED NET: OWNED/LAB TRAFFIC METADATA\nLAB SIM: SAFE ATTACK-CONCEPT SIMULATION\nGATEWAY HARDEN: PROTOCOL / AUTH / CRC\n\nSAMPLES %lu DEVICES %lu PACKETS %lu\nALERTS %lu LAB RUNS %lu\n\n%s",securitylab::modeName(sr.mode),sr.consent?"YES":"REQUIRED",sr.txLocked?"YES":"NO",sr.credentialCaptureLocked?"YES":"NO",(unsigned long)sr.samples,(unsigned long)sr.devices,(unsigned long)sr.packets,(unsigned long)sr.alerts,(unsigned long)sr.labRuns,securitylab::warning());break;}
     case MOD_STUDIO:{auto st=studio::state();iprintf("AETHER STUDIO\nDAW / TRACKER / PERFORMANCE\nBPM %u STEP %u/16 NOTE %u\nVOICES %u\nQUANTUM -> MUSIC\nLAB -> AUDIO",st.bpm,st.step,st.note,st.voices);break;}
+    case MOD_CODEX:{ static unsigned ci=0; unsigned n=codex::count(); if(n && ci>=n) ci=0; const auto* es=codex::entries(); iprintf("YHWH CODEX / GENEVA 1599\nENTRIES %u\nSELECTED %u\n",n,ci+1); if(n) iprintf("TITLE: %s\nBYTES: %lu\nSOURCE SHA: %.8s\n",es[ci].name,(unsigned long)es[ci].bytes,es[ci].sourceSha); iprintf("STATUS: %s\nREADY: %s\nA NEXT  X REINIT  Y RESET\nL/R ENTRY",codex::status(),codex::ready()?"YES":"NO"); break; }
     case MOD_ANIMAL:{
         auto ar=animal::report();
         iprintf("AETHER UNIVERSAL COMMUNICATION");
@@ -219,6 +233,7 @@ static void module(const SystemState&s){
         iprintf(" TRANSLATE > VERIFY > SYNTHESIZE");
         break;
     }
+    case MOD_HARMONIC:{ auto n=harmonic::node(); iprintf("PRIME HARMONIC LAB\nPRIME %lu\nVOID %u DAMP %u AMP %u\nOUTPUT %lu mHz\nA TICK  X NEXT PRIME  Y VOID\nL/R DAMP/AMP", (unsigned long)n.prime,n.voidVector,n.dampener,n.amplifier,(unsigned long)harmonic::outputMilliHz()); break; }
     case MOD_SYSTEM:{auto hr=hil::report();auto dg=diag::report();auto mr=mission::report();iprintf("SYSTEM HEALTH / MISSION CONTROL\nREADY SCORE %u%%\nCORE %s  SD %s  CFG %s\nQ %s  AUD %s  DSP %s  LAB %s\nAI %s  NET %s  SEC %s  REC %s\nGATEWAY %s\nHIL %u%%  DIAG %u  FAULTS %u\nGRAPH %u  ONLINE %u\nTX/CREDS/DESTRUCTIVE LOCKED",mr.score,mission::state(mr.boot),mission::state(mr.sd),mission::state(mr.config),mission::state(mr.quantum),mission::state(mr.audio),mission::state(mr.dsp),mission::state(mr.lab),mission::state(mr.ai),mission::state(mr.network),mission::state(mr.security),mission::state(mr.recovery),mission::state(mr.gateway),hr.score,dg.score,dg.faults,dg.graphTicks,dg.gatewayOnline);break;}
     }
     actionPanel(m);
