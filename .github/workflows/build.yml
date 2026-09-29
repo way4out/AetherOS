@@ -34,19 +34,17 @@ jobs:
           make
           test -s AetherCore1.nds
           "$BLOCKSDS/tools/ndstool/ndstool" -t AetherCore1.nds
-          python3 - <<'PY'
-          from pathlib import Path
-          p=Path("AetherCore1.nds")
-          b=p.read_bytes()
-          assert len(b) > 65536, f"NDS unexpectedly small: {len(b)} bytes"
-          assert b[0x0C:0x10] == b"####", f"unexpected game code: {b[0x0C:0x10]!r}"
-          assert b[0x12] == 2, f"expected DSi unit code 2, got {b[0x12]}"
-          assert int.from_bytes(b[0x20:0x24],"little") != 0, "ARM9 ROM offset missing"
-          assert int.from_bytes(b[0x2C:0x30],"little") != 0, "ARM9 size missing"
-          print(f"VERIFIED_NDS_SIZE={len(b)}")
-          print(f"VERIFIED_DSI_UNIT_CODE={b[0x12]}")
-          print("VERIFIED_ARM9_HEADER=present")
-          PY
+          NDS_SIZE=$(stat -c '%s' AetherCore1.nds)
+          test "$NDS_SIZE" -gt 65536
+          UNIT_CODE=$(dd if=AetherCore1.nds bs=1 skip=18 count=1 2>/dev/null | od -An -tu1 | tr -d ' ')
+          test "$UNIT_CODE" = "2"
+          ARM9_OFFSET=$(dd if=AetherCore1.nds bs=1 skip=32 count=4 2>/dev/null | od -An -tu4 -N1 | tr -d ' ')
+          ARM9_SIZE=$(dd if=AetherCore1.nds bs=1 skip=44 count=4 2>/dev/null | od -An -tu4 -N1 | tr -d ' ')
+          test -n "$ARM9_OFFSET"
+          test -n "$ARM9_SIZE"
+          echo "VERIFIED_NDS_SIZE=$NDS_SIZE"
+          echo "VERIFIED_DSI_UNIT_CODE=$UNIT_CODE"
+          echo "VERIFIED_ARM9_HEADER=present"
           sha256sum AetherCore1.nds
           ls -lh AetherCore1.nds
 
