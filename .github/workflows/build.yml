@@ -10,28 +10,26 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: devkitpro/devkitarm:latest
+    container: skylyrac/blocksds:slim-latest
     steps:
       - uses: actions/checkout@v4
 
       - name: Inspect toolchain
         run: |
           set -eu
-          export PATH="$DEVKITARM/bin:$DEVKITPRO/tools/bin:$PATH"
-          echo "DEVKITPRO=$DEVKITPRO"
-          echo "DEVKITARM=$DEVKITARM"
-          "$DEVKITARM/bin/arm-none-eabi-gcc" --version | head -1
-          test -f "$DEVKITARM/ds_rules"
-          test -f "$DEVKITPRO/libnds/include/nds.h"
+          echo "BLOCKSDS=$BLOCKSDS"
+          "$BLOCKSDS/tools/arm-none-eabi/bin/arm-none-eabi-gcc" --version | head -1
+          test -f "$BLOCKSDS/sys/crts/ds_arm9.ld"
+          test -f "$BLOCKSDS/libs/libnds/include/nds.h"
 
       - name: Clean and build real NDS
         run: |
           set -eu
-          export PATH="$DEVKITARM/bin:$DEVKITPRO/tools/bin:$PATH"
+          export PATH="$BLOCKSDS/tools/arm-none-eabi/bin:$PATH"
           make clean
           make
           test -s AetherCore1.nds
-          ndstool -t AetherCore1.nds
+          "$BLOCKSDS/tools/ndstool/ndstool" -t AetherCore1.nds
           python3 - <<'PY'
           from pathlib import Path
           p=Path("AetherCore1.nds")
@@ -62,6 +60,7 @@ jobs:
           grep -q 'execSystems\[48\]' source/aetherosq.c
           grep -q 'EXECUTIVE SYSTEM' source/aetherosq.c
           grep -q 'aetherHardwareInit' source/aetherosq.c
+          grep -q '#include <nds/camera.h>\|#include <nds/arm9/camera.h>' source/aether_hardware.c
           grep -q 'soundMicRecord' source/aether_hardware.c
           grep -q 'cameraStartTransfer' source/aether_hardware.c
           grep -q 'mode>=30&&mode<=77' source/aetherosq.c
