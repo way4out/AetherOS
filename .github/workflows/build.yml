@@ -36,12 +36,24 @@ jobs:
           "$BLOCKSDS/tools/ndstool/ndstool" -t AetherCore4.nds
           NDS_SIZE=$(stat -c '%s' AetherCore4.nds)
           test "$NDS_SIZE" -gt 65536
-          UNIT_CODE=$(dd if=AetherCore4.nds bs=1 skip=18 count=1 2>/dev/null | od -An -tu1 | tr -d ' ')
+          UNIT_CODE=$(python3 - <<'PY'
+from pathlib import Path
+p=Path("AetherCore4.nds").read_bytes()
+print(p[0x12])
+PY
+          )
           test "$UNIT_CODE" = "2"
-          ARM9_OFFSET=$(dd if=AetherCore4.nds bs=1 skip=32 count=4 2>/dev/null | od -An -tu4 -N1 | tr -d ' ')
-          ARM9_SIZE=$(dd if=AetherCore4.nds bs=1 skip=44 count=4 2>/dev/null | od -An -tu4 -N1 | tr -d ' ')
-          test -n "$ARM9_OFFSET"
-          test -n "$ARM9_SIZE"
+          python3 - <<'PY'
+from pathlib import Path
+p=Path("AetherCore4.nds").read_bytes()
+assert len(p) > 65536
+arm9_off=int.from_bytes(p[0x20:0x24],"little")
+arm9_size=int.from_bytes(p[0x2c:0x30],"little")
+assert arm9_off > 0 and arm9_size > 0
+assert arm9_off + arm9_size <= len(p)
+print(f"VERIFIED_ARM9_OFFSET={arm9_off}")
+print(f"VERIFIED_ARM9_SIZE={arm9_size}")
+PY
           echo "VERIFIED_NDS_SIZE=$NDS_SIZE"
           echo "VERIFIED_DSI_UNIT_CODE=$UNIT_CODE"
           echo "VERIFIED_ARM9_HEADER=present"
