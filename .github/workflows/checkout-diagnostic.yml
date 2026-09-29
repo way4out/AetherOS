@@ -17,7 +17,7 @@ jobs:
         run: |
           set -eux
           docker pull skylyrac/blocksds:slim-latest
-          docker run --rm -v "$GITHUB_WORKSPACE:/work" -w /work skylyrac/blocksds:slim-latest sh -c '. /opt/wonderful/bin/wf-env && make'
+          docker run --rm -v "$GITHUB_WORKSPACE:/work" -w /work skylyrac/blocksds:slim-latest bash -c 'source /opt/wonderful/bin/wf-env && make'
       - name: Check output
         run: |
           set -eux
