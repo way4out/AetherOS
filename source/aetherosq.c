@@ -8,19 +8,19 @@
 #include <dirent.h>
 #include "config.h"
 
-/* AetherOS 8.8 — DSi-native modular cockpit.
+/* AetherOS 9.0 — DSi-native modular cockpit.
  * Every home entry maps to an independent implementation.
  * Hardware claims remain honest: external RF/TinySA/camera/AI/phone/QPU
  * capabilities are represented as software workspaces/gateways, not invented
  * stock-DSi hardware.
  */
 #define APP_COUNT 29
-#define AETHERMOD_MAJOR 8
-#define AETHERMOD_MINOR 8
+#define AETHERMOD_MAJOR 9
+#define AETHERMOD_MINOR 0
 #define AETHERMOD_PASS 1
 #define AETHERMOD_TOTAL_PASSES 1
 #define HOME_PAGES 4
-#define AETHER_SAVE_VERSION 6
+#define AETHER_SAVE_VERSION 7
 
 typedef struct {
     u32 magic, checksum, launches;
@@ -56,7 +56,7 @@ static int powerMode=0,powerSaver=0,powerCycles=0;
 static int controlCursor=0,controlEvents=0,diagRuns=0,diagErrors=0;
 static int botCursor=0,botRuns=0,settingsCursor=0,eventCursor=0,eventCount=0;
 static int noteCursor=0,clock24=1,safetyCursor=0;
-static int visualPhase=0,energy=0,bootCount=0;
+static int visualPhase=0,energy=0,bootCount=0,diagStorage=0,diagStorageKnown=0;
 static char fileNames[16][48],vaultNames[12][48],eventNames[16][48];
 
 static const char *apps[APP_COUNT]={
@@ -99,17 +99,16 @@ static void defaults(void){
 static void loadState(void){
  defaults();ensureDirs();FILE *f=fopen("fat:/data/AetherMod/save.dat","rb");
  if(f){SaveData t;if(fread(&t,1,sizeof(t),f)==sizeof(t)){u32 c=t.checksum;t.checksum=0;
-   if(c==hash32(&t,sizeof(t))&&t.magic==SAVE_MAGIC&&(t.version==4||t.version==SAVE_VERSION))save=t;
+   if(c==hash32(&t,sizeof(t))&&t.magic==SAVE_MAGIC&&(t.version==4||t.version==6||t.version==SAVE_VERSION))save=t;
   }fclose(f);}
  bootCount++;
- /* 8.7 Pass 1: deterministic cold start on the first home entry. */
- selected=0; cursor=0; homePage=0; save.selected=0;
+ selected=(save.selected<APP_COUNT)?save.selected:0; cursor=selected; homePage=selected/8;
 }
 static void persistSelection(void){save.selected=(u16)selected;markDirty();}
 static void homeSet(int n){if(n<0)n=APP_COUNT-1;if(n>=APP_COUNT)n=0;selected=n;cursor=n;homePage=n/8;persistSelection();}
 static void page(const char *title){
  consoleSelect(&topConsole);consoleClear();
- iprintf("\x1b[36;1mAETHEROS 8.8 / DSi BOOT-SAFE\x1b[37;1m\n");
+ iprintf("\x1b[36;1mAETHEROS 9.0 / DSi BOOT-SAFE\x1b[37;1m\n");
  iprintf("\x1b[35;1m==============================\x1b[37;1m\n");
  iprintf("%s\n",title);
  iprintf("DSi:%s  SAFE:%s  AI:%s  WIFI:%s\n",isDSiMode()?"YES":"DS",safeMode?"ON":"OFF",save.ai?"ON":"OFF",save.wireless?"ON":"OFF");
@@ -148,8 +147,8 @@ static void touchMap(u32 *d){
      if(touchMoved){
        if(touchStartY>=0 && t.py+24<touchStartY)*d|=KEY_UP;
        else if(touchStartY>=0 && t.py>touchStartY+24)*d|=KEY_DOWN;
-       else if(t.px>touchX+24)*d|=KEY_RIGHT;
-       else if(t.px+24<touchX)*d|=KEY_LEFT;
+       else if(touchStartX>=0 && t.px>touchStartX+24)*d|=KEY_RIGHT;
+       else if(touchStartX>=0 && t.px+24<touchStartX)*d|=KEY_LEFT;
      } else if(t.py<32&&t.px<128)*d|=KEY_B;
      else if(t.py<32)*d|=KEY_Y;
      else if(t.py>160&&t.px<128)*d|=KEY_X;
@@ -289,10 +288,12 @@ static void modControl(void){page("20 CONTROL LAB");iprintf("CURSOR:%d EVENTS:%d
  iprintf("INPUT MATRIX: A B X Y / D-PAD / L R / START SELECT\n");footer("UP/DOWN CURSOR | A EVENT | X CLEAR | L/R MODE | B HOME");}
 
 /* 21 — Diagnostics */
-static void modDiagnostics(void){page("21 DIAGNOSTICS");diagRuns++;diagErrors=0;if(!isDSiMode())diagErrors++;if(!save.magic)diagErrors++;
- iprintf("RUN:%d ERRORS:%d STATUS:%s\n",diagRuns,diagErrors,diagErrors?"CHECK":"PASS");iprintf("FAT:%s  SAVE:%s  TOUCH:%s\n",storageOk()?"PASS":"FAIL",save.magic?"VALID":"FAIL",touchDown?"LIVE":"READY");
+static void modDiagnostics(void){page("21 DIAGNOSTICS");
+ diagErrors=0;if(!isDSiMode())diagErrors++;if(!save.magic)diagErrors++;if(diagStorageKnown&&!diagStorage)diagErrors++;
+ iprintf("RUN:%d ERRORS:%d STATUS:%s\n",diagRuns,diagErrors,diagErrors?"CHECK":"PASS");
+ iprintf("FAT:%s  SAVE:%s  TOUCH:%s\n",diagStorageKnown?(diagStorage?"PASS":"FAIL"):"NOT TESTED",save.magic?"VALID":"FAIL",touchDown?"LIVE":"READY");
  iprintf("APP COUNT:%d  BUILD:%d.%d PASS:%d/%d\n",APP_COUNT,AETHERMOD_MAJOR,AETHERMOD_MINOR,AETHERMOD_PASS,AETHERMOD_TOTAL_PASSES);
- footer("A RUN AGAIN | X RESET COUNTERS | B HOME");}
+ footer("A RUN TEST | X RESET | B HOME");}
 
 /* 22 — Aether Bot */
 static void modBot(void){page("22 AETHER BOT");const char *jobs[]={"HOME","DIAGNOSTICS","FILES","VAULT","POWER","CONTROL","SETTINGS","SAFETY"};
@@ -318,7 +319,7 @@ static void modClock(void){page("26 CLOCK / TIME");time_t now=time(NULL);struct 
  iprintf("%04d-%02d-%02d\n",t->tm_year+1900,t->tm_mon+1,t->tm_mday);}footer("A 12/24H | B HOME");}
 
 /* 27 — About */
-static void modAbout(void){page("27 ABOUT");iprintf("AETHEROS 8.8 / DSi BOOT-SAFE\n");iprintf("29 INDIVIDUAL MODULE IMPLEMENTATIONS\n");iprintf("Geneva 1599 corpus: SD/OFFLINE\n");iprintf("Universal touch: TAP / SWIPE / DRAG\n");iprintf("Local-first, bounded, recoverable runtime.\n");footer("B HOME");}
+static void modAbout(void){page("27 ABOUT");iprintf("AETHEROS 9.0 / DSi BOOT-SAFE\n");iprintf("29 INDIVIDUAL MODULE IMPLEMENTATIONS\n");iprintf("Geneva 1599 corpus: SD/OFFLINE\n");iprintf("Universal touch: TAP / SWIPE / DRAG\n");iprintf("Local-first, bounded, recoverable runtime.\n");footer("B HOME");}
 
 /* 28 — Safety Center */
 static void modSafety(void){page("28 SAFETY CENTER");const char *n[]={"PARENTAL","NSFW FILTER","UNSAFE FILTER","UNREGULATED","USER CONTENT","BROWSER","DOWNLOADS","WIRELESS"};
@@ -368,7 +369,7 @@ static void moduleInput(u32 d){
  case 18:if(d&KEY_UP&&accessScale<3){accessScale++;changed=1;}if(d&KEY_DOWN&&accessScale>1){accessScale--;changed=1;}if(d&KEY_A){accessContrast=!accessContrast;changed=1;}if(d&KEY_X){accessScroll=(accessScroll%3)+1;changed=1;}if(d&KEY_Y){save.sound=!save.sound;changed=1;}break;
  case 19:if(d&KEY_UP||d&KEY_DOWN){powerMode=!powerMode;changed=1;}if(d&KEY_A){powerSaver=!powerSaver;changed=1;}if(d&KEY_X){save.brightness=(save.brightness+1)%5;changed=1;}if(d&KEY_Y){powerCycles++;changed=1;}break;
  case 20:if(d&KEY_UP){controlCursor=(controlCursor+7)%8;changed=1;}if(d&KEY_DOWN){controlCursor=(controlCursor+1)%8;changed=1;}if(d&KEY_A){controlEvents++;changed=1;}if(d&KEY_X){controlEvents=0;changed=1;}if(d&KEY_LEFT||d&KEY_RIGHT){subCursor=(subCursor+1)%4;changed=1;}break;
- case 21:if(d&KEY_A){diagRuns++;changed=1;}if(d&KEY_X){diagRuns=0;diagErrors=0;changed=1;}break;
+ case 21:if(d&KEY_A){diagRuns++;diagStorage=storageOk();diagStorageKnown=1;changed=1;}if(d&KEY_X){diagRuns=0;diagErrors=0;diagStorage=0;diagStorageKnown=0;changed=1;}break;
  case 22:if(d&KEY_UP){botCursor=(botCursor+7)%8;changed=1;}if(d&KEY_DOWN){botCursor=(botCursor+1)%8;changed=1;}if(d&KEY_A){botRuns++;changed=1;}if(d&KEY_X){botRuns=0;changed=1;}if(d&KEY_Y){back();return;}break;
  case 23:if(d&KEY_UP){settingsCursor=(settingsCursor+7)%8;changed=1;}if(d&KEY_DOWN){settingsCursor=(settingsCursor+1)%8;changed=1;}if(d&KEY_A){switch(settingsCursor){case 0:save.ai=!save.ai;break;case 1:save.onlineAI=!save.onlineAI;break;case 2:save.privacy=!save.privacy;break;case 3:save.browser=!save.browser;break;case 4:save.downloads=!save.downloads;break;case 5:save.wireless=!save.wireless;break;case 6:save.sound=!save.sound;break;default:save.theme=!save.theme;break;}changed=1;}if(d&KEY_X){safeMode=!safeMode;changed=1;}if(d&KEY_Y){save.brightness=(save.brightness+1)%5;changed=1;}break;
  case 24:if(d&KEY_UP&&eventCount){eventCursor=(eventCursor+eventCount-1)%eventCount;changed=1;}if(d&KEY_DOWN&&eventCount){eventCursor=(eventCursor+1)%eventCount;changed=1;}if(d&KEY_X){eventCount=actionCount<16?actionCount:16;changed=1;}if(d&KEY_Y){eventCount=0;changed=1;}break;
@@ -404,7 +405,7 @@ int legacy_shell_main(void){
   * A bad/slow/unmounted DSi SD must never leave the user staring at black. */
  consoleSelect(&topConsole);
  consoleClear();
- iprintf("\x1b[36;1mAETHEROS 8.8 / DSi\x1b[37;1m\n");
+ iprintf("\x1b[36;1mAETHEROS 9.0 / DSi\x1b[37;1m\n");
  iprintf("\x1b[35;1mBOOT-SAFE INITIALIZATION\x1b[37;1m\n");
  iprintf("DISPLAY: ONLINE\n");
  consoleSelect(&bottomConsole);
@@ -448,4 +449,4 @@ int legacy_shell_main(void){
  return 0;
 }
 
-/* AetherOS 8.8 CI trigger: boot-safe runtime verified through the real devkitARM build. */
+/* AetherOS 9.0 CI release: build/header/package verification is mandatory. */
