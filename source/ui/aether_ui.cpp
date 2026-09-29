@@ -188,7 +188,7 @@ static void actionPanel(int m){
     case MOD_DSP: printf("A Analyze signal\nX FFT snapshot\nY Recompute\nSELECT Reset"); break;
     case MOD_LAB: printf("A Run experiment\nX New sample\nY Recompute\nSELECT Reset"); break;
     case MOD_AI: printf("A Generate pattern\nX Classify\nY Regenerate\nSELECT Reset"); break;
-    case MOD_NETWORK: printf("A Refresh links\nX Gateway/remote view\nY Queue test\nSELECT Reset"); break;
+    case MOD_NETWORK: printf("A Refresh links\nX Submit input\nY Cycle emulator mode\nSELECT Cycle target\nB Home"); break;
     case MOD_PROJECTS: printf("A Save project\nX Fabric view\nY New project\nSELECT Reset"); break;
     case MOD_RF: printf("A Capture sample\nX Analyze band\nY Refresh telemetry\nSELECT Reset"); break;
     case MOD_MARAUDER: printf("A Sample + analyze\nX Analyze\nY Consent/acknowledge\nL Passive RF\nR Lab Simulation\nSELECT Reset"); break;
