@@ -171,3 +171,27 @@ This pass converts the platform contract into a product-ready value stack withou
 - Unsupported hardware capabilities remain visibly gated.
 
 **Pass-1 acceptance target:** the repository clearly separates what creates present product utility from long-range valuation ambition, while preserving a path to four-pass commercial hardening.
+
+
+## Pass 2 — Exponential value architecture
+
+AetherCore 708 is designed so value can compound through reusable infrastructure rather than a single-device sale. The architecture supports a flywheel:
+
+**Core runtime → more modules → more gateway integrations → more developers → more deployments → more recurring support/integration revenue → more ecosystem utility.**
+
+### Multipliers
+- **Reusable:** one capability contract can support many authorized external gateways.
+- **Composable:** modules can be packaged independently without rewriting the DSi core.
+- **Portable:** the same application/gateway contracts can extend to future compatible hardware.
+- **Network-ready:** optional services can add value without making the stock DSi dependent on them.
+- **Data-responsible:** local-first state and explicit capability status preserve trust.
+- **Commercially expandable:** consumer, developer, education, enterprise and hardware-integration packages can coexist.
+
+### Value equation
+
+**Platform value = utility × adoption × retention × ecosystem breadth × recurring monetization**, subject to execution, competition, costs, regulation and market conditions.
+
+The expression “exponential” describes an architectural growth objective, **not a guaranteed financial return or valuation**. A $1T+ outcome remains an ambitious future market-cap objective requiring real adoption and economics.
+
+### Pass-2 acceptance target
+Create compounding product primitives that can be reused across customers and compatible devices while keeping the DSi product functional as a standalone local-first system.
