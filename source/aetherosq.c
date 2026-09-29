@@ -61,7 +61,7 @@ static char fileNames[16][48],vaultNames[12][48],eventNames[16][48];
 
 static const char *apps[APP_COUNT]={
  "AETHER HOME","QUANTUM CORE","YHWH CODEX","ANIMAL AI","MARAUDER/RF",
- "TINySA LAB","CALCULATOR","DAW STUDIO","DSP/FFT","TELEMETRY","AI HOME",
+ "TinySA LAB","CALCULATOR","DAW STUDIO","DSP/FFT","TELEMETRY","AI HOME",
  "NETWORK GATEWAY","PHONE LINK","MEDIA STUDIO","SENSOR HUB","DATA VAULT",
  "FILE BROWSER","HAPTIC LAB","ACCESSIBILITY","POWER LAB","CONTROL LAB",
  "DIAGNOSTICS","AETHER BOT","GENERAL SETTINGS","EVENT LOG","NOTES","CLOCK",
@@ -102,7 +102,7 @@ static void loadState(void){
    if(c==hash32(&t,sizeof(t))&&t.magic==SAVE_MAGIC&&(t.version==4||t.version==6||t.version==SAVE_VERSION))save=t;
   }fclose(f);}
  bootCount++;
- selected=(save.selected<APP_COUNT)?save.selected:0; cursor=selected; homePage=selected/8;
+ selected=(save.selected<APP_COUNT)?save.selected:0; cursor=selected; homePage=selected/8; save.version=AETHER_SAVE_VERSION;
 }
 static void persistSelection(void){save.selected=(u16)selected;markDirty();}
 static void homeSet(int n){if(n<0)n=APP_COUNT-1;if(n>=APP_COUNT)n=0;selected=n;cursor=n;homePage=n/8;persistSelection();}
@@ -328,7 +328,7 @@ static void modSafety(void){page("28 SAFETY CENTER");const char *n[]={"PARENTAL"
 
 static void home(void){
  page("00 AETHER HOME");consoleSelect(&bottomConsole);consoleClear();
- iprintf("PAGE %d/%d  MODULES %02d-%02d\n\n",homePage+1,HOME_PAGES,homePage*8+1,homePage*8+8);
+ int last=homePage*8+8; if(last>APP_COUNT) last=APP_COUNT; iprintf("PAGE %d/%d  MODULES %02d-%02d\n\n",homePage+1,HOME_PAGES,homePage*8+1,last);
  int first=homePage*8;for(int i=0;i<8;i++){int n=first+i;if(n>=APP_COUNT)break;iprintf("%c%02d %-18s %c\n",n==selected?'>':' ',n+1,apps[n],((frame+i*7)%16<5)?'*':'.');}
  iprintf("\nSELECT:%02d  %s\n",selected+1,apps[selected]);iprintf("A OPEN | L/R PAGE | UP/DOWN MODULE\n");
  iprintf("TOUCH: 8 LARGE ROWS OPEN | SWIPE = SCROLL | LOWER STRIP = NEXT PAGE\n");footer("START+SELECT: normal controls | START hold is not destructive");
