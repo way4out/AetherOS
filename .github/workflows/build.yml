@@ -1,4 +1,4 @@
-name: AetherCore7 Production Build
+name: AetherCore707 Production Build
 
 on:
   push:
@@ -21,14 +21,14 @@ jobs:
       - name: Validate
         run: |
           bash ci/validate-aetheros5.sh
-          test -s AetherCore7.nds
-          cp AetherCore7.nds AetherOS-AetherCore7.nds
-          test -s AetherOS-AetherCore7.nds
+          test -s AetherCore707.nds
+          cp AetherCore707.nds AetherOS-AetherCore707.nds
+          test -s AetherOS-AetherCore707.nds
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: AetherCore7-DSi-Verified
+          name: AetherCore707-DSi-Verified
           if-no-files-found: error
           path: |
-            AetherCore7.nds
-            AetherOS-AetherCore7.nds
+            AetherCore707.nds
+            AetherOS-AetherCore707.nds
