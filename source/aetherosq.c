@@ -340,6 +340,8 @@ static void modSafety(void){page("28 SAFETY CENTER");const char *n[]={"PARENTAL"
  int on=safetyCursor==0?save.parental:safetyCursor==1?save.nsfw:safetyCursor==2?save.unsafe:safetyCursor==3?save.unregulated:safetyCursor==4?save.userContent:safetyCursor==5?save.browser:safetyCursor==6?save.downloads:save.wireless;
  iprintf("CONTROL:%s  STATE:%s\n",n[safetyCursor],on?"ON":"OFF");iprintf("SAFE MODE MASTER:%s\n",safeMode?"ON":"OFF");footer("UP/DOWN CONTROL | A TOGGLE | X SAFE MODE | Y RESET SAFE | B HOME");}
 
+static void draw(void);
+
 /* AetherCore 1 — Pass 3: executive system fusion. */
 static const char *execSystems[19]={
  "EXECUTIVE HUB","MISSION CONTROL","RESOURCE COMMAND","SECURITY COMMAND","COMMS COMMAND",
@@ -357,8 +359,8 @@ static void execSystemView(int id){
  iprintf("AETHERCORE EXECUTIVE SYSTEM %02d/19  MODE:%s\\n",id+1,execModes[id]);
  iprintf("STATE:%d  ACTIONS:%d  CORE LVL:%d  XP:%d\\n",v,a,coreLevel,coreXp);
  switch(id){
-  case 0: iprintf("NEXUS STATUS:%s  ZONE:%s  SESSION:%d\\n",coreEnergy>20?"READY":"LOW ENERGY",coreZones[coreZone],coreSession); graph("COMMAND ",corePulse); break;
-  case 1: iprintf("ACTIVE QUEST:%s  DONE:%s  ENERGY:%d\\n",coreQuests[coreQuest],coreQuestDone[coreQuest]?"YES":"NO",coreEnergy); graph("MISSION ",coreQuest*11+v); break;
+  case 0: iprintf("NEXUS STATUS:%s  ZONE:%s  SESSION:%d\\n",coreEnergy>20?"READY":"LOW ENERGY",((const char *[]){"NEXUS","QUANTUM FIELD","CODEX GARDEN","SIGNAL RIDGE","CREATOR DECK","SYSTEMS"})[coreZone],coreSession); graph("COMMAND ",corePulse); break;
+  case 1: iprintf("ACTIVE QUEST:%s  DONE:%s  ENERGY:%d\\n",((const char *[]){"CALIBRATE THE CORE","SCAN A SIGNAL","OPEN THE CODEX","BUILD A BEAT","RUN A DIAGNOSTIC","VISIT THE SYSTEMS"})[coreQuest],coreQuestDone[coreQuest]?"YES":"NO",coreEnergy); graph("MISSION ",coreQuest*11+v); break;
   case 2: iprintf("COINS:%d  CREDITS:%d  INVENTORY:%d\\n",coreCoins,coreCredits,coreInventory); graph("RESOURCE ",coreCoins+v); break;
   case 3: iprintf("SAFE MODE:%s  PRIVACY:%s  PARENTAL:%s\\n",safeMode?"ON":"OFF",save.privacy?"ON":"OFF",save.parental?"ON":"OFF"); graph("GUARD ",save.privacy*19+v); break;
   case 4: iprintf("WIRELESS:%s  NETWORK PACKETS:%d  PHONE:%d\\n",save.wireless?"READY":"OFF",networkPackets,phonePackets); graph("SIGNAL ",networkPackets+v); break;
