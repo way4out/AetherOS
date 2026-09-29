@@ -1,4 +1,4 @@
-name: Build AetherCore 2 for Nintendo DSi
+name: Build AetherCore 3 for Nintendo DSi
 
 on:
   workflow_dispatch:
@@ -32,8 +32,8 @@ jobs:
           export PATH="$TOOLBIN:/opt/wonderful/bin:$PATH"
           make clean
           make
-          test -s AetherCore2.nds
-          "$BLOCKSDS/tools/ndstool/ndstool" -t AetherCore2.nds
+          test -s AetherCore3.nds
+          "$BLOCKSDS/tools/ndstool/ndstool" -t AetherCore3.nds
           NDS_SIZE=$(stat -c '%s' AetherCore2.nds)
           test "$NDS_SIZE" -gt 65536
           UNIT_CODE=$(dd if=AetherCore2.nds bs=1 skip=18 count=1 2>/dev/null | od -An -tu1 | tr -d ' ')
@@ -77,11 +77,11 @@ jobs:
           test -f source/core/aether_core2.h
           grep -q "core2::init" source/core/aether_core.cpp
           grep -q "core2::tick" source/core/aether_core.cpp
-          echo "VERIFIED_AETHERCORE2_INTEGRATION=present"
+          echo "VERIFIED_AETHERCORE2_INTEGRATION=present"\n          test -f source/core/aether_core3.cpp\n          test -f source/core/aether_core3.h\n          grep -q "core3::init" source/core/universal_guard.cpp\n          grep -q "aether_core3_tick" source/aetherosq.c\n          grep -q "AETHERCORE_PASS 70" source/aetherosq.c\n          echo "VERIFIED_AETHERCORE3_RUNTIME_HEALTH=present"
           echo "VERIFIED_PASS_CORE2_BASE_PRODUCTION_DEPLOY=present"
           grep -q "AETHERCORE_PASS 60" source/aetherosq.c
           sha256sum AetherCore2.nds
-          cp AetherCore2.nds AetherOS-AetherCore2.nds
+          cp AetherCore2.nds AetherOS-AetherCore3.nds
           ls -lh AetherCore2.nds AetherOS-AetherCore2.nds
 
       - name: Static source sanity
@@ -92,7 +92,7 @@ jobs:
           test -s source/core/universal_fabric.cpp
           test -s source/core/self_heal.cpp
           test -s source/security/aether_security_lab.cpp
-          grep -Fq 'AETHERCORE_PASS 60' source/aetherosq.c
+          grep -Fq 'AETHERCORE_PASS 70' source/aetherosq.c
           grep -Fq '#define APP_COUNT 77' source/aetherosq.c
           grep -Fq 'mode>=30&&mode<=77' source/aetherosq.c
           echo "VERIFIED_PASS_CORE2_SOURCE_SANITY=present"
@@ -110,11 +110,11 @@ jobs:
           cp AETHERMOD.md deploy/AETHERMOD.md
           printf '%s\n' '4GB SD INSTALL: copy apps/AetherMod and data/AetherMod to the SD root, then launch apps/AetherMod/AetherCore2.nds.' > deploy/INSTALL.txt
           cp AetherCore2.nds deploy/AetherOS-AetherCore2.nds
-          tar -czf AetherCore2-Pass6-DSi-Public.tar.gz -C deploy .
+          tar -czf AetherCore3-DSi-Public.tar.gz -C deploy .
 
       - uses: actions/upload-artifact@v4
         with:
-          name: AetherCore2-Pass6-DSi-Public
+          name: AetherCore3-DSi-Public
           if-no-files-found: error
           path: |
             AetherCore2.nds
