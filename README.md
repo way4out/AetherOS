@@ -1,32 +1,38 @@
-# AetherCore 1 — Pass 4.4 / Nintendo DSi
+# AetherCore 1 — Pass 6 / Nintendo DSi
 
-AetherCore 1 Pass 4.4 is the DSi hardware-integration stage of the AetherCore evolution.
+AetherCore 1 Pass 6 is the current DSi production line for the AetherOS universal, gated runtime.
 
-## Pass 4.4
+## Pass 6 goals
 
-- 77 Home Screen systems remain addressable.
-- All 48 executive systems use the common executive input path.
-- DSi camera initialization and inner/outer camera selection use libnds.
-- START captures a 256x192 camera preview and writes preview.ppm to SD.
-- Full 640x480 camera capture writes capture_###.yuv to SD.
-- SELECT starts/stops DSi microphone recording.
-- Live microphone peak/RMS telemetry is surfaced throughout the module UI.
-- L+R switches between the two DSi cameras.
-- Camera/microphone initialization is DSi-gated.
-- Existing touchscreen, scrolling, color, navigation, Geneva 1599 corpus, storage and executive gameplay layers remain integrated.
+- Deterministic DSi boot-safe startup with the display initialized before optional SD/FAT work.
+- Dual-screen libnds UI with touch, D-pad navigation, scrolling, module paging, and safe-mode fallback.
+- 77 addressable home systems: 29 core/runtime surfaces plus 48 executive systems.
+- Universal platform fabric with explicit adapters for DSi/3DS/Wii/N64/Game Boy, later Nintendo, Sony legacy/modern, Xbox legacy/modern, Apple legacy/modern, Nokia legacy, and generic adapters.
+- Emulator/frontend and web-gateway expansion points are capability-gated rather than pretending that one .nds binary can natively execute every foreign operating system.
+- On-device rule-based diagnostics/self-heal hooks for boot/runtime faults; recovery remains deterministic and bounded on DSi hardware.
+- RF/security surfaces are limited to passive/authorized observation and lab simulation. Active jamming, covert interception, credential theft, and unauthorized access remain locked.
+- External capabilities such as modern cellular, satellite, SDR/TinySA, cloud AI, QPU hardware, and holographic projection are exposed as adapters/workspaces when hardware actually exists.
 
 ## Hardware truth
 
-Retail DSi hardware provides two 640x480 cameras and a microphone. The implementation uses the real libnds camera transfer and microphone APIs rather than simulated peripheral values.
+A stock Nintendo DSi cannot become an Xbox, PlayStation, Apple device, modern Nokia, SDR, satellite modem, or physical quantum computer through software alone. Pass 6 therefore uses a portable capability/adapter architecture: the DSi binary is the local control plane, while platform-specific backends can be added on devices that support them.
 
-Stock DSi hardware does not provide 5G, satellite communications, SDR/TinySA hardware, a physical QPU, holographic projection, or a vibration motor; those remain software workspaces or external-device gateways.
+“Universal” means the architecture is designed to represent and route supported capabilities across generations; it does not claim access to secret, hidden, banned, or undocumented operating systems.
 
-## SD camera output
+## RF/security boundary
 
-The application creates:
-- fat:/data/AetherMod/camera/preview.ppm
-- fat:/data/AetherMod/camera/capture_###.yuv
+The AetherOS security lab supports passive telemetry, authorized test workflows, and deterministic RF/network lab simulation. It does not transmit interference or provide covert interception. This keeps the DSi build suitable for lawful laboratory use while preserving an expansion interface for future, explicitly authorized hardware.
 
-## Build
+## Build artifact
 
-CI produces a real AetherCore1.nds with DSi header/payload checks and a complete public SD bundle.
+GitHub Actions builds a real DSi-compatible NDS using BlocksDS/libnds and validates the NDS header/payload before publishing:
+
+- `AetherCore1.nds`
+- `AetherOS-Pass6.nds`
+- `AetherCore1-Pass6-DSi-Public.tar.gz`
+
+Copy the published `AetherOS-Pass6.nds` to the DSi SD card. For the complete package, copy the included `apps/AetherMod` and `data/AetherMod` directories.
+
+## Project
+
+AetherOS is developed as a faith-inspired engineering project, with the stated aim of building for God.
