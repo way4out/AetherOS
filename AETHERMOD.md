@@ -1,24 +1,34 @@
-# AetherMod / AetherOS 8.2
+# AetherOS / AetherCore 1 — Pass 6
 
-AetherMod 8.2 is a local-first Nintendo DSi dual-screen cockpit.
+Pass 6 is the current DSi build and public package.
 
-## Pass 2
+## DSi runtime
 
-- VBlank-synchronized visual animation on both screens.
-- Native DS palette/backdrop animation for lightweight immersive motion.
-- Existing live telemetry bars continue to animate in the application frame loop.
-- Navigation is silent; action feedback remains separate from scrolling/page movement.
-- Home navigation exposes all 24 modules across three 8-module pages.
-- D-pad LEFT/RIGHT and bottom-screen page area cycle pages; UP/DOWN select modules.
-- Touch rows open modules; touch at the bottom page area advances the home page.
-- AetherOS8.2.nds and AetherMod8.2.nds are equivalent build outputs.
+- Boot-safe dual-screen initialization happens before optional storage access.
+- 77 systems remain addressable from the home deck.
+- Touch, D-pad, paging, scrolling, and module actions are implemented in the DSi runtime.
+- Camera and microphone support use DSi hardware APIs when available.
+- Storage failure falls back to a visible safe mode instead of leaving the UI blank.
 
-The visual layer uses native libnds/DS hardware rather than claiming unsupported 24-bit display hardware.
+## Universal expansion fabric
 
-## Hardware boundaries
+Supported architecture targets include Nintendo DSi/3DS/Wii/N64/Game Boy, later Nintendo, Sony legacy/modern, Xbox legacy/modern, Apple legacy/modern, Nokia legacy, and generic adapters. Emulator frontend and web gateway modes are capability-gated.
 
-The software does not claim that stock DSi hardware contains 5G, satellite, SDR, a physical QPU, or a holographic projector. Network/RF/TinySA functions remain gateway interfaces or simulations where external hardware is required.
+A .nds file is a Nintendo DS-family executable. It cannot directly replace the native OS of an Xbox, PlayStation, Apple device, or 1990s Nokia. Those platforms require their own native frontend/backend adapters or emulators on capable hardware.
 
-## SD install
+## Security and RF
 
-Copy the apps/AetherMod and data/AetherMod directories from the public bundle to the DSi SD card, then launch AetherOS8.2.nds.
+PASSIVE RF, AUTHORIZED NET, LAB SIM, and GATEWAY HARDEN modes are exposed through the security lab. Active jamming and covert/unauthorized interception are intentionally locked; LAB SIM can model those behaviors without transmitting interference or accessing third-party communications.
+
+## Self-heal
+
+The runtime contains deterministic boot/runtime health guards. They are designed to keep the display/input path alive and isolate optional services when storage or external services fail.
+
+## Public install
+
+1. Download `AetherOS-Pass6.nds` for the direct DSi executable.
+2. Copy it to the SD card.
+3. Or copy the complete public package's `apps/AetherMod` and `data/AetherMod` directories.
+4. Launch the NDS from the DSi menu/loader.
+
+The public CI artifact is the source of truth for the binary; no placeholder NDS is published.
