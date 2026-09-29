@@ -78,3 +78,5 @@ The production workflow now emits AetherCore4.nds and AetherOS-AetherCore4.nds. 
 <!-- actual production build -->
 
 <!-- docker smoke -->
+
+<!-- docker volume smoke -->
