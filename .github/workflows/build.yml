@@ -17,6 +17,7 @@ jobs:
       - name: Inspect toolchain
         run: |
           set -eu
+          export PATH="/opt/wonderful/toolchain/gcc-arm-none-eabi/arm-none-eabi/bin:/opt/wonderful/bin:$PATH"
           echo "BLOCKSDS=$BLOCKSDS"
           arm-none-eabi-gcc --version | head -1
           test -f "$BLOCKSDS/sys/crts/ds_arm9.ld"
