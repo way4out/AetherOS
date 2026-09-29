@@ -46,3 +46,6 @@ See [AETHERCORE4_USER_GUIDE.md](AETHERCORE4_USER_GUIDE.md) for the complete touc
 ## AetherCore 4 release naming
 
 The production workflow now emits AetherCore4.nds and AetherOS-AetherCore4.nds. RF interference/jamming and unauthorized interception remain disabled; interstellar/interdimensional surfaces are conceptual or external-gateway contracts only.
+
+
+<!-- AetherCore4 CI release trigger -->
