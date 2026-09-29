@@ -146,7 +146,8 @@ static void page(const char *title){
  printf("\x1b[35;1m==============================\x1b[37;1m\n");
  printf("%s\n",title);
  printf("DSi:%s  SAFE:%s  AI:%s  WIFI:%s\n",isDSiMode()?"YES":"DS",safeMode?"ON":"OFF",save.ai?"ON":"OFF",save.wireless?"ON":"OFF");
- printf("FRAME:%d  ENERGY:%d%%  ACTIONS:%d\n\n",frame,energy,actionCount);
+ printf("FRAME:%d  ENERGY:%d%%  ACTIONS:%d\n",frame,energy,actionCount);
+ printf("UI STATE: ACTIVE | RESERVED AREAS = DATA / STATUS / CONTROLS\n\n");
 }
 static void footer(const char *s){
  consoleSelect(&bottomConsole);
