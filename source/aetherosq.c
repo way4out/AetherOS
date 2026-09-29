@@ -66,6 +66,9 @@ static int coreDay=1,coreEnergy=100,coreCoins=40,coreInventory=0,coreAchievement
 static int coreQuestDone[6]={0,0,0,0,0,0},coreAchDone[6]={0,0,0,0,0,0};
 static int coreExecCursor=0;
 static int execState[48]={0};
+static int execMastery[48]={0};
+static int execStreak[48]={0};
+static int execReward[48]={0};
 static int execAction[48]={0};
 static char fileNames[16][48],vaultNames[12][48],eventNames[16][48];
 
@@ -346,10 +349,34 @@ static void draw(void);
 static const char *execSystems[48]={
  "EXECUTIVE HUB","MISSION CONTROL","RESOURCE COMMAND","SECURITY COMMAND","COMMS COMMAND","OPERATIONS CENTER","DEVELOPMENT CENTER","CREATOR ECONOMY","KNOWLEDGE CENTER","HEALTH & WELLNESS","ACCESS COMMAND","FINANCE LEDGER","INVENTORY COMMAND","FIELD COMMAND","AUTOMATION DESK","ANALYTICS CENTER","ARCHIVE COMMAND","USER PROFILE","SYSTEMS MONITOR","STRATEGY DESK","PROJECT COMMAND","TASK COMMAND","SCHEDULE CENTER","RESOURCE PLANNER","RISK DESK","QUALITY COMMAND","RESEARCH DESK","DESIGN COMMAND","CONTENT COMMAND","COMMUNITY COMMAND","PARTNERSHIP DESK","SERVICE COMMAND","SUPPORT COMMAND","LOGISTICS COMMAND","ASSET COMMAND","DATA COMMAND","INSIGHTS DESK","PERFORMANCE COMMAND","COMPLIANCE DESK","POLICY CENTER","CHANGE COMMAND","RELEASE COMMAND","TEST COMMAND","RELIABILITY CENTER","CONTINUITY DESK","GROWTH COMMAND","IMPACT CENTER","AETHERCORE CONTROL"
 };
+static const char *execGameplay[10]={"COMMANDER","STRATEGIST","QUARTERMASTER","WARDEN","OPERATOR","DIRECTOR","ENGINEER","MERCHANT","SCHOLAR","STEWARD"};
 static const char *execModes[48]={
  "COMMAND","QUESTS","RESOURCES","GUARD","SIGNALS","OPS","BUILD","MARKET","LIBRARY","WELLNESS",
  "ACCESS","LEDGER","ASSETS","FIELD","AUTOMATION","METRICS","ARCHIVE","PROFILE","MONITOR","STRATEGY","PROJECT","TASK","SCHEDULE","PLAN","RISK","QUALITY","RESEARCH","DESIGN","CONTENT","COMMUNITY","PARTNERS","SERVICE","SUPPORT","LOGISTICS","ASSETS","DATA","INSIGHTS","PERFORMANCE","COMPLIANCE","POLICY","CHANGE","RELEASE","TEST","RELIABILITY","CONTINUITY","GROWTH","IMPACT","CONTROL"
 };
+static void execExecutivePlay(int id){
+ int v=execState[id],m=execMastery[id],s=execStreak[id];
+ const char *role=execGameplay[id];
+ page(execSystems[id]);
+ iprintf("AETHERCORE GAMEPLAY // EXECUTIVE 01-10\\n");
+ iprintf("ROLE:%s  MASTERY:%d  STREAK:%d  REWARD:%d\\n",role,m,s,execReward[id]);
+ iprintf("CORE LV:%d XP:%d ENERGY:%d COINS:%d CREDITS:%d\\n",coreLevel,coreXp,coreEnergy,coreCoins,coreCredits);
+ iprintf("QUEST:%d  ZONE:%d  CREW:%d  DAY:%d\\n",coreQuest,coreZone,coreSocial,coreDay);
+ switch(id){
+  case 0: iprintf("MISSION: establish command state.\\n"); break;
+  case 1: iprintf("MISSION: choose and complete an active objective.\\n"); break;
+  case 2: iprintf("MISSION: balance resources and inventory.\\n"); break;
+  case 3: iprintf("MISSION: maintain safety and privacy controls.\\n"); break;
+  case 4: iprintf("MISSION: route authorized signals and communications.\\n"); break;
+  case 5: iprintf("MISSION: coordinate live Nexus operations.\\n"); break;
+  case 6: iprintf("MISSION: create, test and iterate a build.\\n"); break;
+  case 7: iprintf("MISSION: manage creator economy progression.\\n"); break;
+  case 8: iprintf("MISSION: discover and record knowledge.\\n"); break;
+  case 9: iprintf("MISSION: maintain sustainable player resources.\\n"); break;
+ }
+ iprintf("\\nA EXECUTE ACTION   X RESET   UP/DOWN MASTERY   L/R EXECUTIVE\\n");
+ iprintf("B RETURN   Y SYSTEMS GATE\\n");
+}
 static void execSystemView(int id){
  int v=execState[id],a=execAction[id];
  page(execSystems[id]);
@@ -397,7 +424,14 @@ static void execSystemInput(int id,u32 d){
  if(d&KEY_LEFT){id=(id+47)%48;selected=29+id;mode=30+id;changed=0;draw();return;}
  if(d&KEY_RIGHT){id=(id+1)%48;selected=29+id;mode=30+id;changed=0;draw();return;}
  if(d&KEY_A){
-   execAction[id]++; execState[id]++;
+   execAction[id]++; execState[id]++; execMastery[id]++;
+   execStreak[id]++;
+   execReward[id]+=5;
+   coreXp+=3;
+   if(coreEnergy>0)coreEnergy--;
+   coreCoins++;
+   if(coreXp>=100){coreLevel++;coreXp-=100;}
+
    if(id==0)corePulse=(corePulse+1)%100;
    if(id==1 && coreEnergy>=5){coreEnergy-=5;coreSession++;}
    if(id==2){coreCoins+=2;coreCredits+=1;}
@@ -419,7 +453,7 @@ static void execSystemInput(int id,u32 d){
    if(id==18)diagRuns++;
    changed=1;
  }
- if(d&KEY_X){execState[id]=0;changed=1;}
+ if(d&KEY_X){execState[id]=0;execMastery[id]=0;execStreak[id]=0;execReward[id]=0;changed=1;}
  if(changed){feedback();markDirty();draw();}
 }
 
