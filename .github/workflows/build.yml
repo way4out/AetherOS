@@ -25,7 +25,7 @@ jobs:
       - name: Clean and build real NDS
         run: |
           set -eu
-          export PATH="/opt/wonderful/toolchain/gcc-arm-none-eabi/bin:/opt/wonderful/bin:$PATH"
+          export PATH="$PATH:/opt/wonderful/toolchain/gcc-arm-none-eabi/arm-none-eabi/bin:/opt/wonderful/bin:$PATH"
           make clean
           make
           test -s AetherCore1.nds
