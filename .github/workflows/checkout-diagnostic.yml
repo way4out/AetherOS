@@ -17,3 +17,4 @@ jobs:
           set -eux
           test -f Makefile
           echo CHECKOUT_OK
+          docker --version
