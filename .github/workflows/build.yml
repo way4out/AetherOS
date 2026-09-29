@@ -79,8 +79,7 @@ jobs:
           cp -r data/AetherMod/. deploy/data/AetherMod/
           cp AETHERMOD.md deploy/AETHERMOD.md
           printf '%s\n' 'Copy apps/AetherMod and data/AetherMod to the DSi SD card. Launch AetherCore1.nds.' > deploy/INSTALL.txt
-          cd deploy
-          zip -r ../AetherCore1-DSi-Public.zip .
+          tar -czf AetherCore1-DSi-Public.tar.gz -C deploy .
 
       - uses: actions/upload-artifact@v4
         with:
@@ -88,4 +87,4 @@ jobs:
           if-no-files-found: error
           path: |
             AetherCore1.nds
-            AetherCore1-DSi-Public.zip
+            AetherCore1-DSi-Public.tar.gz
