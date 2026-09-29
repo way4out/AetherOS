@@ -54,7 +54,7 @@ bool writeBootMarker() {
     if (!sdAvailable() || !dirExists("REVF") || !dirExists("REVF/LOGS")) return false;
     FILE* f=fopen("REVF/LOGS/BOOT.LOG","w");
     if(!f) return false;
-    fprintf(f,"AetherOS AetherCore1 DSi booted.\n");
+    fprintf(f,"AetherOS AetherCore1 booted.\n");
     fclose(f);
     return true;
 }
@@ -75,7 +75,6 @@ bool microphoneAvailable() {
 bool microphoneStart() {
     if(!microphoneAvailable()) return false;
     if(gMicRunning) return true;
-    // Double-buffered PCM input; callback is intentionally lightweight.
     gMicRunning = soundMicRecord(gMicBuffer, sizeof(gMicBuffer), MicFormat_12Bit, 16000, micCallback) != 0;
     return gMicRunning;
 }
@@ -120,11 +119,12 @@ void cameraShutdown() {
     gCameraSelected=false;
 }
 
+// Deliberately non-invasive: capability probing must not initialize camera or
+// microphone during boot. Those services are started only by a module that
+// explicitly requests them. This keeps the same .nds binary usable on both
+// original NDS and DSi/TWL hardware.
 void hardwareTick() {
-    if(dsiMode()) {
-        (void)microphoneAvailable();
-        (void)cameraAvailable();
-    }
+    (void)dsiMode();
 }
 
 }
