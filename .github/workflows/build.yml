@@ -47,6 +47,11 @@ jobs:
           echo "VERIFIED_ARM9_HEADER=present"
           grep -R "web_fabric\|device_fabric" source >/dev/null
           echo "VERIFIED_PASS_4_5_FABRICS=present"
+          test -f source/core/pass46_runtime.cpp
+          test -f source/core/pass46_runtime.h
+          grep -q "pass46::init" source/core/aether_core.cpp
+          grep -q "pass46::tick" source/core/aether_core.cpp
+          echo "VERIFIED_PASS_4_6_RUNTIME_HEALTH=present"
           sha256sum AetherCore1.nds
           ls -lh AetherCore1.nds
 
