@@ -17,7 +17,7 @@
  */
 #define APP_COUNT 77
 #define AETHERCORE_MAJOR 1
-#define AETHERCORE_PASS 48
+#define AETHERCORE_PASS 49
 #define AETHERCORE_TOTAL_PASSES 7
 #define AETHERMOD_MAJOR 9
 #define AETHERMOD_MINOR 0
@@ -478,12 +478,12 @@ static void execSystemInput(int id,u32 d){
  if(changed){feedback();markDirty();draw();}
 }
 
-/* AetherCore 1 — Pass 1: gameplay/social shell around the complete AetherOS 9 runtime. */
+/* AetherCore 1 — Pass 4.9: gameplay/social shell around the complete AetherOS 9 runtime. */
 static const char *coreZones[]={"NEXUS","QUANTUM FIELD","CODEX GARDEN","SIGNAL RIDGE","CREATOR DECK","SYSTEMS"};
 static const char *coreQuests[]={"CALIBRATE THE CORE","SCAN A SIGNAL","OPEN THE CODEX","BUILD A BEAT","RUN A DIAGNOSTIC","VISIT THE SYSTEMS"};
 static const char *coreAvatars[]={"PIONEER","ENGINEER","SCOUT","CREATOR"};
 static void draw(void);
-static void coreHeader(const char *title){ page(title); consoleSelect(&topConsole); printf("\x1b[33;1mAETHERCORE 1 / PASS 4.4\x1b[37;1m\n"); printf("LEVEL %d  XP %d  STREAK %d  CREDITS %d\n",coreLevel,coreXp,coreStreak,coreCredits); }
+static void coreHeader(const char *title){ page(title); consoleSelect(&topConsole); printf("\x1b[33;1mAETHERCORE 1 / PASS 4.9\x1b[37;1m\n"); printf("LEVEL %d  XP %d  STREAK %d  CREDITS %d\n",coreLevel,coreXp,coreStreak,coreCredits); }
 static void coreReward(int xp,int credits){ coreXp+=xp; coreCredits+=credits; coreWins++; coreStreak++; if(coreXp>=coreLevel*100){coreXp-=coreLevel*100;coreLevel++;} corePulse=(corePulse+1)%100; markDirty(); feedback(); }
 static void coreWorld(void){
  coreHeader("AETHERCORE NEXUS");
