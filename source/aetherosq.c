@@ -99,7 +99,7 @@ static void defaults(void){
 static void loadState(void){
  defaults();ensureDirs();FILE *f=fopen("fat:/data/AetherMod/save.dat","rb");
  if(f){SaveData t;if(fread(&t,1,sizeof(t),f)==sizeof(t)){u32 c=t.checksum;t.checksum=0;
-   if(c==hash32(&t,sizeof(t))&&t.magic==SAVE_MAGIC&&(t.version==4||t.version==SAVE_VERSION))save=t;
+   if(c==hash32(&t,sizeof(t))&&t.magic==SAVE_MAGIC&&(t.version==4||t.version==6||t.version==SAVE_VERSION))save=t;
   }fclose(f);}
  bootCount++;
  selected=(save.selected<APP_COUNT)?save.selected:0; cursor=selected; homePage=selected/8;
