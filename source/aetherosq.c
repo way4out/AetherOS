@@ -9,15 +9,15 @@
 #include "config.h"
 #include "aether_hardware.h"
 
-/* AetherOS 9.0 — DSi-native modular cockpit. Pass 6 production deploy.
+/* AetherOS / AetherCore3 — DSi-native modular cockpit. Production pass 70.
  * Every home entry maps to an independent implementation.
  * Hardware claims remain honest: external RF/TinySA/camera/AI/phone/QPU
  * capabilities are represented as software workspaces/gateways, not invented
  * stock-DSi hardware.
  */
 #define APP_COUNT 77
-#define AETHERCORE_MAJOR 1
-#define AETHERCORE_PASS 60
+#define AETHERCORE_MAJOR 3
+#define AETHERCORE_PASS 70
 #define AETHERCORE_TOTAL_PASSES 7
 #define AETHERMOD_MAJOR 9
 #define AETHERMOD_MINOR 0
@@ -71,7 +71,7 @@ static int execMastery[48]={0};
 static int execStreak[48]={0};
 static int execReward[48]={0};
 static int execAction[48]={0};
-static int hardwareActionCount=0;
+static int hardwareActionCount=0;\nextern void aether_core3_tick(void);
 static char fileNames[16][48],vaultNames[12][48],eventNames[16][48];
 
 static const char *apps[APP_COUNT]={
@@ -651,7 +651,7 @@ int legacy_shell_main(void){
  while(1){
    swiWaitForVBlank();
    scanKeys();
-   frame++;
+   frame++;\n   aether_core3_tick();
    visualPhase=(visualPhase+1)&63;
    energy=(energy+1)%101;
    if(dawPlaying&&(frame%15)==0){
