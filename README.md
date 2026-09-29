@@ -88,3 +88,5 @@ The production workflow now emits AetherCore4.nds and AetherOS-AetherCore4.nds. 
 <!-- isolated build script trigger -->
 
 <!-- container build test -->
+
+<!-- host docker build trigger -->
