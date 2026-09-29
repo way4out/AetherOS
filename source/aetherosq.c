@@ -588,8 +588,8 @@ static void moduleInput(u32 d){
    if(d&KEY_A){if(aetherCameraPreview())hardwareActionCount++;changed=1;}
    if(d&KEY_X){if(aetherCameraCapture())hardwareActionCount++;changed=1;}
    if(d&KEY_Y){if(aetherMicStartStop())hardwareActionCount++;changed=1;}
-   if(d&KEY_LEFT){if(aetherCameraSelectInner())changed=1;}
-   if(d&KEY_RIGHT){if(aetherCameraSelectOuter())changed=1;}
+   if(d&KEY_LEFT){aetherCameraToggle();changed=1;}
+   if(d&KEY_RIGHT){aetherCameraToggle();changed=1;}
    break;
  case 1:if(d&KEY_UP){qState=(qState+3)%4;changed=1;}if(d&KEY_DOWN){qState=(qState+1)%4;changed=1;}if(d&KEY_A){qShots++;qState=(qState+1)%4;changed=1;}if(d&KEY_X){qState=(qState+1)%4;changed=1;}if(d&KEY_Y){qState=0;changed=1;}break;
  case 2:if(d&KEY_UP){if(codexPage)codexPage--;changed=1;}if(d&KEY_DOWN){codexPage++;if(codexPage>4095)codexPage=4095;changed=1;}if(d&KEY_LEFT){codexBook=(codexBook+65)%66;codexPage=0;changed=1;}if(d&KEY_RIGHT){codexBook=(codexBook+1)%66;codexPage=0;changed=1;}if(d&KEY_A){codexSearch=!codexSearch;changed=1;}if(d&KEY_X){codexSearch=!codexSearch;changed=1;}if(d&KEY_Y){codexBook=0;codexPage=0;changed=1;}break;
