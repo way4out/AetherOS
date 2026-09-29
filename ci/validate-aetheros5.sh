@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euxo pipefail
-test -s AetherOS5.nds
+test -s AetherCore5.nds
 python3 - <<'PY'
 from pathlib import Path
-p=Path("AetherOS5.nds").read_bytes()
+p=Path("AetherCore5.nds").read_bytes()
 assert len(p) > 0
 assert len(p) <= 64*1024*1024
 assert p[0x12] == 2, f"DSi unit code={p[0x12]}"
