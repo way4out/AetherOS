@@ -41,7 +41,7 @@ static const char *root="fat:/";
 static int mode=0,selected=0,homePage=0,cursor=0;
 static int dirty=0, safeMode=0, frame=0, actionCount=0;
 static int touchX=0,touchY=0,touchDown=0,touchStartX=-1,touchStartY=-1,touchPrevY=-1,touchMoved=0;
-static int pageCursor=0, subCursor=0, moduleValue=0, touchActionLatch=0;
+static int pageCursor=0, subCursor=0, moduleValue=0, touchActionLatch=0, msgTouchKey=-1;
 static int qState=0,qShots=0,qFidelity=0;
 static int codexBook=0,codexPage=0,codexSearch=0;
 static int animal=0,animalFeature=0,animalLive=0,animalEvents=0;
@@ -183,6 +183,19 @@ static void touchMap(u32 *d){
      if(touchStartY>=0&&t.py+24<touchStartY){homePage=(homePage+1)%HOME_PAGES;homeSet(homePage*8);feedback();draw();}
      else if(touchStartY>=0&&t.py>touchStartY+24){homePage=(homePage+HOME_PAGES-1)%HOME_PAGES;homeSet(homePage*8);feedback();draw();}
      touchStartY=t.py;touchMoved=0;touchActionLatch=1;
+   }
+   lastHeld=1;return;
+ }
+ if(mode==77){
+   if(!touchMoved && t.py>=48 && t.py<176){
+     int col=((int)t.px)/32; int row=((int)t.py-48)/16; int k=row*8+col;
+     if(k>=0 && k<74){msgTouchKey=k;*d|=KEY_A;touchActionLatch=1;}
+   }else if(touchMoved){
+     if(touchStartX>=0&&t.px>touchStartX+24)*d|=KEY_RIGHT;
+     else if(touchStartX>=0&&t.px+24<touchStartX)*d|=KEY_LEFT;
+     else if(touchStartY>=0&&t.py+24<touchStartY)*d|=KEY_UP;
+     else if(touchStartY>=0&&t.py>touchStartY+24)*d|=KEY_DOWN;
+     touchActionLatch=1;
    }
    lastHeld=1;return;
  }
@@ -606,7 +619,7 @@ static void moduleInput(u32 d){
    if(d&KEY_DOWN){aether_messaging_cursor_down();changed=1;}
    if(d&KEY_LEFT){aether_messaging_cycle_contact();changed=1;}
    if(d&KEY_RIGHT){aether_messaging_cycle_platform();changed=1;}
-   if(d&KEY_A){const char* k=" ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,!?'-_@:/";aether_messaging_append_char(k[aether_messaging_cursor()]);changed=1;}
+   if(d&KEY_A){const char* k=" ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,!?'-_@:/";int idx=(msgTouchKey>=0)?msgTouchKey:(int)aether_messaging_cursor();if(idx>=0&&idx<74)aether_messaging_append_char(k[idx]);msgTouchKey=-1;changed=1;}
    if(d&KEY_X){if(aether_messaging_send())changed=1;}
    if(d&KEY_Y){aether_messaging_backspace();changed=1;}
    if(d&KEY_SELECT){aether_messaging_simulate_incoming();changed=1;}
