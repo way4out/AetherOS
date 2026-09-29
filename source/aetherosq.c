@@ -372,7 +372,7 @@ static void execSystemView(int id){
   case 10: iprintf("SCALE:%d  CONTRAST:%s  SCROLL:%d\\n",accessScale,accessContrast?"HIGH":"NORMAL",accessScroll); graph("ACCESS ",accessScale+v); break;
   case 11: iprintf("CREDITS:%d  COINS:%d  TRANSACTIONS:%d\\n",coreCredits,coreCoins,a); graph("LEDGER ",coreCredits+coreCoins+v); break;
   case 12: iprintf("INVENTORY:%d  VAULT:%d  FILES:%d\\n",coreInventory,vaultCount,fileCount); graph("ASSETS ",coreInventory+v); break;
-  case 13: iprintf("ZONE:%s  ANIMAL EVENTS:%d  RF EVENTS:%d\\n",coreZones[coreZone],animalEvents,rfEvents); graph("FIELD ",coreZone+animalEvents+v); break;
+  case 13: iprintf("ZONE:%s  ANIMAL EVENTS:%d  RF EVENTS:%d\\n",((const char *[]){"NEXUS","QUANTUM FIELD","CODEX GARDEN","SIGNAL RIDGE","CREATOR DECK","SYSTEMS"})[coreZone],animalEvents,rfEvents); graph("FIELD ",coreZone+animalEvents+v); break;
   case 14: iprintf("AUTOMATION RUNS:%d  BOT RUNS:%d  DIAG:%d\\n",a,botRuns,diagRuns); graph("AUTO ",a+botRuns); break;
   case 15: iprintf("ACTIONS:%d  FRAME:%d  TELEMETRY PAGE:%d\\n",actionCount,frame,telemetryPage+1); graph("METRIC ",actionCount+v); break;
   case 16: iprintf("EVENTS:%d  FILES:%d  VAULT:%d\\n",eventCount,fileCount,vaultCount); graph("ARCHIVE ",eventCount+v); break;
