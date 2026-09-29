@@ -8,6 +8,7 @@ bool aetherMicAvailable(void);
 int aetherCameraDevice(void);
 int aetherCameraPreview(void);
 int aetherCameraCapture(void);
+void aetherCameraToggle(void);
 int aetherCameraPreviewCount(void);
 int aetherCameraCaptureCount(void);
 int aetherMicStartStop(void);
