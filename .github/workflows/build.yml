@@ -84,12 +84,6 @@ jobs:
           grep -q "aether_core3_tick" source/aetherosq.c
           grep -q "AETHERCORE_PASS 70" source/aetherosq.c
           echo "VERIFIED_AETHERCORE3_RUNTIME_HEALTH=present"
-          test -f source/core/aether_core3.cpp
-          test -f source/core/aether_core3.h
-          grep -q "core3::init" source/core/universal_guard.cpp
-          grep -q "aether_core3_tick" source/aetherosq.c
-          grep -q "AETHERCORE_PASS 70" source/aetherosq.c
-          echo "VERIFIED_AETHERCORE3_RUNTIME_HEALTH=present"
           echo "VERIFIED_PASS_CORE2_BASE_PRODUCTION_DEPLOY=present"
           grep -q "AETHERCORE_PASS 70" source/aetherosq.c
           sha256sum AetherCore3.nds
@@ -120,8 +114,7 @@ jobs:
           cp AetherCore3.nds deploy/apps/AetherMod/AetherCore3.nds
           cp -r data/AetherMod/. deploy/data/AetherMod/
           cp AETHERMOD.md deploy/AETHERMOD.md
-          printf '%s
-' '4GB SD INSTALL: copy apps/AetherMod and data/AetherMod to the SD root, then launch apps/AetherMod/AetherCore3.nds.' > deploy/INSTALL.txt
+          printf '%s\n' '4GB SD INSTALL: copy apps/AetherMod and data/AetherMod to the SD root, then launch apps/AetherMod/AetherCore3.nds.' > deploy/INSTALL.txt
           cp AetherCore3.nds deploy/AetherOS-AetherCore3.nds
           tar -czf AetherCore3-DSi-Public.tar.gz -C deploy .
 
