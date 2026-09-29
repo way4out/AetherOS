@@ -8,6 +8,7 @@
 #include <dirent.h>
 #include "config.h"
 #include "aether_hardware.h"
+#include "messaging/aether_messaging.h"
 
 /* AetherOS / AetherCore5 — DSi-native modular cockpit. Production pass 70.
  * Every home entry maps to an independent implementation.
@@ -16,8 +17,8 @@
  * stock-DSi hardware.
  */
 #define APP_COUNT 79
-#define AETHERCORE_MAJOR 5
-#define AETHERCORE_PASS 70
+#define AETHERCORE_MAJOR 7
+#define AETHERCORE_PASS 1
 #define AETHERCORE_TOTAL_PASSES 7
 #define AETHERMOD_MAJOR 9
 #define AETHERMOD_MINOR 0
@@ -91,7 +92,7 @@ static const char *apps[APP_COUNT]={
  "COMMUNITY COMMAND","PARTNERSHIP DESK","SERVICE COMMAND","SUPPORT COMMAND","LOGISTICS COMMAND",
  "ASSET COMMAND","DATA COMMAND","INSIGHTS DESK","PERFORMANCE COMMAND","COMPLIANCE DESK",
  "POLICY CENTER","CHANGE COMMAND","RELEASE COMMAND","TEST COMMAND","RELIABILITY CENTER",
- "CONTINUITY DESK","GROWTH COMMAND","IMPACT CENTER","AETHERCORE CONTROL","CAMERA & MIC"
+ "CONTINUITY DESK","GROWTH COMMAND","IMPACT CENTER","MESSAGING","CAMERA & MIC"
 };
 static const char *animalNames[]={"Horse","Dog","Cat","Cow","Bison","Camel","Zebra","Ostrich","Bird","Wolf","Fox","Deer","Bear","Big Cat","Other"};
 static const char *codexBooks[66]={
@@ -284,97 +285,20 @@ static void modNetwork(void){page("11 NETWORK GATEWAY");printf("WIFI:%s SELFTEST
  printf("No credential capture, disruption, or radio attack path.\n");footer("A WIFI | X SELFTEST | Y BROWSER | L/R SLOT | B HOME");}
 
 /* 12 — Phone Link */
-static void modPhone(void){page("12 PHONE LINK");printf("PAIR:%s SESSION:%d SYNC:%s\n",phoneConnected?"CONNECTED":"READY",phoneConnected?1:0,phoneSync?"LIVE":"IDLE");
- printf("TX:%d RX:%d ACK:%d  DSi Wi-Fi 2.4GHz GATE\n",phonePackets*3,phonePackets*2,phonePackets);
- printf("PHONE REMOTE CONTROL IS A LOCAL UI/GATEWAY CONTRACT.\n");footer("A CONNECT | X SYNC | Y CLEAR | UP/DOWN PROFILE | B HOME");}
-
-/* 13 — Media Studio */
-static void modMedia(void){page("13 MEDIA STUDIO");printf("MODE:%s TRACK:%d PLAY:%s VOL:%d\n",mediaMode?"MIXER":"PLAYER",mediaTrack+1,mediaPlaying?"YES":"NO",mediaVolume);
- graph("WAVE ",mediaTrack*17);printf("LOCAL SD MEDIA CONTROL SURFACE\n");footer("UP/DOWN TRACK | L/R VOLUME | A PLAY | X MODE | Y NEXT | B HOME");}
-
-/* 14 — Sensor Hub */
-static void modSensor(void){page("14 SENSOR HUB");sensorSamples++;sensorPeak=(sensorPeak+frame)%100;
- printf("SOURCE:%s SAMPLES:%d PEAK:%d\n",sensorMode?"EXTERNAL GATE":"DSi LOCAL",sensorSamples,sensorPeak);
- printf("TOUCH:%d BAT:%d%% FRAME:%d\n",touchDown,getBatteryLevel(),frame);graph("SENS ",sensorMode*23);
- footer("UP/DOWN SOURCE | A SAMPLE | X RESET | Y PEAK | B HOME");}
-
-/* 15 — Data Vault */
-static void scanVault(void){vaultCount=0;DIR *d=opendir("fat:/data/AetherMod");if(!d&&isDSiMode())d=opendir("sd:/data/AetherMod");if(!d)return;struct dirent *e;
- while((e=readdir(d))&&vaultCount<12){if(e->d_name[0]=='.')continue;strncpy(vaultNames[vaultCount++],e->d_name,47);}closedir(d);}
-static void modVault(void){page("15 DATA VAULT");if(vaultCount==0)scanVault();printf("SD DATA/AetherMod  ITEMS:%d\n",vaultCount);
- for(int i=0;i<vaultCount&&i<8;i++)printf("%c %02d %s\n",i==vaultCursor?'>':' ',i+1,vaultNames[i]);footer("UP/DOWN SELECT | A/X RESCAN | B HOME");}
-
-/* 16 — File Browser */
-static void scanFiles(void){fileCount=0;DIR *d=opendir("fat:/");if(!d&&isDSiMode())d=opendir("sd:/");if(!d)return;struct dirent *e;
- while((e=readdir(d))&&fileCount<16){if(e->d_name[0]=='.')continue;strncpy(fileNames[fileCount++],e->d_name,47);}closedir(d);}
-static void modFiles(void){page("16 FILE BROWSER");if(fileCount==0)scanFiles();printf("ROOT:%s ITEMS:%d\n",root,fileCount);
- for(int i=0;i<fileCount&&i<8;i++)printf("%c %02d %s\n",i==fileCursor?'>':' ',i+1,fileNames[i]);printf("READ-ONLY NAVIGATION; no destructive delete action.\n");footer("UP/DOWN SELECT | A REFRESH | X VAULT | B HOME");}
-
-/* 17 — Haptic */
-static void modHaptic(void){page("17 HAPTIC LAB");printf("LEVEL:%d/3 PULSES:%d\n",hapticLevel,actionCount);printf("ACTIONS -> VISUAL:%d SOUND:%s\n",energy,save.sound?"ON":"OFF");
- printf("DSi physical rumble hardware is not claimed; feedback is UI/audio.\n");footer("L/R LEVEL | A TEST | X SOUND | Y VISUAL | B HOME");}
-
-/* 18 — Accessibility */
-static void modAccess(void){page("18 ACCESSIBILITY");printf("SCALE:%d CONTRAST:%s SCROLL:%d\n",accessScale,accessContrast?"HIGH":"NORMAL",accessScroll);
- printf("TOUCH TARGETS: LARGE  |  NAVIGATION: D-PAD + TOUCH\n");printf("VISUAL FEEDBACK:%s  AUDIO:%s\n",accessContrast?"HIGH":"STANDARD",save.sound?"ON":"OFF");
- footer("UP/DOWN SCALE | A CONTRAST | X SCROLL | Y SOUND | B HOME");}
-
-/* 19 — Power */
-static void modPower(void){page("19 POWER LAB");int bat=getBatteryLevel();printf("BATTERY:%d%% MODE:%s SAVER:%s CYCLES:%d\n",bat,powerMode?"LOW POWER":"NORMAL",powerSaver?"ON":"OFF",powerCycles);
- printf("BACKLIGHT:%u/4  FRAME RATE CONTROL: SOFTWARE\n",save.brightness);printf("STOCK DSi POWER RAILS ARE NOT MODIFIED.\n");footer("UP/DOWN MODE | A SAVER | X BRIGHT | Y CYCLE | B HOME");}
-
-/* 20 — Control */
-static void modControl(void){page("20 CONTROL LAB");printf("CURSOR:%d EVENTS:%d\n",controlCursor,controlEvents);printf("TOUCH X:%d Y:%d DOWN:%d\n",touchX,touchY,touchDown);
- printf("INPUT MATRIX: A B X Y / D-PAD / L R / START SELECT\n");footer("UP/DOWN CURSOR | A EVENT | X CLEAR | L/R MODE | B HOME");}
-
-/* 21 — Diagnostics */
-static void modDiagnostics(void){page("21 DIAGNOSTICS");
- diagErrors=0;if(!isDSiMode())diagErrors++;if(!save.magic)diagErrors++;if(diagStorageKnown&&!diagStorage)diagErrors++;
- printf("RUN:%d ERRORS:%d STATUS:%s\n",diagRuns,diagErrors,diagErrors?"CHECK":"PASS");
- printf("FAT:%s  SAVE:%s  TOUCH:%s\n",diagStorageKnown?(diagStorage?"PASS":"FAIL"):"NOT TESTED",save.magic?"VALID":"FAIL",touchDown?"LIVE":"READY");
- printf("APP COUNT:%d  BUILD:%d.%d PASS:%d/%d\n",APP_COUNT,AETHERMOD_MAJOR,AETHERMOD_MINOR,AETHERMOD_PASS,AETHERMOD_TOTAL_PASSES);
- footer("A RUN TEST | X RESET | B HOME");}
-
-/* 22 — Aether Bot */
-static void modBot(void){page("22 AETHER BOT");const char *jobs[]={"HOME","DIAGNOSTICS","FILES","VAULT","POWER","CONTROL","SETTINGS","SAFETY"};
- printf("JOB:%s RUNS:%d\n",jobs[botCursor%8],botRuns);printf("LOCAL ORCHESTRATION / NO AUTONOMOUS EXTERNAL ACTIONS\n");
- footer("UP/DOWN JOB | A EXECUTE | X RESET | Y HOME | B HOME");}
-
-/* 23 — General Settings */
-static void modSettings(void){page("23 GENERAL SETTINGS");const char *s[]={"AI","ONLINE AI","PRIVACY","BROWSER","DOWNLOADS","WIFI","SOUND","THEME"};
- printf("SELECT:%s = %s\n",s[settingsCursor],(settingsCursor==0?save.ai:settingsCursor==1?save.onlineAI:settingsCursor==2?save.privacy:settingsCursor==3?save.browser:settingsCursor==4?save.downloads:settingsCursor==5?save.wireless:settingsCursor==6?save.sound:save.theme)?"ON":"OFF");
- printf("BRIGHTNESS:%u  BPM:%u  LANGUAGE:%u\n",save.brightness,save.bpm,save.language);footer("UP/DOWN SELECT | A TOGGLE | X SAFE MODE | Y BRIGHT | B HOME");}
-
-/* 24 — Event Log */
-static void modEvents(void){page("24 EVENT LOG");eventCount=actionCount<16?actionCount:16;printf("EVENTS:%d\n",eventCount);
- for(int i=0;i<eventCount;i++)printf("%c EVENT %02d FRAME %d\n",i==eventCursor?'>':' ',i+1,(frame-i*7));footer("UP/DOWN SELECT | X REFRESH | Y CLEAR | B HOME");}
-
-/* 25 — Notes */
-static void modNotes(void){static const char *n[]={"Build priorities","DSi local-first workspace","Geneva corpus","Module QA","Animal signal lab","Rescue notes","Power notes","Release notes"};page("25 NOTES");
- printf("NOTE %d/8\n%s\n\nA writes selected note to SD.\n",noteCursor+1,n[noteCursor]);footer("UP/DOWN NOTE | A SAVE | X NEXT | B HOME");}
-
-/* 26 — Clock */
-static void modClock(void){page("26 CLOCK / TIME");time_t now=time(NULL);struct tm *t=localtime(&now);if(!t)printf("RTC UNAVAILABLE\n");else{
- int h=t->tm_hour;if(!clock24){int hh=h%12;if(hh==0)hh=12;printf("%02d:%02d:%02d %s\n",hh,t->tm_min,t->tm_sec,h>=12?"PM":"AM");}else printf("%02d:%02d:%02d\n",h,t->tm_min,t->tm_sec);
- printf("%04d-%02d-%02d\n",t->tm_year+1900,t->tm_mon+1,t->tm_mday);}footer("A 12/24H | B HOME");}
-
-/* 27 — About */
-static void modAbout(void){page("27 ABOUT");printf("AETHEROS 9.0 / DSi BOOT-SAFE\n");printf("29 INDIVIDUAL MODULE IMPLEMENTATIONS\n");printf("Geneva 1599 corpus: SD/OFFLINE\n");printf("Universal touch: TAP / SWIPE / DRAG\n");printf("Local-first, bounded, recoverable runtime.\n");footer("B HOME");}
-
-/* 29 — DSi Camera & Microphone */
-static void modCamera(void){
- page("29 DSi CAMERA / MICROPHONE");
- printf("DSi CAMERA:%s  DEVICE:%s  PREV:%d  CAP:%d\n",
-        isDSiMode()?(aetherCameraAvailable()?"READY":"UNAVAILABLE"):"DS MODE",
-        aetherCameraDevice()==CAMERA_INNER?"INNER":"OUTER",
-        aetherCameraPreviewCount(),aetherCameraCaptureCount());
- printf("MIC:%s  STATE:%s  PEAK:%d  RMS:%d\n",
-        aetherMicAvailable()?"READY":"UNAVAILABLE",
-        aetherMicActive()?"LIVE":"OFF",aetherMicPeak(),aetherMicRms());
- printf("\nA PREVIEW   X FULL CAPTURE   Y MIC ON/OFF\n");
- printf("L/R SELECT CAMERA   START PREVIEW   SELECT MIC\n");
- printf("Images require writable SD storage. Hardware is DSi-only.\n");
- footer("A PREVIEW | X CAPTURE | Y MIC | L/R CAMERA | B HOME");
+static void modPhone(void){
+ page("12 PHONE LINK / MESSAGING");
+ printf("FREE-TEXT MESSAGING WORKSPACE\\n");
+ printf("CONTACT: %s\\n",aether_messaging_contact());
+ printf("PLATFORM: %s  ACCENT: %s\\n",aether_messaging_platform(),aether_messaging_color_name());
+ printf("CONNECTION: %s  SENT:%u  RX:%u  QUEUE:%u\\n",
+        aether_messaging_connected()?"READY":"OFFLINE",aether_messaging_sent(),
+        aether_messaging_received(),aether_messaging_queued());
+ printf("TEXT[%u/160]: %s\\n",aether_messaging_text_len(),aether_messaging_text());
+ printf("KEY:%c  [touch keyboard / D-PAD character select]\\n",
+        " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,!?'-_@:/"
+        [aether_messaging_cursor()]);
+ printf("APPLE/ANDROID: COLOR IS A LOCAL CONTACT ACCENT; ACTUAL iMessage/RCS/SMS DELIVERY REQUIRES A COMPATIBLE INTERNET/CARRIER GATEWAY.\\n");
+ footer("UP/DOWN KEY | L/R CONTACT | A APPEND | X SEND | Y BACKSPACE | SELECT TEST RX | B HOME");
 }
 
 /* 28 — Safety Center */
@@ -668,7 +592,7 @@ static void draw(void){
  case 16:modFiles();break;case 17:modHaptic();break;case 18:modAccess();break;case 19:modPower();break;
  case 20:modControl();break;case 21:modDiagnostics();break;case 22:modBot();break;case 23:modSettings();break;
  case 24:modEvents();break;case 25:modNotes();break;case 26:modClock();break;case 27:modAbout();break;
- case 28:modSafety();break;case 29:coreFront();break;case 30:execSystemView(0);break;case 31:execSystemView(1);break;case 32:execSystemView(2);break;case 33:execSystemView(3);break;case 34:execSystemView(4);break;case 35:execSystemView(5);break;case 36:execSystemView(6);break;case 37:execSystemView(7);break;case 38:execSystemView(8);break;case 39:execSystemView(9);break;case 40:execSystemView(10);break;case 41:execSystemView(11);break;case 42:execSystemView(12);break;case 43:execSystemView(13);break;case 44:execSystemView(14);break;case 45:execSystemView(15);break;case 46:execSystemView(16);break;case 47:execSystemView(17);break;case 48:execSystemView(18);break;case 49:execSystemView(19);break;case 50:execSystemView(20);break;case 51:execSystemView(21);break;case 52:execSystemView(22);break;case 53:execSystemView(23);break;case 54:execSystemView(24);break;case 55:execSystemView(25);break;case 56:execSystemView(26);break;case 57:execSystemView(27);break;case 58:execSystemView(28);break;case 59:execSystemView(29);break;case 60:execSystemView(30);break;case 61:execSystemView(31);break;case 62:execSystemView(32);break;case 63:execSystemView(33);break;case 64:execSystemView(34);break;case 65:execSystemView(35);break;case 66:execSystemView(36);break;case 67:execSystemView(37);break;case 68:execSystemView(38);break;case 69:execSystemView(39);break;case 70:execSystemView(40);break;case 71:execSystemView(41);break;case 72:execSystemView(42);break;case 73:execSystemView(43);break;case 74:execSystemView(44);break;case 75:execSystemView(45);break;case 76:execSystemView(46);break;case 77:execSystemView(47);break;case 78:modCamera();break;case 79:arcadeRender();break;default:mode=79;arcadeReset();break;
+ case 28:modSafety();break;case 29:coreFront();break;case 30:execSystemView(0);break;case 31:execSystemView(1);break;case 32:execSystemView(2);break;case 33:execSystemView(3);break;case 34:execSystemView(4);break;case 35:execSystemView(5);break;case 36:execSystemView(6);break;case 37:execSystemView(7);break;case 38:execSystemView(8);break;case 39:execSystemView(9);break;case 40:execSystemView(10);break;case 41:execSystemView(11);break;case 42:execSystemView(12);break;case 43:execSystemView(13);break;case 44:execSystemView(14);break;case 45:execSystemView(15);break;case 46:execSystemView(16);break;case 47:execSystemView(17);break;case 48:execSystemView(18);break;case 49:execSystemView(19);break;case 50:execSystemView(20);break;case 51:execSystemView(21);break;case 52:execSystemView(22);break;case 53:execSystemView(23);break;case 54:execSystemView(24);break;case 55:execSystemView(25);break;case 56:execSystemView(26);break;case 57:execSystemView(27);break;case 58:execSystemView(28);break;case 59:execSystemView(29);break;case 60:execSystemView(30);break;case 61:execSystemView(31);break;case 62:execSystemView(32);break;case 63:execSystemView(33);break;case 64:execSystemView(34);break;case 65:execSystemView(35);break;case 66:execSystemView(36);break;case 67:execSystemView(37);break;case 68:execSystemView(38);break;case 69:execSystemView(39);break;case 70:execSystemView(40);break;case 71:execSystemView(41);break;case 72:execSystemView(42);break;case 73:execSystemView(43);break;case 74:execSystemView(44);break;case 75:execSystemView(45);break;case 76:execSystemView(46);break;case 77:modPhone();break;case 78:modCamera();break;case 79:arcadeRender();break;default:mode=79;arcadeReset();break;
  }
 }
 static void moduleInput(u32 d){
@@ -677,6 +601,16 @@ static void moduleInput(u32 d){
  /* hardwareAction is dispatched once per frame by input(); avoid duplicate camera/mic actions. */
  if(mode>=30&&mode<=77){execSystemInput(mode-30,d);return;}
  switch(mode){
+ case 77:
+   if(d&KEY_UP){aether_messaging_cursor_up();changed=1;}
+   if(d&KEY_DOWN){aether_messaging_cursor_down();changed=1;}
+   if(d&KEY_LEFT){aether_messaging_cycle_contact();changed=1;}
+   if(d&KEY_RIGHT){aether_messaging_cycle_platform();changed=1;}
+   if(d&KEY_A){const char* k=" ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,!?'-_@:/";aether_messaging_append_char(k[aether_messaging_cursor()]);changed=1;}
+   if(d&KEY_X){if(aether_messaging_send())changed=1;}
+   if(d&KEY_Y){aether_messaging_backspace();changed=1;}
+   if(d&KEY_SELECT){aether_messaging_simulate_incoming();changed=1;}
+   break;
  case 78:
    if(d&KEY_A){if(aetherCameraPreview())hardwareActionCount++;changed=1;}
    if(d&KEY_X){if(aetherCameraCapture())hardwareActionCount++;changed=1;}
@@ -742,6 +676,7 @@ int legacy_shell_main(void){
  consoleInit(&topConsole,0,BgType_Text4bpp,BgSize_T_256x256,22,3,true,true);
  consoleInit(&bottomConsole,0,BgType_Text4bpp,BgSize_T_256x256,30,0,false,true);
  soundEnable();
+ aether_messaging_init();
 
  /* Boot-critical rule: the display must be live before any SD/FAT work.
   * A bad/slow/unmounted DSi SD must never leave the user staring at black. */
@@ -785,6 +720,7 @@ int legacy_shell_main(void){
    scanKeys();
    frame++;
    aether_core3_tick();
+   aether_messaging_tick();
    visualPhase=(visualPhase+1)&63;
    energy=(energy+1)%101;
    if(dawPlaying&&(frame%15)==0){
