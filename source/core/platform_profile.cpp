@@ -1,5 +1,5 @@
 #include "platform_profile.h"
-#include "hardware_profile.h"
+#include "../hardware/hardware_profile.h"
 
 namespace aether::platform {
 Capabilities detect() {
