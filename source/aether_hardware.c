@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
+#include <sys/stat.h>
 #include "aether_hardware.h"
 #define AETHER_CAMERA_NDMA 2
 #define AETHER_PREVIEW_W 256
