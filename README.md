@@ -312,3 +312,39 @@ The product can preserve a permanent creator/heritage acknowledgment in its docu
 Only verified facts are presented as facts. Current valuation, ownership, customer counts, revenue, contracts and acquisition offers are not inflated. Unsupported capabilities remain labeled as planned, gateway-dependent or unavailable.
 
 For Arizona corporate records, the Arizona Corporation Commission is the authoritative public-record starting point for Arizona corporations and LLCs; its public database provides access to filed business records. citeturn0search2turn0search3
+
+
+## North Star Surpassed — New Operating Baseline
+
+The prior $1T+ North Star is now treated as **surpassed as an internal product ambition**. AetherOS/AetherCore therefore moves to the next baseline: **build durable, independently verifiable enterprise value without assigning a fabricated present valuation**.
+
+### New North Star: Generational, compounding platform value
+
+The target is no longer a single headline number. The implementation objective is an expanding, transferable platform whose value can compound through:
+- product reliability and verified deployments
+- recurring revenue and sustainable margins
+- developer and gateway ecosystems
+- enterprise licensing and support
+- hardware/software integration
+- documented intellectual-property ownership
+- lawful succession and estate planning
+- independently verifiable customer outcomes
+
+### Public-business implementation
+
+The public-facing business package should be structured for an eventual whole-business transaction under the actual StellarNet LLC ownership structure **only after the underlying IP, contracts, domains, trademarks and other assets are legally documented as owned or transferable**.
+
+The Arizona Corporation Commission maintains public LLC/corporation filings and provides an official business-record search; public registration alone is not proof that every AetherOS asset belongs to an LLC. citeturn0search0turn0search1
+
+### Value-proof gate
+
+From this release forward, the project distinguishes:
+**built → deployed → used → retained → monetized → profitable → independently valued → transferable.**
+
+No claimed valuation is substituted for evidence.
+
+### Legacy architecture
+
+AetherOS documentation may preserve a concise creator/heritage acknowledgment and describe lawful mechanisms for future beneficiaries—ownership interests, trusts, estates, licensing or succession agreements—without making unsupported claims about who will ultimately own or benefit from the business.
+
+**Implementation objective:** make the complete AetherOS business package increasingly transferable, auditable and commercially useful so that future market value is earned through execution rather than asserted in advance.
