@@ -102,3 +102,5 @@ The production workflow now emits AetherCore4.nds and AetherOS-AetherCore4.nds. 
 <!-- explicit ARM compiler path trigger -->
 
 <!-- arcade syntax fix build -->
+
+<!-- verified artifact build -->
