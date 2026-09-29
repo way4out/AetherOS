@@ -2,6 +2,8 @@
 #include "../i18n/aether_i18n.h"
 #include "../benchmark/benchmark.h"
 #include "../hardware/hardware_profile.h"
+#include "../network/web_fabric.h"
+#include "../network/device_fabric.h"
 #include "../ui/aether_ui.h"
 #include "../quantum/quantum_core.h"
 #include "../engine/engine_modules.h"
@@ -50,7 +52,7 @@ void init(SystemState&s){
     videoSetMode(MODE_0_2D); videoSetModeSub(MODE_0_2D);
     vramSetBankA(VRAM_A_MAIN_BG); vramSetBankC(VRAM_C_SUB_BG);
     consoleDemoInit(); consoleClear(); s.touchReady=true; hardware::hardwareTick();
-    quantum::init(q); engine::init(); graph::init(); recovery::init(); governor::init(); diag::init(); hil::init(); mission::init(); capacity::init();
+    quantum::init(q); engine::init(); web::init(); device::init(); graph::init(); recovery::init(); governor::init(); diag::init(); hil::init(); mission::init(); capacity::init();
     studio::init(); gate::init(); compute::init(); settings::init(); i18n::init(); codex::init(); harmonic::init(); osfabric::init(); i18n::adjust((int)settings::current().language-1); theme::init(); securitylab::init(); animal::init(); heritage::init(); ui::init();
 }
 static void startDeferredServices(SystemState&s){
@@ -66,7 +68,7 @@ static void doAction(SystemState&s){
     switch(s.selectedModule){
     case MOD_QUANTUM: quantum::runBell(q); break; case MOD_SOUND: audio::tone(440,250); break;
     case MOD_DSP: ++s.dspTicks; (void)dsp::metrics(); break; case MOD_LAB: ++s.labTicks; lab::tick(); break;
-    case MOD_AI: ++s.aiTicks; ai::generate(); break; case MOD_NETWORK: network::tick(); gate::tick(); break;
+    case MOD_AI: ++s.aiTicks; ai::generate(); break; case MOD_NETWORK: network::tick(); web::tick(); device::tick(); gate::tick(); break;
     case MOD_PROJECTS: engine::saveProject(); break; case MOD_RF: ++s.rfSamples; break;
     case MOD_MARAUDER: securitylab::sample(); securitylab::analyze(); if(securitylab::report().mode==securitylab::LAB_SIMULATION) securitylab::runLabSimulation(); ++s.marauderFrames; break;
     case MOD_STUDIO: studio::trigger(60+(s.studioTicks&7),100); ++s.studioTicks; break; case MOD_SYSTEM: mission::refresh(); diag::tick(s.frame); recovery::heartbeat(); break;
