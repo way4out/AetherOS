@@ -96,3 +96,5 @@ The production workflow now emits AetherCore4.nds and AetherOS-AetherCore4.nds. 
 <!-- POSIX toolchain retry -->
 
 <!-- supported shell retry -->
+
+<!-- bash toolchain retry -->
