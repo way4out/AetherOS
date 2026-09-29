@@ -52,6 +52,11 @@ jobs:
           grep -q "pass46::init" source/core/aether_core.cpp
           grep -q "pass46::tick" source/core/aether_core.cpp
           echo "VERIFIED_PASS_4_6_RUNTIME_HEALTH=present"
+          test -f source/core/platform_profile.cpp
+          test -f source/core/platform_profile.h
+          grep -q "platform::detect" source/core/aether_core.cpp
+          echo "VERIFIED_PASS_4_7_PLATFORM_PROFILE=present"
+          grep -q "AETHERCORE_PASS 47" source/aetherosq.c
           sha256sum AetherCore1.nds
           ls -lh AetherCore1.nds
 
@@ -59,7 +64,7 @@ jobs:
         run: |
           set -eu
           grep -q 'AETHERCORE_MAJOR 1' source/aetherosq.c
-          grep -q 'AETHERCORE_PASS 44' source/aetherosq.c
+          grep -q 'AETHERCORE_PASS 47' source/aetherosq.c
           grep -q 'AETHERMOD_MAJOR 9' source/aetherosq.c
           grep -q 'AETHER_SAVE_VERSION 7' source/aetherosq.c
           grep -q 'touchStartX' source/aetherosq.c
