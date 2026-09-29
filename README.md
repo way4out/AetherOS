@@ -2,6 +2,16 @@
 
 AetherCore 1 is the first five-pass evolution of the AetherOS 9.0 DSi runtime. Pass 1 adds a gameplay-oriented Nexus front end while preserving the existing 29-module AetherOS workspace.
 
+## Pass 2 surfaces
+
+- Living-world day/energy loop
+- Persistent local mission completion state
+- NPC encounter rotation
+- Coins and inventory progression
+- Achievement tracking
+- Live events with rewards
+- Expanded Nexus navigation and controller shortcuts
+
 ## Pass 1 surfaces
 
 - AetherCore Nexus world/mission front end
@@ -22,4 +32,4 @@ The Pass 1 social layer is local-first and does not claim a cloud multiplayer se
 
 The repository is built with devkitPro/devkitARM/libnds. CI must produce a real `AetherCore1.nds`, validate the DSi unit code and ARM9 payload, and package the complete SD bundle.
 
-Passes 2–5 will expand the game world, deeper system integration, persistence and multiplayer-capable architecture without removing the underlying AetherOS runtime.
+Passes 3–5 will expand the game world, deeper system integration, persistence and multiplayer-capable architecture without removing the underlying AetherOS runtime.
