@@ -7,6 +7,12 @@ namespace {
 static constexpr u16 kBudgetLocalUs = 15000;
 static constexpr u16 kBudgetRemoteUs = 5000;
 static constexpr u8 kQualityDefault = 2;
+static constexpr u32 kDSiWorkRam = 12u * 1024u * 1024u;
+static constexpr u32 kFrameBufferReserve = 2u * 256u * 192u * 2u;
+
+static u8 renderClass(crossgen::Target t) {
+    return static_cast<u8>(t);
+}
 
 static bool isRemoteTarget(crossgen::Target t) {
     return t != crossgen::Target::PlayStation1 &&
@@ -27,6 +33,11 @@ void init(State& s) {
     s.inputEpoch = 0;
     s.frameBudgetUs = kBudgetLocalUs;
     s.quality = kQualityDefault;
+    s.workRamBudget = kDSiWorkRam;
+    s.framebufferBudget = kFrameBufferReserve;
+    s.renderEpoch = 0;
+    s.renderedTarget = renderClass(s.target);
+    s.rendererReady = true;
     gState = s;
 }
 
@@ -37,6 +48,11 @@ void tick(State& s, u32 frame) {
         s.mode = Mode::RemoteSession;
 
     s.frameBudgetUs = (s.mode == Mode::LocalProfile) ? kBudgetLocalUs : kBudgetRemoteUs;
+    s.workRamBudget = kDSiWorkRam;
+    s.framebufferBudget = kFrameBufferReserve;
+    s.renderedTarget = renderClass(s.target);
+    s.rendererReady = s.ready;
+    if ((frame & 3u) == 0u) ++s.renderEpoch;
 
     /* Deterministic DSi-side session heartbeat. No fake console execution. */
     if ((frame & 63u) == 0u) {
@@ -58,6 +74,8 @@ void cycleTarget(State& s) {
     s.authenticated = false;
     s.sessionLive = false;
     s.jamReady = false;
+    s.renderedTarget = renderClass(s.target);
+    s.renderEpoch = 0;
     if (isRemoteTarget(s.target) && s.mode == Mode::LocalProfile)
         s.mode = Mode::RemoteSession;
     gState = s;
