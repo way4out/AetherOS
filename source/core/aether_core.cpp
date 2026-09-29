@@ -27,6 +27,7 @@
 #include "pass46_runtime.h"
 #include "platform_profile.h"
 #include "crossgen_fabric.h"
+#include "pass49_emulation.h"
 #include "../studio/aether_studio.h"
 #include "../settings/aether_settings.h"
 #include "../theme/aether_theme.h"
@@ -50,6 +51,7 @@ u8 touchLockFrames=0;
 aether::pass46::Health runtimeHealth;
 aether::platform::Capabilities platformCaps;
 aether::crossgen::FabricState crossgenState;
+aether::emulation::State emulationState;
 }
 
 namespace aether {
@@ -60,6 +62,7 @@ void init(SystemState&s){
     pass46::init(runtimeHealth);
     platformCaps = platform::detect();
     crossgen::init(crossgenState);
+    emulation::init(emulationState);
     s={false,false,false,false,false,false,false,false,0,0,0,false,false,0,0,0,0,0,0,0,0,0,0,0};
     videoSetMode(MODE_0_2D); videoSetModeSub(MODE_0_2D);
     vramSetBankA(VRAM_A_MAIN_BG); vramSetBankC(VRAM_C_SUB_BG);
@@ -93,8 +96,11 @@ void update(SystemState&s){
     scanKeys(); ++s.frame;
     pass46::tick(runtimeHealth, s.frame);
     crossgen::tick(crossgenState, s.frame);
+    emulation::tick(emulationState, s.frame);
     if(s.frame==30) startDeferredServices(s);
     const u16 down=keysDown();
+    if(down&KEY_SELECT) emulation::cycleTarget(emulationState);
+    if(down&KEY_X) emulation::submitInput(emulationState, down, 0, 0);
     const bool touchRaw=(keysHeld()&KEY_TOUCH)!=0;
     touchPosition touch; touchRead(&touch);
 
@@ -113,6 +119,7 @@ void update(SystemState&s){
     const bool touchReleasedNow = touchReleaseFrames>=2 && touchWasDown;
 
     if(touchDownNow && !touchWasDown && touchLockFrames==0){
+        emulation::submitInput(emulationState, 0, touch.px, touch.py);
         touchStartX=touch.px; touchStartY=touch.py;
         touchStartScreen=s.screen; touchStartModule=s.selectedModule;
         touchGestureConsumed=false;
