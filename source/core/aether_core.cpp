@@ -104,6 +104,7 @@ void update(SystemState&s){
     if(s.frame==30) startDeferredServices(s);
     const u16 down=keysDown();
     if(down&KEY_SELECT) emulation::cycleTarget(emulationState);
+    if(down&KEY_Y && s.selectedModule==MOD_NETWORK) emulation::cycleMode(emulationState);
     if(down&KEY_X) emulation::submitInput(emulationState, down, 0, 0);
     const bool touchRaw=(keysHeld()&KEY_TOUCH)!=0;
     touchPosition touch; touchRead(&touch);
