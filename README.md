@@ -70,3 +70,5 @@ The production workflow now emits AetherCore4.nds and AetherOS-AetherCore4.nds. 
 <!-- production build retry -->
 
 <!-- docker cli test -->
+
+<!-- production compile trigger -->
