@@ -1,6 +1,7 @@
 #include "crossgen_fabric.h"
 
 namespace aether::crossgen {
+static FabricState gState{};
 namespace {
 static const char* kNames[] = {
     "PlayStation 1","PlayStation 2","PlayStation 3","PlayStation 4","PlayStation 5",
@@ -48,8 +49,6 @@ void cycle(FabricState& s) {
 const char* name(Target t) { return kNames[(u8)t]; }
 const char* capability(Target t) { return kCaps[(u8)t]; }
 bool targetAvailable(Target) { return true; }
-static FabricState gState{};
-
 bool productionGateOpen(const FabricState& s) {
     return s.remoteOnly && s.gatewayReady && s.authenticated;
 }
