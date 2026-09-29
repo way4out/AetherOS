@@ -148,3 +148,26 @@ The project does **not** guarantee a $1 trillion valuation, a bullish market out
 ## Commercial positioning
 
 The $1T+ concept is treated as a long-range market-cap objective, not a present valuation. A credible sellable path is based on measurable adoption, recurring revenue, gateway partnerships, developer ecosystem growth, hardware/software bundles, and transparent unit economics. The repository's CI status is the source of truth for whether a build is actually production-built.
+
+
+## Pass 1 — Immediate-value productization (2026-09-29)
+
+This pass converts the platform contract into a product-ready value stack without representing a speculative valuation as guaranteed.
+
+**Value stack:** free DSi core → paid support/deployment → optional authorized gateways → developer integrations → commercial hardware bundles → enterprise deployments.
+
+**Near-term value instruments**
+- A working DSi-first runtime that can be demonstrated offline.
+- A documented gateway contract for phone, network, media and external compute capabilities.
+- A non-custodial local BTC/treasury dashboard for owner-controlled portfolio data.
+- SD-deployable resource bundles and deterministic CI validation.
+- Product telemetry limited to user-authorized/local diagnostics.
+
+**Commercial guardrails**
+- No guaranteed $1T valuation or BTC appreciation claim.
+- No fabricated users, revenue, partnerships, reserves, orders or market share.
+- No custodial handling of BTC keys in the DSi UI by default.
+- External services remain optional and authorized.
+- Unsupported hardware capabilities remain visibly gated.
+
+**Pass-1 acceptance target:** the repository clearly separates what creates present product utility from long-range valuation ambition, while preserving a path to four-pass commercial hardening.
