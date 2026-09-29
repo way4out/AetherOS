@@ -52,15 +52,19 @@ jobs:
         run: |
           set -eu
           grep -q 'AETHERCORE_MAJOR 1' source/aetherosq.c
-          grep -q 'AETHERCORE_PASS 3' source/aetherosq.c
+          grep -q 'AETHERCORE_PASS 44' source/aetherosq.c
           grep -q 'AETHERMOD_MAJOR 9' source/aetherosq.c
           grep -q 'AETHER_SAVE_VERSION 7' source/aetherosq.c
           grep -q 'touchStartX' source/aetherosq.c
           grep -q 'diagStorageKnown' source/aetherosq.c
-          grep -q 'AETHERCORE 1 / PASS 3' source/aetherosq.c
+          grep -q 'AETHERCORE 1 / PASS 4.4' source/aetherosq.c
           grep -q '#define APP_COUNT 77' source/aetherosq.c
           grep -q 'execSystems\[48\]' source/aetherosq.c
           grep -q 'EXECUTIVE SYSTEM' source/aetherosq.c
+          grep -q 'aetherHardwareInit' source/aetherosq.c
+          grep -q 'soundMicRecord' source/aether_hardware.c
+          grep -q 'cameraStartTransfer' source/aether_hardware.c
+          grep -q 'mode>=30&&mode<=77' source/aetherosq.c
 
       - name: Emulator availability check
         run: |
