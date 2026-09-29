@@ -1,4 +1,17 @@
-# AetherCore 1 — Pass 1 / Nintendo DSi
+# AetherCore 1 — Pass 3 / Nintendo DSi
+
+AetherCore 1 Pass 3 fuses the AetherOS 9.0 runtime with a 48-system executive Home Screen.
+
+## Pass 3 surfaces
+
+- 48 total Home Screen systems
+- All 29 AetherOS 9.0 core modules retained
+- 19 executive systems with dedicated state, actions, metrics and controller/touch navigation
+- Executive systems: Hub, Mission Control, Resource Command, Security Command, Comms Command, Operations Center, Development Center, Creator Economy, Knowledge Center, Health & Wellness, Access Command, Finance Ledger, Inventory Command, Field Command, Automation Desk, Analytics Center, Archive Command, User Profile, Systems Monitor
+- Executive actions feed existing AetherCore state such as XP, coins, credits, energy, inventory, quests, crew, diagnostics, telemetry, network/phone counters, DAW/DSP state and safety controls
+- Six Home Screen pages with D-pad, L/R and touch/swipe navigation
+- AetherCore Systems Gate exposes the full 48-system architecture
+
 
 AetherCore 1 is the first five-pass evolution of the AetherOS 9.0 DSi runtime. Pass 1 adds a gameplay-oriented Nexus front end while preserving the existing 29-module AetherOS workspace.
 
@@ -32,4 +45,4 @@ The Pass 1 social layer is local-first and does not claim a cloud multiplayer se
 
 The repository is built with devkitPro/devkitARM/libnds. CI must produce a real `AetherCore1.nds`, validate the DSi unit code and ARM9 payload, and package the complete SD bundle.
 
-Passes 3–5 will expand the game world, deeper system integration, persistence and multiplayer-capable architecture without removing the underlying AetherOS runtime.
+Pass 4 is reserved for deeper social/network architecture and cross-system orchestration; Pass 5 is release hardening and QA.

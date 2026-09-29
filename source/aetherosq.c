@@ -14,15 +14,15 @@
  * capabilities are represented as software workspaces/gateways, not invented
  * stock-DSi hardware.
  */
-#define APP_COUNT 29
+#define APP_COUNT 48
 #define AETHERCORE_MAJOR 1
-#define AETHERCORE_PASS 1
+#define AETHERCORE_PASS 3
 #define AETHERCORE_TOTAL_PASSES 5
 #define AETHERMOD_MAJOR 9
 #define AETHERMOD_MINOR 0
 #define AETHERMOD_PASS 1
 #define AETHERMOD_TOTAL_PASSES 1
-#define HOME_PAGES 4
+#define HOME_PAGES 6
 #define AETHER_SAVE_VERSION 7
 
 typedef struct {
@@ -64,6 +64,9 @@ static int coreMode=0,coreCursor=0,coreZone=0,coreXp=120,coreLevel=2,coreStreak=
 static int coreQuest=0,coreSocial=0,corePulse=0,coreCredits=75,coreWins=0,coreSession=0;
 static int coreDay=1,coreEnergy=100,coreCoins=40,coreInventory=0,coreAchievements=0,coreEvent=0,coreNpc=0;
 static int coreQuestDone[6]={0,0,0,0,0,0},coreAchDone[6]={0,0,0,0,0,0};
+static int coreExecCursor=0;
+static int execState[19]={0};
+static int execAction[19]={0};
 static char fileNames[16][48],vaultNames[12][48],eventNames[16][48];
 
 static const char *apps[APP_COUNT]={
@@ -72,7 +75,11 @@ static const char *apps[APP_COUNT]={
  "NETWORK GATEWAY","PHONE LINK","MEDIA STUDIO","SENSOR HUB","DATA VAULT",
  "FILE BROWSER","HAPTIC LAB","ACCESSIBILITY","POWER LAB","CONTROL LAB",
  "DIAGNOSTICS","AETHER BOT","GENERAL SETTINGS","EVENT LOG","NOTES","CLOCK",
- "ABOUT","SAFETY CENTER"
+ "ABOUT","SAFETY CENTER",
+ "EXECUTIVE HUB","MISSION CONTROL","RESOURCE COMMAND","SECURITY COMMAND","COMMS COMMAND",
+ "OPERATIONS CENTER","DEVELOPMENT CENTER","CREATOR ECONOMY","KNOWLEDGE CENTER","HEALTH & WELLNESS",
+ "ACCESS COMMAND","FINANCE LEDGER","INVENTORY COMMAND","FIELD COMMAND","AUTOMATION DESK",
+ "ANALYTICS CENTER","ARCHIVE COMMAND","USER PROFILE","SYSTEMS MONITOR"
 };
 static const char *animalNames[]={"Horse","Dog","Cat","Cow","Bison","Camel","Zebra","Ostrich","Bird","Wolf","Fox","Deer","Bear","Big Cat","Other"};
 static const char *codexBooks[66]={
@@ -333,12 +340,86 @@ static void modSafety(void){page("28 SAFETY CENTER");const char *n[]={"PARENTAL"
  int on=safetyCursor==0?save.parental:safetyCursor==1?save.nsfw:safetyCursor==2?save.unsafe:safetyCursor==3?save.unregulated:safetyCursor==4?save.userContent:safetyCursor==5?save.browser:safetyCursor==6?save.downloads:save.wireless;
  iprintf("CONTROL:%s  STATE:%s\n",n[safetyCursor],on?"ON":"OFF");iprintf("SAFE MODE MASTER:%s\n",safeMode?"ON":"OFF");footer("UP/DOWN CONTROL | A TOGGLE | X SAFE MODE | Y RESET SAFE | B HOME");}
 
+/* AetherCore 1 — Pass 3: executive system fusion. */
+static const char *execSystems[19]={
+ "EXECUTIVE HUB","MISSION CONTROL","RESOURCE COMMAND","SECURITY COMMAND","COMMS COMMAND",
+ "OPERATIONS CENTER","DEVELOPMENT CENTER","CREATOR ECONOMY","KNOWLEDGE CENTER","HEALTH & WELLNESS",
+ "ACCESS COMMAND","FINANCE LEDGER","INVENTORY COMMAND","FIELD COMMAND","AUTOMATION DESK",
+ "ANALYTICS CENTER","ARCHIVE COMMAND","USER PROFILE","SYSTEMS MONITOR"
+};
+static const char *execModes[19]={
+ "COMMAND","QUESTS","RESOURCES","GUARD","SIGNALS","OPS","BUILD","MARKET","LIBRARY","WELLNESS",
+ "ACCESS","LEDGER","ASSETS","FIELD","AUTOMATION","METRICS","ARCHIVE","PROFILE","MONITOR"
+};
+static void execSystemView(int id){
+ int v=execState[id],a=execAction[id];
+ page(execSystems[id]);
+ iprintf("AETHERCORE EXECUTIVE SYSTEM %02d/19  MODE:%s\\n",id+1,execModes[id]);
+ iprintf("STATE:%d  ACTIONS:%d  CORE LVL:%d  XP:%d\\n",v,a,coreLevel,coreXp);
+ switch(id){
+  case 0: iprintf("NEXUS STATUS:%s  ZONE:%s  SESSION:%d\\n",coreEnergy>20?"READY":"LOW ENERGY",coreZones[coreZone],coreSession); graph("COMMAND ",corePulse); break;
+  case 1: iprintf("ACTIVE QUEST:%s  DONE:%s  ENERGY:%d\\n",coreQuests[coreQuest],coreQuestDone[coreQuest]?"YES":"NO",coreEnergy); graph("MISSION ",coreQuest*11+v); break;
+  case 2: iprintf("COINS:%d  CREDITS:%d  INVENTORY:%d\\n",coreCoins,coreCredits,coreInventory); graph("RESOURCE ",coreCoins+v); break;
+  case 3: iprintf("SAFE MODE:%s  PRIVACY:%s  PARENTAL:%s\\n",safeMode?"ON":"OFF",save.privacy?"ON":"OFF",save.parental?"ON":"OFF"); graph("GUARD ",save.privacy*19+v); break;
+  case 4: iprintf("WIRELESS:%s  NETWORK PACKETS:%d  PHONE:%d\\n",save.wireless?"READY":"OFF",networkPackets,phonePackets); graph("SIGNAL ",networkPackets+v); break;
+  case 5: iprintf("CORE DAY:%d  NPC:%d  WINS:%d  ACTIONS:%d\\n",coreDay,coreNpc,coreWins,a); graph("OPS ",coreDay+v); break;
+  case 6: iprintf("DAW STEP:%d  DSP FRAMES:%d  CREATIVE RUNS:%d\\n",dawStep,dspFrames,v); graph("BUILD ",dawStep+v); break;
+  case 7: iprintf("CREATOR CREDITS:%d  COINS:%d  QUEST WINS:%d\\n",coreCredits,coreCoins,coreWins); graph("ECON ",coreCredits+v); break;
+  case 8: iprintf("CODEX BOOK:%s  PAGE:%d  NOTES:%d\\n",codexBooks[codexBook],codexPage,noteCursor+1); graph("KNOW ",codexBook+v); break;
+  case 9: iprintf("ENERGY:%d  SENSOR SAMPLES:%d  ACTIVITY:%d\\n",coreEnergy,sensorSamples,energy); graph("WELL ",coreEnergy+v); break;
+  case 10: iprintf("SCALE:%d  CONTRAST:%s  SCROLL:%d\\n",accessScale,accessContrast?"HIGH":"NORMAL",accessScroll); graph("ACCESS ",accessScale+v); break;
+  case 11: iprintf("CREDITS:%d  COINS:%d  TRANSACTIONS:%d\\n",coreCredits,coreCoins,a); graph("LEDGER ",coreCredits+coreCoins+v); break;
+  case 12: iprintf("INVENTORY:%d  VAULT:%d  FILES:%d\\n",coreInventory,vaultCount,fileCount); graph("ASSETS ",coreInventory+v); break;
+  case 13: iprintf("ZONE:%s  ANIMAL EVENTS:%d  RF EVENTS:%d\\n",coreZones[coreZone],animalEvents,rfEvents); graph("FIELD ",coreZone+animalEvents+v); break;
+  case 14: iprintf("AUTOMATION RUNS:%d  BOT RUNS:%d  DIAG:%d\\n",a,botRuns,diagRuns); graph("AUTO ",a+botRuns); break;
+  case 15: iprintf("ACTIONS:%d  FRAME:%d  TELEMETRY PAGE:%d\\n",actionCount,frame,telemetryPage+1); graph("METRIC ",actionCount+v); break;
+  case 16: iprintf("EVENTS:%d  FILES:%d  VAULT:%d\\n",eventCount,fileCount,vaultCount); graph("ARCHIVE ",eventCount+v); break;
+  case 17: iprintf("LEVEL:%d  XP:%d  STREAK:%d  CREW:%d\\n",coreLevel,coreXp,coreStreak,coreSocial); graph("PROFILE ",coreLevel+coreSocial+v); break;
+  default: iprintf("DSi:%s  BAT:%d%%  SAFE:%s  FRAME:%d\\n",isDSiMode()?"YES":"DS",getBatteryLevel(),safeMode?"ON":"OFF",frame); graph("MONITOR ",frame+v); break;
+ }
+ iprintf("\\nA EXECUTE  X RESET  UP/DOWN SYSTEM PARAMETER  L/R EXECUTIVE SYSTEM\\n");
+ footer("A RUN | X RESET | L/R SYSTEM | Y AETHERCORE | B HOME");
+}
+static void execSystemInput(int id,u32 d){
+ int changed=0;
+ if(d&KEY_B){back();return;}
+ if(d&KEY_UP){execState[id]++;changed=1;}
+ if(d&KEY_DOWN){if(execState[id]>0)execState[id]--;changed=1;}
+ if(d&KEY_LEFT){id=(id+18)%19;selected=29+id;mode=30+id;changed=0;draw();return;}
+ if(d&KEY_RIGHT){id=(id+1)%19;selected=29+id;mode=30+id;changed=0;draw();return;}
+ if(d&KEY_A){
+   execAction[id]++; execState[id]++;
+   if(id==0)corePulse=(corePulse+1)%100;
+   if(id==1 && coreEnergy>=5){coreEnergy-=5;coreSession++;}
+   if(id==2){coreCoins+=2;coreCredits+=1;}
+   if(id==3){save.privacy=1;save.parental=1;}
+   if(id==4){networkPackets++;phonePackets++;}
+   if(id==5){coreDay++;coreNpc=(coreNpc+1)%4;}
+   if(id==6){dawStep=(dawStep+1)%16;dspFrames++;}
+   if(id==7)coreCredits+=3;
+   if(id==8)codexPage++;
+   if(id==9){coreEnergy=coreEnergy<100?coreEnergy+1:100;}
+   if(id==10)accessScroll=(accessScroll%3)+1;
+   if(id==11)coreCredits++;
+   if(id==12)coreInventory++;
+   if(id==13)coreZone=(coreZone+1)%6;
+   if(id==14)botRuns++; 
+   if(id==15)telemetryPage=(telemetryPage+1)%3;
+   if(id==16)eventCount=(eventCount+1)%17;
+   if(id==17)coreStreak++;
+   if(id==18)diagRuns++;
+   changed=1;
+ }
+ if(d&KEY_X){execState[id]=0;changed=1;}
+ if(changed){feedback();markDirty();draw();}
+}
+
 /* AetherCore 1 — Pass 1: gameplay/social shell around the complete AetherOS 9 runtime. */
 static const char *coreZones[]={"NEXUS","QUANTUM FIELD","CODEX GARDEN","SIGNAL RIDGE","CREATOR DECK","SYSTEMS"};
 static const char *coreQuests[]={"CALIBRATE THE CORE","SCAN A SIGNAL","OPEN THE CODEX","BUILD A BEAT","RUN A DIAGNOSTIC","VISIT THE SYSTEMS"};
 static const char *coreAvatars[]={"PIONEER","ENGINEER","SCOUT","CREATOR"};
 static void draw(void);
-static void coreHeader(const char *title){ page(title); consoleSelect(&topConsole); iprintf("\x1b[33;1mAETHERCORE 1 / PASS 1\x1b[37;1m\n"); iprintf("LEVEL %d  XP %d  STREAK %d  CREDITS %d\n",coreLevel,coreXp,coreStreak,coreCredits); }
+static void coreHeader(const char *title){ page(title); consoleSelect(&topConsole); iprintf("\x1b[33;1mAETHERCORE 1 / PASS 3\x1b[37;1m\n"); iprintf("LEVEL %d  XP %d  STREAK %d  CREDITS %d\n",coreLevel,coreXp,coreStreak,coreCredits); }
 static void coreReward(int xp,int credits){ coreXp+=xp; coreCredits+=credits; coreWins++; coreStreak++; if(coreXp>=coreLevel*100){coreXp-=coreLevel*100;coreLevel++;} corePulse=(corePulse+1)%100; markDirty(); feedback(); }
 static void coreWorld(void){
  coreHeader("AETHERCORE NEXUS");
@@ -370,7 +451,7 @@ static void coreTick(void){
  if((frame%120)==0){corePulse=(corePulse+1)%100;coreNpc=(coreNpc+1)%4;if(coreEnergy<100)coreEnergy++;}
 }
 static void coreSocialView(void){ coreHeader("AETHERCORE CREW"); iprintf("LOCAL SOCIAL DECK / NO CLOUD CLAIM\n\n"); iprintf("CREW SIGNAL: %s\n",coreSocial?"ACTIVE":"DISCOVERY"); iprintf("Players are represented locally until a supported network service is added.\n\n"); iprintf("[01] YOU      LVL %d  XP %d\n",coreLevel,coreXp); iprintf("[02] NOVA     LVL 4   READY\n[03] ORBIT    LVL 3   READY\n[04] VECTOR   LVL 5   READY\n"); iprintf("\nA=send local pulse  X=refresh crew  Y=world\n"); footer("A PULSE | X REFRESH | Y WORLD | B NEXUS"); }
-static void coreSystems(void){ coreHeader("AETHERCORE SYSTEMS GATE"); iprintf("THE COMPLETE AETHEROS 9.0 MODULE GRID REMAINS AVAILABLE.\n\n"); iprintf("29 SYSTEMS / INDIVIDUAL RUNTIMES / GENEVA 1599\n"); iprintf("QUANTUM  CODEX  ANIMAL  RF  TinySA  CALC  DAW  DSP\n"); iprintf("TELEMETRY  AI  NETWORK  PHONE  MEDIA  SENSOR  VAULT\n"); iprintf("FILES  HAPTIC  ACCESS  POWER  CONTROL  DIAGNOSTICS\n"); iprintf("BOT  SETTINGS  EVENTS  NOTES  CLOCK  ABOUT  SAFETY\n"); footer("A MODULE GRID | X WORLD | Y AETHEROS HOME | B NEXUS"); }
+static void coreSystems(void){ coreHeader("AETHERCORE SYSTEMS GATE"); iprintf("THE COMPLETE AETHEROS 9.0 MODULE GRID REMAINS AVAILABLE.\n\n"); iprintf("48 SYSTEMS / 29 CORE RUNTIMES + 19 EXECUTIVE SYSTEMS / GENEVA 1599\n"); iprintf("QUANTUM  CODEX  ANIMAL  RF  TinySA  CALC  DAW  DSP\n"); iprintf("TELEMETRY  AI  NETWORK  PHONE  MEDIA  SENSOR  VAULT\n"); iprintf("FILES  HAPTIC  ACCESS  POWER  CONTROL  DIAGNOSTICS\n"); iprintf("BOT  SETTINGS  EVENTS  NOTES  CLOCK  ABOUT  SAFETY\n"); footer("A MODULE GRID | X WORLD | Y AETHEROS HOME | B NEXUS"); }
 static void coreInput(u32 d){
  if(d&KEY_B){coreMode=0;draw();return;}
  if(coreMode==0){
@@ -387,7 +468,7 @@ static void coreInput(u32 d){
 static void coreFront(void){ if(coreMode==0)coreWorld(); else if(coreMode==1)coreSocialView(); else if(coreMode==2)coreSystems(); else if(coreMode==3)coreAchievementsView(); else coreEventView(); }
 
 static void home(void){
- page("00 AETHER HOME");consoleSelect(&bottomConsole);consoleClear();
+ page("00 AETHER HOME / EXECUTIVE DECK");consoleSelect(&bottomConsole);consoleClear();
  int last=homePage*8+8; if(last>APP_COUNT) last=APP_COUNT; iprintf("PAGE %d/%d  MODULES %02d-%02d\n\n",homePage+1,HOME_PAGES,homePage*8+1,last);
  int first=homePage*8;for(int i=0;i<8;i++){int n=first+i;if(n>=APP_COUNT)break;iprintf("%c%02d %-18s %c\n",n==selected?'>':' ',n+1,apps[n],((frame+i*7)%16<5)?'*':'.');}
  iprintf("\nSELECT:%02d  %s\n",selected+1,apps[selected]);iprintf("A OPEN | L/R PAGE | UP/DOWN MODULE\n");
@@ -402,11 +483,12 @@ static void draw(void){
  case 16:modFiles();break;case 17:modHaptic();break;case 18:modAccess();break;case 19:modPower();break;
  case 20:modControl();break;case 21:modDiagnostics();break;case 22:modBot();break;case 23:modSettings();break;
  case 24:modEvents();break;case 25:modNotes();break;case 26:modClock();break;case 27:modAbout();break;
- case 28:modSafety();break;case 29:coreFront();break;default:mode=0;break;
+ case 28:modSafety();break;case 29:coreFront();break;case 30:execSystemView(0);break;case 31:execSystemView(1);break;case 32:execSystemView(2);break;case 33:execSystemView(3);break;case 34:execSystemView(4);break;case 35:execSystemView(5);break;case 36:execSystemView(6);break;case 37:execSystemView(7);break;case 38:execSystemView(8);break;case 39:execSystemView(9);break;case 40:execSystemView(10);break;case 41:execSystemView(11);break;case 42:execSystemView(12);break;case 43:execSystemView(13);break;case 44:execSystemView(14);break;case 45:execSystemView(15);break;case 46:execSystemView(16);break;case 47:execSystemView(17);break;case 48:execSystemView(18);break;default:mode=0;break;
  }
 }
 static void moduleInput(u32 d){
  int changed=0;
+ if(mode>=30&&mode<=48){execSystemInput(mode-30,d);return;}
  if(d&KEY_B){back();return;}
  switch(mode){
  case 1:if(d&KEY_UP){qState=(qState+3)%4;changed=1;}if(d&KEY_DOWN){qState=(qState+1)%4;changed=1;}if(d&KEY_A){qShots++;qState=(qState+1)%4;changed=1;}if(d&KEY_X){qState=(qState+1)%4;changed=1;}if(d&KEY_Y){qState=0;changed=1;}break;
