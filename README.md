@@ -60,3 +60,5 @@ The production workflow now emits AetherCore4.nds and AetherOS-AetherCore4.nds. 
 <!-- build validation pulse -->
 
 <!-- checkout diagnostic pulse -->
+
+<!-- docker diagnostic pulse -->
