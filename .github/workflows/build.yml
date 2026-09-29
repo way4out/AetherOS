@@ -17,8 +17,10 @@ jobs:
       - name: Inspect toolchain
         run: |
           set -eu
-          export PATH="/opt/wonderful/toolchain/gcc-arm-none-eabi/arm-none-eabi/bin:/opt/wonderful/bin:$PATH"
+          TOOLBIN="$(dirname "$(find /opt/wonderful -type f -name arm-none-eabi-gcc -print -quit)")"
+          export PATH="$TOOLBIN:/opt/wonderful/bin:$PATH"
           echo "BLOCKSDS=$BLOCKSDS"
+          echo "TOOLBIN=$TOOLBIN"
           arm-none-eabi-gcc --version | head -1
           test -f "$BLOCKSDS/sys/crts/ds_arm9.ld"
           test -f "$BLOCKSDS/libs/libnds/include/nds.h"
@@ -26,7 +28,8 @@ jobs:
       - name: Clean and build real NDS
         run: |
           set -eu
-          export PATH="$PATH:/opt/wonderful/toolchain/gcc-arm-none-eabi/arm-none-eabi/bin:/opt/wonderful/bin:$PATH"
+          TOOLBIN="$(dirname "$(find /opt/wonderful -type f -name arm-none-eabi-gcc -print -quit)")"
+          export PATH="$TOOLBIN:/opt/wonderful/bin:$PATH"
           make clean
           make
           test -s AetherCore1.nds
