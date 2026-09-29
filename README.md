@@ -11,7 +11,7 @@ The official build is produced by GitHub Actions from the repository source usin
 - Boot-safe display initialization before optional SD/FAT access.
 - Storage-optional operation with deterministic safe mode.
 - Dual-screen UI, DSi touch input, D-pad navigation, paging and scrolling.
-- 77 addressable runtime/home systems.
+- 78 addressable runtime/home systems.
 - Core 2 supervisor coordinating health, recovery, capability gating and offline operation.
 - Existing universal platform/cross-generation/emulation fabrics remain capability-gated adapters rather than false claims of native foreign hardware.
 - Self-heal hooks are bounded and deterministic.
