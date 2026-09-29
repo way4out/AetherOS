@@ -12,6 +12,17 @@ Capabilities detect() {
     c.cameras = dsi;
     c.wifi = true;
     c.sd = hardware::sdAvailable();
+    c.extendedRuntime = dsi;
     return c;
+}
+
+const char* integrationTarget() {
+#if defined(AETHER_TARGET_3DS)
+    return "Nintendo 3DS native integration";
+#elif defined(AETHER_TARGET_MODERN_NINTENDO)
+    return "Later Nintendo native integration";
+#else
+    return hardware::dsiMode() ? "Nintendo DSi/TWL .nds" : "Nintendo DS .nds";
+#endif
 }
 }
