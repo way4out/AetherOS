@@ -2,10 +2,10 @@ ifeq ($(strip $(BLOCKSDS)),)
 $(error "Environment variable BLOCKSDS not found")
 endif
 
-NAME := AetherCore5
+NAME := AetherCore7
 GAME_TITLE := AetherCore5
-GAME_SUBTITLE1 := DSi AetherOS 5
-GAME_SUBTITLE2 := AetherCore 5 DSi Production
+GAME_SUBTITLE1 := DSi AetherOS 7
+GAME_SUBTITLE2 := AetherCore 7 DSi Production
 
 SOURCEDIRS := source
 INCLUDEDIRS := include
@@ -14,7 +14,7 @@ BINDIRS := data
 AUDIODIRS :=
 NITROFATDIR :=
 
-DEFINES := -D__NDS__ -DARM9 -DAETHER_DSI_MEMORY_MAX -DAETHERCORE5
+DEFINES := -D__NDS__ -DARM9 -DAETHER_DSI_MEMORY_MAX -DAETHERCORE7
 LIBS := -ldswifi9 -lnds9 -lc
 LIBDIRS := $(BLOCKSDS)/libs/dswifi $(BLOCKSDS)/libs/libnds $(BLOCKSDS)/libs/libc9
 
