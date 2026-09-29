@@ -16,7 +16,7 @@ jobs:
 
       - name: Inspect toolchain
         run: |
-          set -euo pipefail
+          set -eu
           export PATH="$DEVKITARM/bin:$DEVKITPRO/tools/bin:$PATH"
           echo "DEVKITPRO=$DEVKITPRO"
           echo "DEVKITARM=$DEVKITARM"
@@ -26,7 +26,7 @@ jobs:
 
       - name: Clean and build real NDS
         run: |
-          set -euo pipefail
+          set -eu
           export PATH="$DEVKITARM/bin:$DEVKITPRO/tools/bin:$PATH"
           make clean
           make
@@ -50,7 +50,7 @@ jobs:
 
       - name: Static source sanity
         run: |
-          set -euo pipefail
+          set -eu
           grep -q 'AETHERMOD_MAJOR 9' source/aetherosq.c
           grep -q 'AETHER_SAVE_VERSION 7' source/aetherosq.c
           grep -q 'touchStartX' source/aetherosq.c
@@ -63,7 +63,7 @@ jobs:
 
       - name: Package complete SD bundle
         run: |
-          set -euo pipefail
+          set -eu
           mkdir -p deploy/apps/AetherMod deploy/data/AetherMod
           cp AetherOS9.nds deploy/apps/AetherMod/AetherOS9.nds
           cp -r data/AetherMod/. deploy/data/AetherMod/
