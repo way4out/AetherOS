@@ -27,4 +27,7 @@ void tick(){
     ++tickCounter;
     h.ticks=tickCounter;
 }
-const Health& health(){ return h; }\n}\n\nextern "C" void aether_core3_tick(){ aether::core3::tick(); }
+const Health& health(){ return h; }
+}
+
+extern "C" void aether_core3_tick(){ aether::core3::tick(); }
