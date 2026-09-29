@@ -164,44 +164,44 @@ static void touchMap(u32 *d){
  static int lastHeld=0;
  int held=(keysHeld()&KEY_TOUCH)!=0;
  touchPosition t; touchRead(&t); touchX=t.px; touchY=t.py; touchDown=held;
- if(held){
-   if(!lastHeld){touchStartX=t.px;touchStartY=t.py;touchPrevY=t.py;touchMoved=0;touchActionLatch=0;}
-   if(touchPrevY>=0 && (t.py>touchPrevY+10 || t.py+10<touchPrevY)) touchMoved=1;
-   touchPrevY=t.py;
-   if(mode==0){
-     if(t.py>=48 && t.py<176){
-       int r=((int)t.py-48)/16;
-       int n=homePage*8+r;
-       if(!touchMoved && n<APP_COUNT && held && !touchActionLatch){homeSet(n);mode=n+1;touchActionLatch=1;feedback();}
-     } else if(t.py>=176 && !touchMoved && held){
-       homePage=(homePage+1)%HOME_PAGES; homeSet(homePage*8); feedback();
-     }
-     if(touchMoved && held && !touchActionLatch){
-       if(touchStartY>=0 && t.py+24<touchStartY){homePage=(homePage+1)%HOME_PAGES;homeSet(homePage*8);feedback();}
-       else if(touchStartY>=0 && t.py>touchStartY+24){homePage=(homePage+HOME_PAGES-1)%HOME_PAGES;homeSet(homePage*8);feedback();}
-       touchStartY=t.py; touchMoved=0; touchActionLatch=1;
-     }
-     lastHeld=1; return;
+ if(!held){lastHeld=0;touchPrevY=-1;touchStartX=-1;touchStartY=-1;touchMoved=0;touchActionLatch=0;return;}
+ if(!lastHeld){touchStartX=t.px;touchStartY=t.py;touchPrevY=t.py;touchMoved=0;touchActionLatch=0;}
+ if(touchPrevY>=0&&(t.py>touchPrevY+10||t.py+10<touchPrevY))touchMoved=1;
+ touchPrevY=t.py;
+ if(mode==0){
+   /* Bottom Home list: 8 generous touch rows begin directly below the header. */
+   if(!touchMoved&&t.py>=16&&t.py<112){
+     int r=((int)t.py-16)/12;if(r<0)r=0;if(r>7)r=7;
+     int n=homePage*8+r;
+     if(n<APP_COUNT){homeSet(n);mode=n+1;save.launches++;markDirty();feedback();draw();}
+     touchActionLatch=1;
+   }else if(!touchMoved&&t.py>=112){
+     homePage=(homePage+1)%HOME_PAGES;homeSet(homePage*8);feedback();draw();touchActionLatch=1;
    }
-   if(!touchActionLatch){
-     if(touchMoved){
-       if(touchStartY>=0 && t.py+24<touchStartY)*d|=KEY_UP;
-       else if(touchStartY>=0 && t.py>touchStartY+24)*d|=KEY_DOWN;
-       else if(touchStartX>=0 && t.px>touchStartX+24)*d|=KEY_RIGHT;
-       else if(touchStartX>=0 && t.px+24<touchStartX)*d|=KEY_LEFT;
-     } else if(t.py<32&&t.px<128)*d|=KEY_B;
-     else if(t.py<32)*d|=KEY_Y;
-     else if(t.py>160&&t.px<128)*d|=KEY_X;
-     else if(t.py>160)*d|=KEY_A;
-     else if(t.px<64)*d|=KEY_LEFT;
-     else if(t.px>192)*d|=KEY_RIGHT;
-     else if(t.py<96)*d|=KEY_UP;
-     else *d|=KEY_DOWN;
-     if(*d & (KEY_A|KEY_B|KEY_X|KEY_Y|KEY_UP|KEY_DOWN|KEY_LEFT|KEY_RIGHT)) touchActionLatch=1;
+   if(touchMoved&&!touchActionLatch){
+     if(touchStartY>=0&&t.py+24<touchStartY){homePage=(homePage+1)%HOME_PAGES;homeSet(homePage*8);feedback();draw();}
+     else if(touchStartY>=0&&t.py>touchStartY+24){homePage=(homePage+HOME_PAGES-1)%HOME_PAGES;homeSet(homePage*8);feedback();draw();}
+     touchStartY=t.py;touchMoved=0;touchActionLatch=1;
    }
- } else {
-   lastHeld=0; touchPrevY=-1; touchStartX=-1; touchStartY=-1; touchMoved=0; touchActionLatch=0;
+   lastHeld=1;return;
  }
+ if(!touchActionLatch){
+   if(touchMoved){
+     if(touchStartY>=0&&t.py+24<touchStartY)*d|=KEY_UP;
+     else if(touchStartY>=0&&t.py>touchStartY+24)*d|=KEY_DOWN;
+     else if(touchStartX>=0&&t.px>touchStartX+24)*d|=KEY_RIGHT;
+     else if(touchStartX>=0&&t.px+24<touchStartX)*d|=KEY_LEFT;
+   }else if(t.py<32&&t.px<128)*d|=KEY_B;
+   else if(t.py<32)*d|=KEY_Y;
+   else if(t.py>160&&t.px<128)*d|=KEY_X;
+   else if(t.py>160)*d|=KEY_A;
+   else if(t.px<64)*d|=KEY_LEFT;
+   else if(t.px>192)*d|=KEY_RIGHT;
+   else if(t.py<96)*d|=KEY_UP;
+   else *d|=KEY_DOWN;
+   if(*d&(KEY_A|KEY_B|KEY_X|KEY_Y|KEY_UP|KEY_DOWN|KEY_LEFT|KEY_RIGHT))touchActionLatch=1;
+ }
+ lastHeld=1;
 }
 static void touchModuleActions(u32 *d){ (void)d; }
 static void openModule(int n){homeSet(n);mode=n+1;save.launches++;markDirty();feedback();}
