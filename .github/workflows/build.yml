@@ -64,10 +64,20 @@ jobs:
           grep -q "AETHER_TARGET_GAMEBOY" source/core/platform_profile.cpp
           echo "VERIFIED_PASS_4_8_WII_N64_GAMEBOY_WEB_EXPANSION_TARGETS=present"
           echo "VERIFIED_PASS_4_8_CROSS_GENERATION_TARGETS=present"
+          grep -q "PlayStation6_1" source/core/crossgen_fabric.h
+          grep -q "PlayStation 6-1" source/core/crossgen_fabric.cpp
+          test -f source/core/pass49_emulation.cpp
+          test -f source/core/pass49_emulation.h
+          grep -q "emulation::init" source/core/aether_core.cpp
+          grep -q "emulation::tick" source/core/aether_core.cpp
+          echo "VERIFIED_PASS_4_9_EMULATION_FACADE=present"
+          grep -q "AETHERCORE_PASS 49" source/aetherosq.c
+          echo "VERIFIED_PASS_4_9_RUNTIME_MARKER=present"
           grep -q "AETHERCORE_PASS 48" source/aetherosq.c
           sha256sum AetherCore1.nds
           cp AetherCore1.nds AetherOS-Pass4.8.nds
-          ls -lh AetherCore1.nds AetherOS-Pass4.8.nds
+          cp AetherCore1.nds AetherOS-Pass4.9.nds
+          ls -lh AetherCore1.nds AetherOS-Pass4.8.nds AetherOS-Pass4.9.nds
 
       - name: Static source sanity
         run: |
@@ -100,11 +110,11 @@ jobs:
           cp -r data/AetherMod/. deploy/data/AetherMod/
           cp AETHERMOD.md deploy/AETHERMOD.md
           printf '%s\n' 'Copy apps/AetherMod and data/AetherMod to the DSi SD card. Launch AetherCore1.nds.' > deploy/INSTALL.txt
-          tar -czf AetherCore1-DSi-Public.tar.gz -C deploy .
+          tar -czf AetherCore1-Pass4.9-DSi-Public.tar.gz -C deploy .
 
       - uses: actions/upload-artifact@v4
         with:
-          name: AetherCore1-DSi-Public
+          name: AetherCore1-Pass4.9-DSi-Public
           if-no-files-found: error
           path: |
             AetherCore1.nds
