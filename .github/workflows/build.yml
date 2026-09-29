@@ -1,4 +1,4 @@
-name: Build AetherCore 3 for Nintendo DSi
+name: Build AetherCore 4 for Nintendo DSi
 
 on:
   workflow_dispatch:
@@ -32,14 +32,14 @@ jobs:
           export PATH="$TOOLBIN:/opt/wonderful/bin:$PATH"
           make clean
           make
-          test -s AetherCore3.nds
-          "$BLOCKSDS/tools/ndstool/ndstool" -t AetherCore3.nds
-          NDS_SIZE=$(stat -c '%s' AetherCore3.nds)
+          test -s AetherCore4.nds
+          "$BLOCKSDS/tools/ndstool/ndstool" -t AetherCore4.nds
+          NDS_SIZE=$(stat -c '%s' AetherCore4.nds)
           test "$NDS_SIZE" -gt 65536
-          UNIT_CODE=$(dd if=AetherCore3.nds bs=1 skip=18 count=1 2>/dev/null | od -An -tu1 | tr -d ' ')
+          UNIT_CODE=$(dd if=AetherCore4.nds bs=1 skip=18 count=1 2>/dev/null | od -An -tu1 | tr -d ' ')
           test "$UNIT_CODE" = "2"
-          ARM9_OFFSET=$(dd if=AetherCore3.nds bs=1 skip=32 count=4 2>/dev/null | od -An -tu4 -N1 | tr -d ' ')
-          ARM9_SIZE=$(dd if=AetherCore3.nds bs=1 skip=44 count=4 2>/dev/null | od -An -tu4 -N1 | tr -d ' ')
+          ARM9_OFFSET=$(dd if=AetherCore4.nds bs=1 skip=32 count=4 2>/dev/null | od -An -tu4 -N1 | tr -d ' ')
+          ARM9_SIZE=$(dd if=AetherCore4.nds bs=1 skip=44 count=4 2>/dev/null | od -An -tu4 -N1 | tr -d ' ')
           test -n "$ARM9_OFFSET"
           test -n "$ARM9_SIZE"
           echo "VERIFIED_NDS_SIZE=$NDS_SIZE"
@@ -86,9 +86,9 @@ jobs:
           echo "VERIFIED_AETHERCORE3_RUNTIME_HEALTH=present"
           echo "VERIFIED_PASS_CORE2_BASE_PRODUCTION_DEPLOY=present"
           grep -q "AETHERCORE_PASS 70" source/aetherosq.c
-          sha256sum AetherCore3.nds
-          cp AetherCore3.nds AetherOS-AetherCore3.nds
-          ls -lh AetherCore3.nds AetherOS-AetherCore3.nds
+          sha256sum AetherCore4.nds
+          cp AetherCore4.nds AetherOS-AetherCore4.nds
+          ls -lh AetherCore4.nds AetherOS-AetherCore4.nds
 
       - name: Static source sanity
         run: |
@@ -111,18 +111,18 @@ jobs:
         run: |
           set -eu
           mkdir -p deploy/apps/AetherMod deploy/data/AetherMod
-          cp AetherCore3.nds deploy/apps/AetherMod/AetherCore3.nds
+          cp AetherCore4.nds deploy/apps/AetherMod/AetherCore4.nds
           cp -r data/AetherMod/. deploy/data/AetherMod/
           cp AETHERMOD.md deploy/AETHERMOD.md
-          printf '%s\n' '4GB SD INSTALL: copy apps/AetherMod and data/AetherMod to the SD root, then launch apps/AetherMod/AetherCore3.nds.' > deploy/INSTALL.txt
-          cp AetherCore3.nds deploy/AetherOS-AetherCore3.nds
-          tar -czf AetherCore3-DSi-Public.tar.gz -C deploy .
+          printf '%s\n' '4GB SD INSTALL: copy apps/AetherMod and data/AetherMod to the SD root, then launch apps/AetherMod/AetherCore4.nds.' > deploy/INSTALL.txt
+          cp AetherCore4.nds deploy/AetherOS-AetherCore4.nds
+          tar -czf AetherCore4-DSi-Public.tar.gz -C deploy .
 
       - uses: actions/upload-artifact@v4
         with:
-          name: AetherCore3-DSi-Public
+          name: AetherCore4-DSi-Public
           if-no-files-found: error
           path: |
-            AetherCore3.nds
-            AetherOS-AetherCore3.nds
-            AetherCore3-DSi-Public.tar.gz
+            AetherCore4.nds
+            AetherOS-AetherCore4.nds
+            AetherCore4-DSi-Public.tar.gz
