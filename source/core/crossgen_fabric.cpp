@@ -26,6 +26,7 @@ void init(FabricState& s) {
     s.authenticated=false;
     s.jamReady=false;
     s.ticks=0;
+    gState=s;
 }
 void tick(FabricState& s,u32 frame) {
     ++s.ticks;
@@ -35,17 +36,22 @@ void tick(FabricState& s,u32 frame) {
         s.gatewayReady=true;
         s.jamReady=true;
     }
+    gState=s;
 }
 void cycle(FabricState& s) {
     u8 n=(u8)s.target;
     n=(u8)((n+1u)%10u);
     s.target=(Target)n;
     s.authenticated=false;
+    gState=s;
 }
 const char* name(Target t) { return kNames[(u8)t]; }
 const char* capability(Target t) { return kCaps[(u8)t]; }
 bool targetAvailable(Target) { return true; }
+static FabricState gState{};
+
 bool productionGateOpen(const FabricState& s) {
     return s.remoteOnly && s.gatewayReady && s.authenticated;
 }
+const FabricState& state() { return gState; }
 }
