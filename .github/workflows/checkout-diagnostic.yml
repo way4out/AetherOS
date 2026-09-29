@@ -13,15 +13,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build AetherOS 5
-        run: |
-          set -eux
-          docker pull skylyrac/blocksds:slim-latest
-          docker run --rm -v "$GITHUB_WORKSPACE:/work" -w /work skylyrac/blocksds:slim-latest make
+      - name: Build
+        run: bash ci/build-aetheros5.sh
       - name: Validate
         run: |
           set -eux
-          test -s AetherOS5.nds
           python3 - <<'PY'
 from pathlib import Path
 p=Path("AetherOS5.nds").read_bytes()
@@ -37,7 +33,7 @@ PY
           grep -Fq '#define APP_COUNT 79' source/aetherosq.c
           grep -Fq 'mode>=30&&mode<=77' source/aetherosq.c
           grep -Fq '"CAMERA & MIC"' source/aetherosq.c
-      - name: Upload verified NDS
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: AetherOS5-DSi-Verified
