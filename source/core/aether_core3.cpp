@@ -1,7 +1,5 @@
 #include "aether_core3.h"
 #include <nds.h>
-#include <fat.h>
-#include <stdio.h>
 
 namespace {
 aether::core3::Health h{};
@@ -21,16 +19,13 @@ void init(){
     h.dsiMode=isDSiMode();
     h.displayReady=true;
     h.inputReady=true;
-    h.storageReady=fatInitDefault();
+    h.storageReady=false; // populated by the legacy shell after FAT init.
     h.heapHint=recommendedHeapHint();
     h.safe=true;
 }
 void tick(){
     ++tickCounter;
     h.ticks=tickCounter;
-    if((tickCounter & 0x3FFu)==0){
-        h.storageReady = h.storageReady || fatInitDefault();
-    }
 }
 const Health& health(){ return h; }
 }
