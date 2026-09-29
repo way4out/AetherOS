@@ -2,6 +2,19 @@
 
 AetherCore 1 Pass 7 is the current DSi production line for the AetherOS universal, gated runtime.
 
+## Latest DSi build
+
+The latest successful GitHub Actions build is **run #756** from commit `88bd8c31f8e1850a7f82d42dd90bdb2313eb7960`.
+
+**Download the real NDS package from the run artifacts:**
+- [AetherOS Actions run #756](https://github.com/way4out/AetherOS/actions/runs/36628512880)
+- Artifact: `AetherCore1-Pass6-DSi-Public`
+- Included NDS files: `AetherCore1.nds` and `AetherOS-Pass6.nds`
+- Artifact size: 1,837,511 bytes
+- Artifact SHA-256: `8d06a764d235189b46bb4cd96be37d5c54e173e68f815fcb88736ab815814fd6`
+
+The artifact is the actual output of the successful DSi build workflow; it is not a placeholder NDS.
+
 ## Pass 6 goals
 
 - Deterministic DSi boot-safe startup with the display initialized before optional SD/FAT work.
@@ -25,13 +38,14 @@ The AetherOS security lab supports passive telemetry, authorized test workflows,
 
 ## Build artifact
 
-GitHub Actions builds a real DSi-compatible NDS using BlocksDS/libnds and validates the NDS header/payload before publishing:
+GitHub Actions builds a real DSi-compatible NDS using BlocksDS/libnds and validates the NDS header/payload before publishing.
 
+Current run #756 publishes:
 - `AetherCore1.nds`
-- `AetherOS-Pass7.nds`
-- `AetherCore1-Pass7-DSi-Public.tar.gz`
+- `AetherOS-Pass6.nds`
+- `AetherCore1-Pass6-DSi-Public.tar.gz`
 
-Copy the published `AetherOS-Pass7.nds` to the DSi SD card. For the complete package, copy the included `apps/AetherMod` and `data/AetherMod` directories.
+Copy the published NDS file to the DSi SD card. For the complete package, use the accompanying archive from the same Actions run.
 
 ## Project
 
