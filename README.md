@@ -1,6 +1,6 @@
-# AetherCore 1 — Pass 6 / Nintendo DSi
+# AetherCore 1 — Pass 7 / Nintendo DSi
 
-AetherCore 1 Pass 6 is the current DSi production line for the AetherOS universal, gated runtime.
+AetherCore 1 Pass 7 is the current DSi production line for the AetherOS universal, gated runtime.
 
 ## Pass 6 goals
 
@@ -28,10 +28,10 @@ The AetherOS security lab supports passive telemetry, authorized test workflows,
 GitHub Actions builds a real DSi-compatible NDS using BlocksDS/libnds and validates the NDS header/payload before publishing:
 
 - `AetherCore1.nds`
-- `AetherOS-Pass6.nds`
-- `AetherCore1-Pass6-DSi-Public.tar.gz`
+- `AetherOS-Pass7.nds`
+- `AetherCore1-Pass7-DSi-Public.tar.gz`
 
-Copy the published `AetherOS-Pass6.nds` to the DSi SD card. For the complete package, copy the included `apps/AetherMod` and `data/AetherMod` directories.
+Copy the published `AetherOS-Pass7.nds` to the DSi SD card. For the complete package, copy the included `apps/AetherMod` and `data/AetherMod` directories.
 
 ## Project
 
