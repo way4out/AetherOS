@@ -10,6 +10,7 @@ enum class Target : u8 {
     PlayStation4,
     PlayStation5,
     PlayStation6,
+    PlayStation6_1,
     Xbox,
     Xbox360,
     XboxOne,
