@@ -22,13 +22,13 @@ jobs:
         run: |
           bash ci/validate-aetheros5.sh
           test -s AetherCore7.nds
-          cp AetherCore5.nds AetherOS-AetherCore7.nds
-          test -s AetherOS-AetherCore5.nds
+          cp AetherCore7.nds AetherOS-AetherCore7.nds
+          test -s AetherOS-AetherCore7.nds
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: AetherCore7-DSi-Verified
           if-no-files-found: error
           path: |
-            AetherCore5.nds
-            AetherOS-AetherCore5.nds
+            AetherCore7.nds
+            AetherOS-AetherCore7.nds
