@@ -13,6 +13,8 @@ Capabilities detect() {
     c.wifi = true;
     c.sd = hardware::sdAvailable();
     c.extendedRuntime = dsi;
+    c.crossGenerationGateway = true;
+    c.interstellarJamGateway = true;
     return c;
 }
 
@@ -28,7 +30,7 @@ const char* integrationTarget() {
 #elif defined(AETHER_TARGET_MODERN_NINTENDO)
     return "Later Nintendo native integration";
 #else
-    return hardware::dsiMode() ? "Nintendo DSi/TWL .nds" : "Nintendo DS .nds";
+    return hardware::dsiMode() ? "Nintendo DSi/TWL .nds + universal gateway" : "Nintendo DS .nds + universal gateway";
 #endif
 }
 }
