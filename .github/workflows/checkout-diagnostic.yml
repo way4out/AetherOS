@@ -1,4 +1,4 @@
-name: AetherOS Container Build Test
+name: AetherOS Production Build
 
 on:
   push:
@@ -11,9 +11,15 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container:
-      image: skylyrac/blocksds:slim-latest
     steps:
       - uses: actions/checkout@v4
       - name: Build
-        run: make
+        run: |
+          set -eux
+          docker pull skylyrac/blocksds:slim-latest
+          docker run --rm -v "$GITHUB_WORKSPACE:/work" -w /work skylyrac/blocksds:slim-latest make
+      - name: Check output
+        run: |
+          set -eux
+          test -s AetherOS5.nds
+          stat -c '%s bytes' AetherOS5.nds
