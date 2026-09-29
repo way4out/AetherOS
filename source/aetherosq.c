@@ -189,7 +189,7 @@ static void touchMap(u32 *d){
  if(mode==77){
    if(!touchMoved && t.py>=48 && t.py<176){
      int col=((int)t.px)/32; int row=((int)t.py-48)/16; int k=row*8+col;
-     if(k>=0 && k<74){msgTouchKey=k;*d|=KEY_A;touchActionLatch=1;}
+     if(k>=0 && k<73){msgTouchKey=k;*d|=KEY_A;touchActionLatch=1;}
    }else if(touchMoved){
      if(touchStartX>=0&&t.px>touchStartX+24)*d|=KEY_RIGHT;
      else if(touchStartX>=0&&t.px+24<touchStartX)*d|=KEY_LEFT;
@@ -626,7 +626,7 @@ static void moduleInput(u32 d){
    if(d&KEY_DOWN){aether_messaging_cursor_down();changed=1;}
    if(d&KEY_LEFT){aether_messaging_cycle_contact();changed=1;}
    if(d&KEY_RIGHT){aether_messaging_cycle_platform();changed=1;}
-   if(d&KEY_A){const char* k=" ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,!?'-_@:/";int idx=(msgTouchKey>=0)?msgTouchKey:(int)aether_messaging_cursor();if(idx>=0&&idx<74)aether_messaging_append_char(k[idx]);msgTouchKey=-1;changed=1;}
+   if(d&KEY_A){const char* k=" ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,!?'-_@:/";int idx=(msgTouchKey>=0)?msgTouchKey:(int)aether_messaging_cursor();if(idx>=0&&idx<73)aether_messaging_append_char(k[idx]);msgTouchKey=-1;changed=1;}
    if(d&KEY_X){if(aether_messaging_send())changed=1;}
    if(d&KEY_Y){aether_messaging_backspace();changed=1;}
    if(d&KEY_SELECT){aether_messaging_simulate_incoming();changed=1;}
