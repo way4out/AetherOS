@@ -1,4 +1,4 @@
-name: Build AetherCore 4 for Nintendo DSi
+name: Build AetherOS 5 for Nintendo DSi
 
 on:
   workflow_dispatch:
@@ -33,8 +33,8 @@ jobs:
               test -f "$BLOCKSDS/libs/libnds/include/nds.h"
               make clean
               make
-              test -s AetherCore4.nds
-              "$BLOCKSDS/tools/ndstool/ndstool" -t AetherCore4.nds
+              test -s AetherOS5.nds
+              "$BLOCKSDS/tools/ndstool/ndstool" -t AetherOS5.nds
             '
 
       - name: Enforce 44 MiB NDS distribution floor
@@ -42,11 +42,11 @@ jobs:
           set -eu
           NDS_MIN=$((44*1024*1024))
           NDS_MAX=$((64*1024*1024))
-          NDS_SIZE=$(stat -c '%s' AetherCore4.nds)
+          NDS_SIZE=$(stat -c '%s' AetherOS5.nds)
           if [ "$NDS_SIZE" -lt "$NDS_MIN" ]; then
-            truncate -s "$NDS_MIN" AetherCore4.nds
+            truncate -s "$NDS_MIN" AetherOS5.nds
           fi
-          NDS_SIZE=$(stat -c '%s' AetherCore4.nds)
+          NDS_SIZE=$(stat -c '%s' AetherOS5.nds)
           test "$NDS_SIZE" -ge "$NDS_MIN"
           test "$NDS_SIZE" -le "$NDS_MAX"
           echo "VERIFIED_DISTRIBUTION_NDS_SIZE=$NDS_SIZE"
@@ -54,10 +54,10 @@ jobs:
       - name: Validate NDS binary
         run: |
           set -eu
-          test -s AetherCore4.nds
+          test -s AetherOS5.nds
           python3 - <<'PY'
 from pathlib import Path
-p=Path("AetherCore4.nds").read_bytes()
+p=Path("AetherOS5.nds").read_bytes()
 assert len(p) >= 44*1024*1024
 assert len(p) <= 64*1024*1024
 assert p[0x12] == 2, f"DSi unit code is {p[0x12]}, expected 2"
@@ -103,29 +103,29 @@ PY
           grep -Fq 'mode>=30&&mode<=77' source/aetherosq.c
           grep -Fq '"CAMERA & MIC"' source/aetherosq.c
           grep -Fq 'modCamera' source/aetherosq.c
-          sha256sum AetherCore4.nds
-          cp AetherCore4.nds AetherOS-AetherCore4.nds
+          sha256sum AetherOS5.nds
+          cp AetherOS5.nds AetherOS-AetherOS5.nds
 
       - name: Package complete SD bundle
         run: |
           set -eu
           mkdir -p deploy/apps/AetherMod deploy/data/AetherMod
-          cp AetherCore4.nds deploy/apps/AetherMod/AetherCore4.nds
+          cp AetherOS5.nds deploy/apps/AetherMod/AetherOS5.nds
           cp -r data/AetherMod/. deploy/data/AetherMod/
           cp AETHERMOD.md deploy/AETHERMOD.md
-          printf '%s\n' '4GB SD INSTALL: copy apps/AetherMod and data/AetherMod to the SD root, then launch apps/AetherMod/AetherCore4.nds.' > deploy/INSTALL.txt
-          cp AetherCore4.nds deploy/AetherOS-AetherCore4.nds
-          tar -czf AetherCore4-DSi-Public.tar.gz -C deploy .
+          printf '%s\n' '4GB SD INSTALL: copy apps/AetherMod and data/AetherMod to the SD root, then launch apps/AetherMod/AetherOS5.nds.' > deploy/INSTALL.txt
+          cp AetherOS5.nds deploy/AetherOS-AetherOS5.nds
+          tar -czf AetherOS5-DSi-Public.tar.gz -C deploy .
 
       - name: Upload verified public artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: AetherCore4-DSi-Public
+          name: AetherOS5-DSi-Public
           if-no-files-found: error
           path: |
-            AetherCore4.nds
-            AetherOS-AetherCore4.nds
-            AetherCore4-DSi-Public.tar.gz
+            AetherOS5.nds
+            AetherOS-AetherOS5.nds
+            AetherOS5-DSi-Public.tar.gz
 
       - name: Publish rolling public release
         if: github.ref == 'refs/heads/main'
@@ -133,10 +133,10 @@ PY
           GH_TOKEN: ${{ github.token }}
         run: |
           set -eu
-          if gh release view AetherCore4-latest >/dev/null 2>&1; then
-            gh release upload AetherCore4-latest AetherCore4.nds AetherOS-AetherCore4.nds AetherCore4-DSi-Public.tar.gz --clobber
+          if gh release view AetherOS5-latest >/dev/null 2>&1; then
+            gh release upload AetherOS5-latest AetherOS5.nds AetherOS-AetherOS5.nds AetherOS5-DSi-Public.tar.gz --clobber
           else
-            gh release create AetherCore4-latest AetherCore4.nds AetherOS-AetherCore4.nds AetherCore4-DSi-Public.tar.gz \
-              --title "AetherCore 4 — Latest Verified DSi Build" \
+            gh release create AetherOS5-latest AetherOS5.nds AetherOS-AetherOS5.nds AetherOS5-DSi-Public.tar.gz \
+              --title "AetherOS 5 — Latest Verified DSi Build" \
               --notes "Verified CI build for Nintendo DSi. Includes the 44 MiB distribution NDS and complete SD bundle."
           fi
