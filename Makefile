@@ -65,7 +65,7 @@ all: $(ROM)
 
 $(ROM): $(ELF)
 	@echo "  NDSTOOL $@"
-	$(V)$(BLOCKSDS)/tools/ndstool/ndstool -c $@ -7 $(ARM7ELF) -9 $(ELF) "$(GAME_TITLE);$(GAME_SUBTITLE1);$(GAME_SUBTITLE2)"
+	$(V)$(BLOCKSDS)/tools/ndstool/ndstool -c $@ -7 $(ARM7ELF) -9 $(ELF) -b $(BLOCKSDS)/tools/ndstool/default_icon.bmp "$(GAME_TITLE);$(GAME_SUBTITLE1);$(GAME_SUBTITLE2)"
 
 $(ELF): $(OBJS_SOURCES)
 	@echo "  LD      $@"
