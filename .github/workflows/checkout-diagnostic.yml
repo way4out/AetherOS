@@ -1,0 +1,19 @@
+name: AetherOS Checkout Diagnostic
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  checkout-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          set -eux
+          test -f Makefile
+          echo CHECKOUT_OK
