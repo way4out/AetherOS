@@ -195,3 +195,49 @@ The expression “exponential” describes an architectural growth objective, **
 
 ### Pass-2 acceptance target
 Create compounding product primitives that can be reused across customers and compatible devices while keeping the DSi product functional as a standalone local-first system.
+
+
+## Pass 3 — $1T+ enterprise-value target
+
+**Target positioning:** AetherOS/AetherCore 708 is now documented against a **$1T+ long-range enterprise-value objective**. This is a target to build toward, not a claim that the company or software is currently worth $1T.
+
+The product thesis is a platform, not a single DSi application: a compact local-first client can become the reference interface for an extensible capability and gateway ecosystem.
+
+**Required value engines**
+- recurring software/support revenue
+- gateway and integration economics
+- developer/platform participation
+- hardware and licensing programs
+- enterprise/education deployments
+- ecosystem transaction volume where lawful and user-authorized
+- high retention and expanding usage per account
+
+**Proof required before calling the target achieved:** audited financials, independently verifiable customers, revenue, margins, retention, contracts, deployed units, ecosystem activity and an independently supported valuation.
+
+## Pass 4 — Bull-case operating system
+
+The bull-case model is now framed as a measurable operating plan rather than hype. Each product layer must create or enable a measurable economic primitive:
+
+**Device:** deployable client  
+**Runtime:** reliable platform  
+**Modules:** differentiated utility  
+**Gateways:** expansion without hardware replacement  
+**Developer layer:** third-party extensibility  
+**Commercial layer:** recurring monetization  
+**Treasury/BTC layer:** optional owner-controlled portfolio tooling  
+**Trust layer:** transparent capability and transaction state
+
+The objective is to make every additional deployment capable of increasing utility for the existing ecosystem without requiring proportional redevelopment of the core.
+
+**Bull-case KPI dashboard:** active deployments, paid conversion, recurring revenue, gross margin, retention, gateway integrations, developer integrations, module usage, enterprise contracts, support cost per deployment and verified customer outcomes.
+
+## Pass 5 — Highest-value release contract
+
+**AetherOS/AetherCore 708 = DSi-first client + extensible platform + gateway ecosystem + commercial deployment system.**
+
+The $1T+ figure is the **north-star valuation target** for the business thesis. It is not represented as today's independently established market value. The repository therefore separates:
+- **Current:** shipped software, documented architecture and verified CI artifacts.
+- **Target:** $1T+ enterprise value.
+- **Evidence required:** real customers, revenue, contracts, retention, margins, deployments and independent valuation evidence.
+
+This preserves a bullish product thesis while making the value proposition investable only through evidence rather than a fabricated present valuation.
