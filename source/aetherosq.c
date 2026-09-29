@@ -560,6 +560,75 @@ static void coreInput(u32 d){
 }
 static void coreFront(void){ if(coreMode==0)coreWorld(); else if(coreMode==1)coreSocialView(); else if(coreMode==2)coreSystems(); else if(coreMode==3)coreAchievementsView(); else coreEventView(); }
 
+/* Universal blank-page recovery arcade: asset-free, deterministic, and always escapable. */
+static int arcadeGame=0, arcadeX=12, arcadeY=7, arcadeScore=0, arcadeTickCount=0, arcadePaused=0;
+static int arcadeBallX=12, arcadeBallY=7, arcadeVX=1, arcadeVY=1, arcadePaddle=12;
+static int arcadeSnakeLen=3, arcadeSnakeDir=1, arcadeSnakeX[32], arcadeSnakeY[32];
+
+static void arcadeReset(void){
+  arcadeX=12; arcadeY=7; arcadeScore=0; arcadeTickCount=0; arcadePaused=0;
+  arcadeBallX=12; arcadeBallY=7; arcadeVX=1; arcadeVY=1; arcadePaddle=12;
+  arcadeSnakeLen=3; arcadeSnakeDir=1;
+  for(int i=0;i<32;i++){arcadeSnakeX[i]=12-i;arcadeSnakeY[i]=7;}
+}
+static void arcadeHeader(const char *name){
+  page(name);
+  consoleSelect(&bottomConsole); consoleClear();
+  printf("AETHER ARCADE / UNIVERSAL RECOVERY\n");
+  printf("GAME %d/5  SCORE:%04d  FRAME:%d\n\n",arcadeGame+1,arcadeScore,arcadeTickCount);
+}
+static void arcadeRender(void){
+  arcadeHeader(arcadeGame==0?"ESCAPE RUNNER":arcadeGame==1?"STAR DODGE":arcadeGame==2?"SNAKE GRID":arcadeGame==3?"PADDLE BOUNCE":"BRICK FIELD");
+  if(arcadeGame==0){
+    for(int y=0;y<12;y++){for(int x=0;x<24;x++)printf(x==arcadeX&&y==arcadeY?"@":((x+y+arcadeTickCount)%11==0?"*":".") ;printf("\n");}
+  }else if(arcadeGame==1){
+    for(int y=0;y<12;y++){for(int x=0;x<24;x++){char c='.';if(x==arcadeX&&y==arcadeY)c='A';else if(((x*7+y*13+arcadeTickCount*3)%37)==0)c='*';printf("%c",c);}printf("\n");}
+  }else if(arcadeGame==2){
+    for(int y=0;y<12;y++){for(int x=0;x<24;x++){char c='.';for(int i=0;i<arcadeSnakeLen;i++)if(arcadeSnakeX[i]==x&&arcadeSnakeY[i]==y)c=(i==0?'O':'o');printf("%c",c);}printf("\n");}
+  }else if(arcadeGame==3){
+    for(int y=0;y<12;y++){for(int x=0;x<24;x++){char c=' ';if(y==0||y==11)c='-';if(x==arcadeBallX&&y==arcadeBallY)c='o';if(y==10&&x>=arcadePaddle-2&&x<=arcadePaddle+2)c='=';printf("%c",c);}printf("\n");}
+  }else{
+    for(int y=0;y<12;y++){for(int x=0;x<24;x++){char c=' ';if(y<3&&((x+y)%5!=0))c='#';if(x==arcadeBallX&&y==arcadeBallY)c='o';if(y==11&&x>=arcadePaddle-2&&x<=arcadePaddle+2)c='=';printf("%c",c);}printf("\n");}
+  }
+  printf("\nA=action  B=HOME  X=pause  Y=next game  L/R=game  D-PAD=move\n");
+  printf("TOUCH bottom edge = RECOVERY ARCADE | START+SELECT = emergency escape\n");
+}
+static void arcadeTick(void){
+  if(arcadePaused)return;
+  ++arcadeTickCount;
+  if(arcadeGame==0){
+    arcadeY=(arcadeY+(arcadeTickCount%3==0?1:0)); if(arcadeY>=12){arcadeY=0;arcadeScore++;}
+  }else if(arcadeGame==1){
+    if((arcadeTickCount&3)==0){arcadeY=(arcadeY+1)%12;if(((arcadeX*7+arcadeY*13+arcadeTickCount)%37)==0)arcadeScore++;}
+  }else if(arcadeGame==2){
+    if((arcadeTickCount&3)==0){
+      int nx=arcadeSnakeX[0]+(arcadeSnakeDir==1?1:arcadeSnakeDir==3?-1:0);
+      int ny=arcadeSnakeY[0]+(arcadeSnakeDir==2?1:arcadeSnakeDir==0?-1:0);
+      if(nx<0)nx=23;if(nx>23)nx=0;if(ny<0)ny=11;if(ny>11)ny=0;
+      for(int i=arcadeSnakeLen-1;i>0;i--){arcadeSnakeX[i]=arcadeSnakeX[i-1];arcadeSnakeY[i]=arcadeSnakeY[i-1];}
+      arcadeSnakeX[0]=nx;arcadeSnakeY[0]=ny;arcadeScore++;
+    }
+  }else{
+    if((arcadeTickCount&1)==0){arcadeBallX+=arcadeVX;arcadeBallY+=arcadeVY;
+      if(arcadeBallX<=0||arcadeBallX>=23){arcadeVX=-arcadeVX;arcadeBallX+=arcadeVX;}
+      if(arcadeBallY<=0){arcadeVY=1;arcadeBallY=1;}
+      if(arcadeBallY>=10){if(arcadeBallX>=arcadePaddle-2&&arcadeBallX<=arcadePaddle+2){arcadeVY=-1;arcadeScore++;}else{arcadeBallY=5;arcadeScore=0;}}
+    }
+  }
+}
+static void arcadeInput(u32 d){
+  if(d&KEY_B){mode=0;draw();return;}
+  if(d&KEY_Y){arcadeGame=(arcadeGame+1)%5;arcadeReset();draw();return;}
+  if(d&KEY_L){arcadeGame=(arcadeGame+4)%5;arcadeReset();draw();return;}
+  if(d&KEY_R){arcadeGame=(arcadeGame+1)%5;arcadeReset();draw();return;}
+  if(d&KEY_X){arcadePaused=!arcadePaused;draw();return;}
+  if(d&KEY_LEFT){arcadeX=(arcadeX+23)%24;arcadePaddle=(arcadePaddle+23)%24;arcadeSnakeDir=3;arcadeScore++;draw();}
+  if(d&KEY_RIGHT){arcadeX=(arcadeX+1)%24;arcadePaddle=(arcadePaddle+1)%24;arcadeSnakeDir=1;arcadeScore++;draw();}
+  if(d&KEY_UP){arcadeY=(arcadeY+11)%12;arcadeSnakeDir=0;arcadeScore++;draw();}
+  if(d&KEY_DOWN){arcadeY=(arcadeY+1)%12;arcadeSnakeDir=2;arcadeScore++;draw();}
+  if(d&KEY_A){arcadeScore++;arcadePaused=0;draw();}
+}
+
 static void home(void){
  page("00 AETHER HOME / EXECUTIVE DECK");consoleSelect(&bottomConsole);consoleClear();
  int last=homePage*8+8; if(last>APP_COUNT) last=APP_COUNT; printf("PAGE %d/%d  MODULES %02d-%02d\n\n",homePage+1,HOME_PAGES,homePage*8+1,last);
@@ -576,7 +645,7 @@ static void draw(void){
  case 16:modFiles();break;case 17:modHaptic();break;case 18:modAccess();break;case 19:modPower();break;
  case 20:modControl();break;case 21:modDiagnostics();break;case 22:modBot();break;case 23:modSettings();break;
  case 24:modEvents();break;case 25:modNotes();break;case 26:modClock();break;case 27:modAbout();break;
- case 28:modSafety();break;case 29:coreFront();break;case 30:execSystemView(0);break;case 31:execSystemView(1);break;case 32:execSystemView(2);break;case 33:execSystemView(3);break;case 34:execSystemView(4);break;case 35:execSystemView(5);break;case 36:execSystemView(6);break;case 37:execSystemView(7);break;case 38:execSystemView(8);break;case 39:execSystemView(9);break;case 40:execSystemView(10);break;case 41:execSystemView(11);break;case 42:execSystemView(12);break;case 43:execSystemView(13);break;case 44:execSystemView(14);break;case 45:execSystemView(15);break;case 46:execSystemView(16);break;case 47:execSystemView(17);break;case 48:execSystemView(18);break;case 49:execSystemView(19);break;case 50:execSystemView(20);break;case 51:execSystemView(21);break;case 52:execSystemView(22);break;case 53:execSystemView(23);break;case 54:execSystemView(24);break;case 55:execSystemView(25);break;case 56:execSystemView(26);break;case 57:execSystemView(27);break;case 58:execSystemView(28);break;case 59:execSystemView(29);break;case 60:execSystemView(30);break;case 61:execSystemView(31);break;case 62:execSystemView(32);break;case 63:execSystemView(33);break;case 64:execSystemView(34);break;case 65:execSystemView(35);break;case 66:execSystemView(36);break;case 67:execSystemView(37);break;case 68:execSystemView(38);break;case 69:execSystemView(39);break;case 70:execSystemView(40);break;case 71:execSystemView(41);break;case 72:execSystemView(42);break;case 73:execSystemView(43);break;case 74:execSystemView(44);break;case 75:execSystemView(45);break;case 76:execSystemView(46);break;case 77:execSystemView(47);break;case 78:modCamera();break;default:mode=0;break;
+ case 28:modSafety();break;case 29:coreFront();break;case 30:execSystemView(0);break;case 31:execSystemView(1);break;case 32:execSystemView(2);break;case 33:execSystemView(3);break;case 34:execSystemView(4);break;case 35:execSystemView(5);break;case 36:execSystemView(6);break;case 37:execSystemView(7);break;case 38:execSystemView(8);break;case 39:execSystemView(9);break;case 40:execSystemView(10);break;case 41:execSystemView(11);break;case 42:execSystemView(12);break;case 43:execSystemView(13);break;case 44:execSystemView(14);break;case 45:execSystemView(15);break;case 46:execSystemView(16);break;case 47:execSystemView(17);break;case 48:execSystemView(18);break;case 49:execSystemView(19);break;case 50:execSystemView(20);break;case 51:execSystemView(21);break;case 52:execSystemView(22);break;case 53:execSystemView(23);break;case 54:execSystemView(24);break;case 55:execSystemView(25);break;case 56:execSystemView(26);break;case 57:execSystemView(27);break;case 58:execSystemView(28);break;case 59:execSystemView(29);break;case 60:execSystemView(30);break;case 61:execSystemView(31);break;case 62:execSystemView(32);break;case 63:execSystemView(33);break;case 64:execSystemView(34);break;case 65:execSystemView(35);break;case 66:execSystemView(36);break;case 67:execSystemView(37);break;case 68:execSystemView(38);break;case 69:execSystemView(39);break;case 70:execSystemView(40);break;case 71:execSystemView(41);break;case 72:execSystemView(42);break;case 73:execSystemView(43);break;case 74:execSystemView(44);break;case 75:execSystemView(45);break;case 76:execSystemView(46);break;case 77:execSystemView(47);break;case 78:modCamera();break;case 79:arcadeRender();break;default:mode=79;arcadeReset();break;
  }
 }
 static void moduleInput(u32 d){
@@ -624,9 +693,14 @@ static void moduleInput(u32 d){
  if(changed){feedback();markDirty();draw();}
 }
 static void input(void){
- u32 d=keysDown()|keysDownRepeat();touchDown=0;touchMap(&d);
+ u32 d=keysDown()|keysDownRepeat();
+ touchPosition emergencyTouch; touchRead(&emergencyTouch);
+ if((keysHeld()&KEY_TOUCH) && emergencyTouch.py>=184 && mode!=79){ mode=79; arcadeReset(); draw(); return; }
+ if((d&(KEY_START|KEY_SELECT))==(KEY_START|KEY_SELECT) && mode!=79){ mode=79; arcadeReset(); draw(); return; }
+ touchDown=0;touchMap(&d);
  hardwareAction(d);
  if(mode==29){coreInput(d);return;}
+ if(mode==79){arcadeInput(d);return;}
  if(mode==0){
    if(d&KEY_UP){homeSet(selected==0?APP_COUNT-1:selected-1);draw();}
    if(d&KEY_DOWN){homeSet((selected+1)%APP_COUNT);draw();}
@@ -693,6 +767,7 @@ int legacy_shell_main(void){
    }
    input();
    if(mode==29) coreTick();
+   if(mode==79){ arcadeTick(); if((frame&3)==0) draw(); }
    saveIfDirty();
    if((frame&3)==0)draw();
  }
