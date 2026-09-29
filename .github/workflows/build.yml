@@ -24,10 +24,9 @@ jobs:
             -w /work \
             skylyrac/blocksds:slim-latest \
             bash -lc '
-              set -eu
+              set -euxo pipefail
               echo "BLOCKSDS=$BLOCKSDS"
-              TOOLBIN="$(dirname "$(find /opt/wonderful -type f -name arm-none-eabi-gcc -print -quit)")"
-              export PATH="$TOOLBIN:/opt/wonderful/bin:$PATH"
+              command -v arm-none-eabi-gcc
               arm-none-eabi-gcc --version | head -1
               test -f "$BLOCKSDS/sys/crts/ds_arm9.ld"
               test -f "$BLOCKSDS/libs/libnds/include/nds.h"
