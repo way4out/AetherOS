@@ -22,7 +22,7 @@ struct State {
     bool ready;
     bool authenticated;
     bool sessionLive;
-    bool jamReady;
+    bool gatewayReady;
     u32 frames;
     u32 packets;
     u32 dropped;
