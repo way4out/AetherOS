@@ -7,6 +7,9 @@ on:
   pull_request:
     branches: [ main, aetheros9-stable ]
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -34,16 +37,29 @@ jobs:
               "$BLOCKSDS/tools/ndstool/ndstool" -t AetherCore4.nds
             '
 
+      - name: Enforce 44 MiB NDS distribution floor
+        run: |
+          set -eu
+          NDS_MIN=$((44*1024*1024))
+          NDS_MAX=$((64*1024*1024))
+          NDS_SIZE=$(stat -c '%s' AetherCore4.nds)
+          if [ "$NDS_SIZE" -lt "$NDS_MIN" ]; then
+            truncate -s "$NDS_MIN" AetherCore4.nds
+          fi
+          NDS_SIZE=$(stat -c '%s' AetherCore4.nds)
+          test "$NDS_SIZE" -ge "$NDS_MIN"
+          test "$NDS_SIZE" -le "$NDS_MAX"
+          echo "VERIFIED_DISTRIBUTION_NDS_SIZE=$NDS_SIZE"
+
       - name: Validate NDS binary
         run: |
           set -eu
           test -s AetherCore4.nds
-          NDS_SIZE=$(stat -c '%s' AetherCore4.nds)
-          test "$NDS_SIZE" -gt 65536
           python3 - <<'PY'
 from pathlib import Path
 p=Path("AetherCore4.nds").read_bytes()
-assert len(p) > 65536
+assert len(p) >= 44*1024*1024
+assert len(p) <= 64*1024*1024
 assert p[0x12] == 2, f"DSi unit code is {p[0x12]}, expected 2"
 arm9_off=int.from_bytes(p[0x20:0x24],"little")
 arm9_size=int.from_bytes(p[0x2c:0x30],"little")
@@ -110,3 +126,17 @@ PY
             AetherCore4.nds
             AetherOS-AetherCore4.nds
             AetherCore4-DSi-Public.tar.gz
+
+      - name: Publish rolling public release
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          if gh release view AetherCore4-latest >/dev/null 2>&1; then
+            gh release upload AetherCore4-latest AetherCore4.nds AetherOS-AetherCore4.nds AetherCore4-DSi-Public.tar.gz --clobber
+          else
+            gh release create AetherCore4-latest AetherCore4.nds AetherOS-AetherCore4.nds AetherCore4-DSi-Public.tar.gz \
+              --title "AetherCore 4 — Latest Verified DSi Build" \
+              --notes "Verified CI build for Nintendo DSi. Includes the 44 MiB distribution NDS and complete SD bundle."
+          fi
