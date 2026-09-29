@@ -58,7 +58,8 @@ jobs:
           grep -q 'touchStartX' source/aetherosq.c
           grep -q 'diagStorageKnown' source/aetherosq.c
           grep -q 'AETHERCORE 1 / PASS 3' source/aetherosq.c
-          grep -q '#define APP_COUNT 48' source/aetherosq.c
+          grep -q '#define APP_COUNT 77' source/aetherosq.c
+          grep -q 'execSystems\[48\]' source/aetherosq.c
           grep -q 'EXECUTIVE SYSTEM' source/aetherosq.c
 
       - name: Emulator availability check

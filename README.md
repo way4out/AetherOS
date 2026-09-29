@@ -4,13 +4,13 @@ AetherCore 1 Pass 3 fuses the AetherOS 9.0 runtime with a 48-system executive Ho
 
 ## Pass 3 surfaces
 
-- 48 total Home Screen systems
+- 77 total Home Screen systems
 - All 29 AetherOS 9.0 core modules retained
-- 19 executive systems with dedicated state, actions, metrics and controller/touch navigation
+- 48 executive systems with dedicated state, actions, metrics and controller/touch navigation
 - Executive systems: Hub, Mission Control, Resource Command, Security Command, Comms Command, Operations Center, Development Center, Creator Economy, Knowledge Center, Health & Wellness, Access Command, Finance Ledger, Inventory Command, Field Command, Automation Desk, Analytics Center, Archive Command, User Profile, Systems Monitor
 - Executive actions feed existing AetherCore state such as XP, coins, credits, energy, inventory, quests, crew, diagnostics, telemetry, network/phone counters, DAW/DSP state and safety controls
-- Six Home Screen pages with D-pad, L/R and touch/swipe navigation
-- AetherCore Systems Gate exposes the full 48-system architecture
+- Ten Home Screen pages with D-pad, L/R and touch/swipe navigation
+- AetherCore Systems Gate exposes the full 77-system architecture
 
 
 AetherCore 1 is the first five-pass evolution of the AetherOS 9.0 DSi runtime. Pass 1 adds a gameplay-oriented Nexus front end while preserving the existing 29-module AetherOS workspace.
