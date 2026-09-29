@@ -75,8 +75,8 @@ static int hardwareActionCount=0;
 static char fileNames[16][48],vaultNames[12][48],eventNames[16][48];
 
 static const char *apps[APP_COUNT]={
- "AETHER HOME","QUANTUM CORE","YHWH CODEX","ANIMAL AI","MARAUDER/RF",
- "TinySA LAB","CALCULATOR","DAW STUDIO","DSP/FFT","TELEMETRY","AI HOME",
+ "AETHER HOME","QUANTUM CORE","YHWH CODEX","ANIMAL AI","PASSIVE INTERCEPT",
+ "TinySA LAB","CALCULATOR","JAM STUDIO","DSP/FFT","TELEMETRY","AI HOME",
  "NETWORK GATEWAY","PHONE LINK","MEDIA STUDIO","SENSOR HUB","DATA VAULT",
  "FILE BROWSER","HAPTIC LAB","ACCESSIBILITY","POWER LAB","CONTROL LAB",
  "DIAGNOSTICS","AETHER BOT","GENERAL SETTINGS","EVENT LOG","NOTES","CLOCK",
@@ -224,11 +224,11 @@ static void modAnimal(void){page("03 ANIMAL AI / SIGNAL LAB");int c=animalLive?6
  printf("Signal classification/vocalization model; not literal speech.\n");footer("UP/DOWN SPECIES | L/R FEATURE | A ANALYZE | X RUN | Y STOP | B HOME");}
 
 /* 04 — Marauder/RF: passive/authorized analysis only */
-static void modRF(void){page("04 MARAUDER / RF");const char *b[]={"2.4GHz ISM","5GHz ISM","EXTERNAL GATE"};
+static void modRF(void){page("04 PASSIVE INTERCEPT LAB");const char *b[]={"2.4GHz ISM","5GHz ISM","EXTERNAL GATE"};
  printf("PASSIVE RECEIVE / AUTHORIZED ANALYSIS\nBAND:%s CH:%d VIEW:%d HOLD:%s\n",b[rfBand],rfChannel,rfView,rfHold?"ON":"OFF");
  int r=-30-(frame%45),n=-80-(frame%12);printf("RSSI:%d dBm NOISE:%d dBm SNR:%d dB\n",r,n,r-n);graph("RF ",rfChannel*9);
  printf("META EVENTS:%d  QUEUE:%d\n",rfEvents,(frame/8)%9);
- printf("JAM/DEAUTH/CREDENTIAL CAPTURE: NOT IMPLEMENTED.\n");footer("UP/DOWN VIEW | L/R BAND/CH | A LOG SAMPLE | X HOLD | Y CLEAR | B HOME");}
+ printf("INTERCEPT: METADATA/TELEMETRY ONLY; NO PAYLOAD OR CREDENTIAL CAPTURE.\n");printf("RF JAMMING/DEAUTH: DISABLED. USE JAM STUDIO FOR LOCAL AUDIO JAMS.\n");footer("UP/DOWN VIEW | L/R BAND/CH | A LOG SAMPLE | X HOLD | Y CLEAR | B HOME");}
 
 /* 05 — TinySA */
 static void modTinySA(void){page("05 TINySA LAB");int level=20+(frame/3)%35;
@@ -244,9 +244,9 @@ static void modCalc(void){const char *op[]={"ADD","SUB","MUL","DIV","MOD","SQR",
  printf("A/B are editable with A/X; operation with UP/DOWN.\n");footer("UP/DOWN OP | A APPLY | X SWAP | Y MEMORY | L/R EDIT | B HOME");}
 
 /* 07 — DAW */
-static void modDAW(void){page("07 DAW / GAME STUDIO");printf("BPM:%u STEP:%02d PLAY:%s TRACK:%d VIEW:%d\n",save.bpm,dawStep,dawPlaying?"YES":"NO",dawTrack+1,dawView);
+static void modDAW(void){page("07 JAM STUDIO / GAME STUDIO");printf("BPM:%u STEP:%02d PLAY:%s TRACK:%d VIEW:%d\n",save.bpm,dawStep,dawPlaying?"YES":"NO",dawTrack+1,dawView);
  for(int t=0;t<4;t++){printf("T%d [",t+1);for(int s=0;s<16;s++)printf("%c",s==dawStep?'^':dawPattern[t][s]?'X':'.');printf("]\n");}
- printf("PSG sequencer / local timing / persistent BPM\n");footer("UP/DOWN STEP | L/R TRACK | A NOTE | X PLAY | Y BPM | B HOME");}
+ printf("LOCAL JAM ENGINE: 4 TRACKS x 16 STEPS / PSG AUDIO / PERSISTENT BPM\n");printf("RF JAMMING IS NOT PART OF THIS SYSTEM.\n");footer("UP/DOWN STEP | L/R TRACK | A NOTE | X PLAY | Y BPM | B HOME");}
 
 /* 08 — DSP/FFT */
 static void modDSP(void){page("08 DSP / FFT");dspFrames++;int peak=(frame/3+dspInput*5)%16;
