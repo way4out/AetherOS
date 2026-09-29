@@ -29,6 +29,11 @@ struct State {
     u32 inputEpoch;
     u16 frameBudgetUs;
     u8 quality;
+    u32 workRamBudget;
+    u32 framebufferBudget;
+    u16 renderEpoch;
+    u8 renderedTarget;
+    bool rendererReady;
 };
 
 void init(State&);
