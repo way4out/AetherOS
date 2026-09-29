@@ -1,12 +1,12 @@
-# AetherOS — AetherCore 2 / Nintendo DSi
+# AetherOS — AetherCore 4 / Nintendo DSi
 
-AetherCore 2 is the current production integration line for the AetherOS DSi runtime.
+AetherCore 4 is the current production integration line for the AetherOS DSi runtime.
 
 ## One-click build
 
 The official build is produced by GitHub Actions from the repository source using BlocksDS/libnds. The pipeline validates the NDS header, DSi unit code, payload size, source integration gates, and complete SD bundle before publishing the artifact.
 
-## AetherCore 2 integration
+## AetherCore 4 integration
 
 - Boot-safe display initialization before optional SD/FAT access.
 - Storage-optional operation with deterministic safe mode.
@@ -20,13 +20,13 @@ The official build is produced by GitHub Actions from the repository source usin
 
 ## Hardware truth
 
-A stock Nintendo DSi cannot become modern Xbox, PlayStation, Apple, satellite, SDR, holographic or quantum hardware through software alone. AetherCore 2 therefore treats those systems as adapters/workspaces and keeps unsupported capabilities explicitly gated.
+A stock Nintendo DSi cannot become modern Xbox, PlayStation, Apple, satellite, SDR, holographic or quantum hardware through software alone. AetherCore 4 therefore treats those systems as adapters/workspaces and keeps unsupported capabilities explicitly gated.
 
 ## Production package
 
 The Actions artifact contains:
-- AetherCore2.nds
-- AetherOS-AetherCore2.nds
+- AetherCore4.nds
+- AetherOS-AetherCore4.nds
 - complete SD deployment archive
 
 Copy the NDS to the DSi SD card. For the complete deployment, extract the accompanying SD bundle and preserve its directory structure.
@@ -39,3 +39,11 @@ The project does not enable active RF interference, covert interception, credent
 
 A successful CI build means the source compiled and passed automated structural gates. It does not constitute a guarantee of flawless behavior on every physical DSi; hardware runtime validation still requires a real device or compatible emulator.
 
+
+## Human DSi instructions
+
+See [AETHERCORE4_USER_GUIDE.md](AETHERCORE4_USER_GUIDE.md) for the complete touchscreen, button, camera, microphone, module, gateway, recovery, and 4 GB SD installation guide.
+
+## AetherCore 4 release naming
+
+The production workflow now emits AetherCore4.nds and AetherOS-AetherCore4.nds. RF interference/jamming and unauthorized interception remain disabled; interstellar/interdimensional surfaces are conceptual or external-gateway contracts only.
