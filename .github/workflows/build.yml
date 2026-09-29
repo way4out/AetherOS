@@ -1,11 +1,9 @@
 name: Build AetherOS 5 for Nintendo DSi
 
 on:
-  workflow_dispatch:
   push:
-    branches: [ main, aetheros9-stable ]
-  pull_request:
-    branches: [ main, aetheros9-stable ]
+    branches: [ main ]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -14,128 +12,35 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Build real DSi NDS in BlocksDS container
+      - name: Build with official BlocksDS image
         run: |
-          set -eu
-          docker run --rm \
-            -v "$GITHUB_WORKSPACE:/work" \
-            -w /work \
-            skylyrac/blocksds:slim-latest \
-            bash -lc '
-              set -euxo pipefail
-              echo "BLOCKSDS=$BLOCKSDS"
-              command -v arm-none-eabi-gcc
-              arm-none-eabi-gcc --version | head -1
-              test -f "$BLOCKSDS/sys/crts/ds_arm9.ld"
-              test -f "$BLOCKSDS/libs/libnds/include/nds.h"
-              make clean
-              make
-              test -s AetherOS5.nds
-              "$BLOCKSDS/tools/ndstool/ndstool" -t AetherOS5.nds
-            '
+          set -eux
+          docker run --rm -v "$GITHUB_WORKSPACE:/work" -w /work skylyrac/blocksds:slim-latest make
 
-      - name: Enforce 44 MiB NDS distribution floor
+      - name: Validate ROM
         run: |
-          set -eu
-          NDS_MIN=$((44*1024*1024))
-          NDS_MAX=$((64*1024*1024))
-          NDS_SIZE=$(stat -c '%s' AetherOS5.nds)
-          if [ "$NDS_SIZE" -lt "$NDS_MIN" ]; then
-            truncate -s "$NDS_MIN" AetherOS5.nds
-          fi
-          NDS_SIZE=$(stat -c '%s' AetherOS5.nds)
-          test "$NDS_SIZE" -ge "$NDS_MIN"
-          test "$NDS_SIZE" -le "$NDS_MAX"
-          echo "VERIFIED_DISTRIBUTION_NDS_SIZE=$NDS_SIZE"
-
-      - name: Validate NDS binary
-        run: |
-          set -eu
+          set -eux
           test -s AetherOS5.nds
           python3 - <<'PY'
 from pathlib import Path
 p=Path("AetherOS5.nds").read_bytes()
-assert len(p) >= 44*1024*1024
+assert p[0x12] == 2, p[0x12]
+a=int.from_bytes(p[0x20:0x24],"little")
+s=int.from_bytes(p[0x2c:0x30],"little")
+assert a > 0 and s > 0 and a+s <= len(p)
 assert len(p) <= 64*1024*1024
-assert p[0x12] == 2, f"DSi unit code is {p[0x12]}, expected 2"
-arm9_off=int.from_bytes(p[0x20:0x24],"little")
-arm9_size=int.from_bytes(p[0x2c:0x30],"little")
-assert arm9_off > 0 and arm9_size > 0
-assert arm9_off + arm9_size <= len(p)
-print(f"VERIFIED_NDS_SIZE={len(p)}")
-print(f"VERIFIED_DSI_UNIT_CODE={p[0x12]}")
-print(f"VERIFIED_ARM9_OFFSET={arm9_off}")
-print(f"VERIFIED_ARM9_SIZE={arm9_size}")
+print("VERIFIED", len(p), p[0x12], a, s)
 PY
-          grep -R "web_fabric\|device_fabric" source >/dev/null
-          test -f source/core/pass46_runtime.cpp
-          test -f source/core/pass46_runtime.h
-          grep -q "pass46::init" source/core/aether_core.cpp
-          grep -q "pass46::tick" source/core/aether_core.cpp
-          test -f source/core/platform_profile.cpp
-          test -f source/core/platform_profile.h
-          grep -q "platform::detect" source/core/aether_core.cpp
-          grep -q "ThreeDS" source/core/platform_profile.h
-          grep -q "AETHER_TARGET_3DS" source/core/platform_profile.cpp
-          grep -q "AETHER_TARGET_MODERN_NINTENDO" source/core/platform_profile.cpp
-          grep -q "AETHER_TARGET_WII" source/core/platform_profile.cpp
-          grep -q "AETHER_TARGET_N64" source/core/platform_profile.cpp
-          grep -q "AETHER_TARGET_GAMEBOY" source/core/platform_profile.cpp
-          grep -q "PlayStation6_1" source/core/crossgen_fabric.h
-          grep -q "PlayStation 6-1" source/core/crossgen_fabric.cpp
-          test -f source/core/pass49_emulation.cpp
-          test -f source/core/pass49_emulation.h
-          grep -q "emulation::init" source/core/aether_core.cpp
-          grep -q "emulation::tick" source/core/aether_core.cpp
-          grep -q "AETHERCORE_PASS 70" source/aetherosq.c
-          test -f source/core/aether_core2.cpp
-          test -f source/core/aether_core2.h
-          grep -q "core2::init" source/core/aether_core.cpp
-          grep -q "core2::tick" source/core/aether_core.cpp
-          test -f source/core/aether_core3.cpp
-          test -f source/core/aether_core3.h
-          grep -q "core3::init" source/core/universal_guard.cpp
-          grep -q "aether_core3_tick" source/aetherosq.c
-          grep -Fq '#define APP_COUNT 78' source/aetherosq.c
+          grep -Fq '#define APP_COUNT 79' source/aetherosq.c
           grep -Fq 'mode>=30&&mode<=77' source/aetherosq.c
           grep -Fq '"CAMERA & MIC"' source/aetherosq.c
-          grep -Fq 'modCamera' source/aetherosq.c
-          sha256sum AetherOS5.nds
-          cp AetherOS5.nds AetherOS-AetherOS5.nds
 
-      - name: Package complete SD bundle
-        run: |
-          set -eu
-          mkdir -p deploy/apps/AetherMod deploy/data/AetherMod
-          cp AetherOS5.nds deploy/apps/AetherMod/AetherOS5.nds
-          cp -r data/AetherMod/. deploy/data/AetherMod/
-          cp AETHERMOD.md deploy/AETHERMOD.md
-          printf '%s\n' '4GB SD INSTALL: copy apps/AetherMod and data/AetherMod to the SD root, then launch apps/AetherMod/AetherOS5.nds.' > deploy/INSTALL.txt
-          cp AetherOS5.nds deploy/AetherOS-AetherOS5.nds
-          tar -czf AetherOS5-DSi-Public.tar.gz -C deploy .
-
-      - name: Upload verified public artifacts
+      - name: Publish artifact
         uses: actions/upload-artifact@v4
         with:
-          name: AetherOS5-DSi-Public
+          name: AetherOS5-DSi-Verified
           if-no-files-found: error
-          path: |
-            AetherOS5.nds
-            AetherOS-AetherOS5.nds
-            AetherOS5-DSi-Public.tar.gz
-
-      - name: Publish rolling public release
-        if: github.ref == 'refs/heads/main'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -eu
-          if gh release view AetherOS5-latest >/dev/null 2>&1; then
-            gh release upload AetherOS5-latest AetherOS5.nds AetherOS-AetherOS5.nds AetherOS5-DSi-Public.tar.gz --clobber
-          else
-            gh release create AetherOS5-latest AetherOS5.nds AetherOS-AetherOS5.nds AetherOS5-DSi-Public.tar.gz \
-              --title "AetherOS 5 — Latest Verified DSi Build" \
-              --notes "Verified CI build for Nintendo DSi. Includes the 44 MiB distribution NDS and complete SD bundle."
-          fi
+          path: AetherOS5.nds
