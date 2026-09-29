@@ -74,7 +74,7 @@ jobs:
           grep -q "AETHERCORE_PASS 50" source/aetherosq.c
           echo "VERIFIED_PASS_4_9_RUNTIME_MARKER=present"
           echo "VERIFIED_PASS_5_BASE_PRODUCTION_DEPLOY=present"
-          grep -q "AETHERCORE_PASS 49" source/aetherosq.c
+          grep -q "AETHERCORE_PASS 50" source/aetherosq.c
           sha256sum AetherCore1.nds
           cp AetherCore1.nds AetherOS-Pass5.nds
           ls -lh AetherCore1.nds AetherOS-Pass5.nds
