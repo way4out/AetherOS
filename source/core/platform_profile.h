@@ -1,5 +1,6 @@
 #pragma once
 #include <nds.h>
+#include "crossgen_fabric.h"
 
 namespace aether::platform {
 
@@ -22,12 +23,11 @@ struct Capabilities {
     bool wifi;
     bool sd;
     bool extendedRuntime;
+    bool crossGenerationGateway;
+    bool interstellarJamGateway;
 };
 
 Capabilities detect();
-
-// Build-target classification. An .nds build remains a DS-family executable;
-// 3DS and later targets are integration targets requiring their native loader/runtime.
 const char* integrationTarget();
 
 }
