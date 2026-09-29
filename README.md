@@ -1,6 +1,8 @@
-# AetherOS — AetherCore 5 / Nintendo DSi
+# AetherOS — AetherCore 708 / Nintendo DSi
 
-AetherCore 7 is the current production integration line for the AetherOS DSi runtime.
+AetherCore 708 is the current DSi-first product line: a local-first operating environment, universal capability contract, communications hub, media/info workspace, and non-custodial digital-asset interface.
+
+AetherCore 708 is the current production integration line for the AetherOS DSi runtime.
 
 ## One-click build
 
@@ -119,3 +121,30 @@ The Messaging surface provides a local-first free-text composer, touchscreen key
 The UI uses a blue Apple/iPhone contact accent and green Android contact accent as **local contact metadata**. Actual bubble colors inside Apple Messages or an Android messaging client are controlled by those clients and are not settable by the DSi.
 
 The subsystem is intentionally transport-neutral so the same composer can feed an authorized gateway without changing the on-device UI.
+
+
+## Product contract — AetherCore 708
+
+AetherOS is structured as a sellable product platform rather than a claim that one DSi can physically become every modern device. Every capability follows the same contract:
+
+**Identity → capability check → local execution → external gateway when required → acknowledgment/receipt → durable state → recovery.**
+
+### Product layers
+
+1. **Device layer** — DSi buttons, touch, dual screens, local storage, sound and hardware-safe memory limits.
+2. **Runtime layer** — boot-safe supervisor, deterministic navigation, paging, scrolling, recovery and offline operation.
+3. **Application layer** — communications, media/info, files, diagnostics, accessibility, tools and the 79-entry runtime/home surface.
+4. **Gateway layer** — optional authorized phone, network, media, AI, camera, sensor and other external capabilities.
+5. **Trust layer** — explicit LIVE/CACHED/OFFLINE/UNAVAILABLE states; no fabricated delivery or hardware claims.
+6. **Asset layer** — local-only/non-custodial Bitcoin interface architecture; private keys are never required by the UI merely to display balances or market information.
+7. **Commercial layer** — product licensing, hardware bundles, support, gateway integrations and enterprise deployment can be separate offerings.
+
+## Local Bitcoin / treasury interface
+
+AetherCore 708 can expose a **local BTC dashboard** for price, holdings entered by the owner, addresses, transaction history supplied by the owner, and offline portfolio calculations. It is intentionally non-custodial: the DSi does not pretend to be a bank, exchange or carrier wallet. Live market values require an authorized network data source; offline values are labeled cached.
+
+The project does **not** guarantee a $1 trillion valuation, a bullish market outcome, or a particular BTC return. Those are market outcomes rather than product capabilities. As of September 29, 2026, published market reports put BTC around $83.6k–$84.4k, while recent reporting also describes elevated volatility and pullback risk. The product therefore treats BTC as an optional treasury/portfolio data surface rather than promising appreciation.
+
+## Commercial positioning
+
+The $1T+ concept is treated as a long-range market-cap objective, not a present valuation. A credible sellable path is based on measurable adoption, recurring revenue, gateway partnerships, developer ecosystem growth, hardware/software bundles, and transparent unit economics. The repository's CI status is the source of truth for whether a build is actually production-built.
