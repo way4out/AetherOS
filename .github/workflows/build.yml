@@ -108,4 +108,5 @@ jobs:
           if-no-files-found: error
           path: |
             AetherCore1.nds
+            AetherOS-Pass4.8.nds
             AetherCore1-DSi-Public.tar.gz
