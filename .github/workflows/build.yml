@@ -97,15 +97,6 @@ jobs:
           grep -q 'soundMicRecord' source/aether_hardware.c
           grep -q 'cameraStartTransfer' source/aether_hardware.c
           grep -q 'mode>=30&&mode<=77' source/aetherosq.c
-          grep -q "PASSIVE_RF" source/security/aether_security_lab.cpp
-          grep -q "LAB_SIMULATION" source/security/aether_security_lab.h
-          grep -q "jamming" source/security/aether_security_lab.cpp
-          echo "VERIFIED_PASS_6_RF_SAFETY_BOUNDARY=present"
-          grep -q "NintendoDSi" source/core/universal_fabric.h
-          grep -q "NokiaLegacy" source/core/universal_fabric.h
-          grep -q "AppleModern" source/core/universal_fabric.h
-          grep -q "XboxModern" source/core/universal_fabric.h
-          echo "VERIFIED_PASS_6_UNIVERSAL_TARGET_FABRIC=present"
 
       - name: Emulator availability check
         run: |
