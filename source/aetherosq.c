@@ -9,14 +9,14 @@
 #include "config.h"
 #include "aether_hardware.h"
 
-/* AetherOS / AetherCore3 — DSi-native modular cockpit. Production pass 70.
+/* AetherOS / AetherCore5 — DSi-native modular cockpit. Production pass 70.
  * Every home entry maps to an independent implementation.
  * Hardware claims remain honest: external RF/TinySA/camera/AI/phone/QPU
  * capabilities are represented as software workspaces/gateways, not invented
  * stock-DSi hardware.
  */
 #define APP_COUNT 79
-#define AETHERCORE_MAJOR 3
+#define AETHERCORE_MAJOR 5
 #define AETHERCORE_PASS 70
 #define AETHERCORE_TOTAL_PASSES 7
 #define AETHERMOD_MAJOR 9
@@ -142,7 +142,7 @@ static void persistSelection(void){save.selected=(u16)selected;markDirty();}
 static void homeSet(int n){if(n<0)n=APP_COUNT-1;if(n>=APP_COUNT)n=0;selected=n;cursor=n;homePage=n/8;persistSelection();}
 static void page(const char *title){
  consoleSelect(&topConsole);consoleClear();
- printf("\x1b[36;1mAETHEROS 9.0 / DSi BOOT-SAFE\x1b[37;1m\n");
+ printf("\x1b[36;1mAETHERCORE 5 / DSi BOOT-SAFE\x1b[37;1m\n");
  printf("\x1b[35;1m==============================\x1b[37;1m\n");
  printf("%s\n",title);
  printf("DSi:%s  SAFE:%s  AI:%s  WIFI:%s\n",isDSiMode()?"YES":"DS",safeMode?"ON":"OFF",save.ai?"ON":"OFF",save.wireless?"ON":"OFF");
@@ -747,7 +747,7 @@ int legacy_shell_main(void){
   * A bad/slow/unmounted DSi SD must never leave the user staring at black. */
  consoleSelect(&topConsole);
  consoleClear();
- printf("\x1b[36;1mAETHEROS 9.0 / DSi\x1b[37;1m\n");
+ printf("\x1b[36;1mAETHERCORE 5 / DSi\x1b[37;1m\n");
  printf("\x1b[35;1mBOOT-SAFE INITIALIZATION\x1b[37;1m\n");
  printf("DISPLAY: ONLINE\n");
  consoleSelect(&bottomConsole);
@@ -784,7 +784,6 @@ int legacy_shell_main(void){
    swiWaitForVBlank();
    scanKeys();
    frame++;
-   if(frame==2) aetherHardwareInit();
    aether_core3_tick();
    visualPhase=(visualPhase+1)&63;
    energy=(energy+1)%101;
