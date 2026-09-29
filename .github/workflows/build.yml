@@ -59,6 +59,10 @@ jobs:
           grep -q "ThreeDS" source/core/platform_profile.h
           grep -q "AETHER_TARGET_3DS" source/core/platform_profile.cpp
           grep -q "AETHER_TARGET_MODERN_NINTENDO" source/core/platform_profile.cpp
+          grep -q "AETHER_TARGET_WII" source/core/platform_profile.cpp
+          grep -q "AETHER_TARGET_N64" source/core/platform_profile.cpp
+          grep -q "AETHER_TARGET_GAMEBOY" source/core/platform_profile.cpp
+          echo "VERIFIED_PASS_4_8_WII_N64_GAMEBOY_WEB_EXPANSION_TARGETS=present"
           echo "VERIFIED_PASS_4_8_CROSS_GENERATION_TARGETS=present"
           grep -q "AETHERCORE_PASS 48" source/aetherosq.c
           sha256sum AetherCore1.nds
