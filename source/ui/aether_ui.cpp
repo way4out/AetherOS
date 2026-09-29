@@ -20,6 +20,7 @@
 #include "../harmonic/aether_prime_harmonic.h"
 #include "../os/aether_os_fabric.h"
 #include "../core/crossgen_fabric.h"
+#include "../core/pass49_emulation.h"
 #include <nds.h>
 
 namespace aether::ui {
@@ -214,7 +215,7 @@ static void module(const SystemState&s){
     case MOD_DSP:{auto mtr=dsp::metrics();printf("AETHER DSP\nINPUT > FFT128 > FX > OUT\nRMS %u PEAK %u\nBIN %u ENERGY %u\nREAL FFT / PHASE ENGINE",mtr.rms,mtr.peak,mtr.dominantBin,mtr.energy);break;}
     case MOD_LAB:{auto mtr=lab::metrics();printf("AETHER LAB\nSCIENCE + PROCEDURAL\nENTROPY %u\nMONTE %u\nAUTOMATA %u\nPHYSICS %u",mtr.entropy,mtr.monteCarlo,mtr.automata,mtr.physics);break;}
     case MOD_AI:{auto r=ai::result();auto ga=gate::status(gate::GATE_AI);printf("AETHER AI\nLOCAL MICRO-AI + GATEWAY\nCLASS %u CONF %u%%\nPATTERN %lu\nGATEWAY %s", (unsigned)r.classId,r.confidence,(unsigned long)r.pattern,ga.online?"ONLINE":"READY");break;}
-    case MOD_NETWORK: { auto cg=crossgen::state(); printf("NETWORK FABRIC\nWIFI %s\n5G EXTERNAL GATEWAY\nSAT EXTERNAL GATEWAY\nBT EXTERNAL GATEWAY\nSDR EXTERNAL GATEWAY\nQPU EXTERNAL GATEWAY\nCROSS-GEN: PS1-PS6 / XBOX FAMILY\nTARGET: %s\nMODE: REMOTE GATEWAY ONLY\nGATE: %s\nINTERSTELLAR JAM: %s\nAUTHORIZED HARDWARE ONLY",s.networkReady?"LINK":"OFF",crossgen::name(cg.target),crossgen::productionGateOpen(cg)?"OPEN":"LOCKED",cg.jamReady?"READY":"WAIT"); break; }
+    case MOD_NETWORK: { auto cg=crossgen::state(); auto em=emulation::state(); printf("EMULATOR / CROSS-GEN FRONTEND\nTARGET: %s\nMODE: %s\nRENDERER: %s  EPOCH:%u\nWORK RAM BUDGET: %lu KB\nFRAMEBUFFER RESERVE: %lu KB\nREADY:%s AUTH:%s SESSION:%s\n\nTARGET MATRIX\n"); for(int i=0;i<11;i++){ auto t=static_cast<crossgen::Target>(i); printf("%c %-13s %s\\n",i==(int)em.target?">":" ",crossgen::name(t),crossgen::targetAvailable(t)?"PROFILE":"GATEWAY"); } printf("\nNETWORK FABRIC\nWIFI %s  5G/SAT/BT/SDR/QPU = EXTERNAL GATEWAYS\nGATE: %s\nACTIVE INTERFERENCE: DISABLED\nAUTHORIZED HARDWARE ONLY",s.networkReady?"LINK":"OFF",crossgen::productionGateOpen(cg)?"OPEN":"LOCKED",emulation::productionReady(em)?"YES":"NO",em.authenticated?"YES":"NO",em.sessionLive?"YES":"NO"); break; }
     case MOD_PROJECTS: { auto cp=capacity::report(); printf("PROJECT SPACE\nAPRJ / CIRCUITS / SAMPLES\nPRESETS / PLUGINS\nCURRENT: %s\nA SAVE  X FABRIC\nCAPACITY %s",s.projectSaved?"SAVED":"NEW",capacity::status());break;}
     case MOD_RF: printf("RF LAB\nRECEIVE-ONLY / AUTHORIZED\nSPECTRUM / WATERFALL\nPEAKS / RSSI / BANDWIDTH\nSDR/TINYSA GATEWAY\nSAMPLES %lu",(unsigned long)s.rfSamples);break;
     case MOD_MARAUDER:{auto sr=securitylab::report();printf("AETHER MARAUDER / SECURITY LAB\nMODE %s\nCONSENT %s\nTX LOCKED %s\nCRED CAPTURE LOCKED %s\n\nPASSIVE RF: RSSI / CHANNEL / WATERFALL\nAUTHORIZED NET: OWNED/LAB TRAFFIC METADATA\nLAB SIM: SAFE ATTACK-CONCEPT SIMULATION\nGATEWAY HARDEN: PROTOCOL / AUTH / CRC\n\nSAMPLES %lu DEVICES %lu PACKETS %lu\nALERTS %lu LAB RUNS %lu\n\n%s",securitylab::modeName(sr.mode),sr.consent?"YES":"REQUIRED",sr.txLocked?"YES":"NO",sr.credentialCaptureLocked?"YES":"NO",(unsigned long)sr.samples,(unsigned long)sr.devices,(unsigned long)sr.packets,(unsigned long)sr.alerts,(unsigned long)sr.labRuns,securitylab::warning());break;}
