@@ -19,10 +19,16 @@ jobs:
           docker pull skylyrac/blocksds:slim-latest
           docker run --rm -v "$GITHUB_WORKSPACE:/work" -w /work skylyrac/blocksds:slim-latest bash -c 'COMPILER=$(find /opt/wonderful -type f -name arm-none-eabi-gcc | head -1); test -n "$COMPILER"; export PATH="$(dirname "$COMPILER"):$PATH"; arm-none-eabi-gcc --version | head -1; make'
       - name: Validate
-        run: bash ci/validate-aetheros5.sh
+        run: |
+          bash ci/validate-aetheros5.sh
+          test -s AetherCore5.nds
+          cp AetherCore5.nds AetherOS-AetherCore5.nds
+          test -s AetherOS-AetherCore5.nds
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: AetherOS5-DSi-Verified
+          name: AetherCore5-DSi-Verified-Diagnostic
           if-no-files-found: error
-          path: AetherOS5.nds
+          path: |
+            AetherCore5.nds
+            AetherOS-AetherCore5.nds
