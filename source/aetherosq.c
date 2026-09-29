@@ -9,7 +9,7 @@
 #include "config.h"
 #include "aether_hardware.h"
 
-/* AetherOS 9.0 — DSi-native modular cockpit. Pass 5 base production deploy.
+/* AetherOS 9.0 — DSi-native modular cockpit. Pass 6 production deploy.
  * Every home entry maps to an independent implementation.
  * Hardware claims remain honest: external RF/TinySA/camera/AI/phone/QPU
  * capabilities are represented as software workspaces/gateways, not invented
@@ -17,7 +17,7 @@
  */
 #define APP_COUNT 77
 #define AETHERCORE_MAJOR 1
-#define AETHERCORE_PASS 50
+#define AETHERCORE_PASS 60
 #define AETHERCORE_TOTAL_PASSES 7
 #define AETHERMOD_MAJOR 9
 #define AETHERMOD_MINOR 0
