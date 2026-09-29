@@ -1,28 +1,25 @@
-# AetherOS 9.0 — Nintendo DSi
+# AetherCore 1 — Pass 1 / Nintendo DSi
 
-AetherOS 9.0 is the next DSi-native AetherOS build, produced with the real devkitPro/devkitARM/libnds toolchain.
+AetherCore 1 is the first five-pass evolution of the AetherOS 9.0 DSi runtime. Pass 1 adds a gameplay-oriented Nexus front end while preserving the existing 29-module AetherOS workspace.
 
-## Release build
+## Pass 1 surfaces
 
-- Binary: `AetherOS9.nds`
-- DSi unit code: required to be `2`
-- Real NDS header and ARM9 payload checks are enforced in CI.
-- The complete SD bundle contains the NDS plus `data/AetherMod`, including the Geneva corpus.
-
-## Included system surfaces
-
-Quantum Core; YHWH Codex — Geneva 1599 corpus interface; Animal AI signal workspace; passive/authorized Marauder/RF telemetry; TinySA external analyzer workspace; Calculator; DAW/Game Studio; DSP/FFT; Telemetry; AI Home; Network Gateway; Phone Link; Media Studio; Sensor Hub; Data Vault; File Browser; Haptic Lab; Accessibility; Power Lab; Control Lab; Diagnostics; Aether Bot; General Settings; Event Log; Notes; Clock; About; Safety Center.
-
-## 9.0 stabilization
-
-The release keeps the boot-safe display-first initialization, fixes touchscreen horizontal swipe tracking to use the touch-start coordinate, preserves valid saved home selection, upgrades save-format compatibility, and removes repeated SD write tests from the diagnostics render loop. CI also verifies the generated binary rather than accepting an empty or placeholder artifact.
+- AetherCore Nexus world/mission front end
+- Six explorable zones
+- Local progression: XP, levels, streaks, credits and completed missions
+- Local crew/social deck with deterministic NPC presence
+- Systems Gate into the complete AetherOS 9.0 module grid
+- Existing Geneva 1599 Codex corpus interface and all AetherOS9 modules remain intact
+- DSi-safe local-first operation and existing touch/navigation runtime
 
 ## Hardware truth
 
-The stock DSi does not natively contain 5G, satellite communications, SDR, a physical QPU, holographic projection hardware, or a vibration motor. Those capabilities remain software simulations or external-device gateway interfaces.
+Stock DSi hardware does not natively provide 5G, satellite communications, SDR, a physical QPU, holographic projection, or a vibration motor. AetherCore therefore treats unavailable capabilities as software workspaces or external-device gateways rather than pretending the hardware contains them.
 
-RF/Marauder functionality is receive/analyze/telemetry-oriented only; no jamming, deauthentication, credential theft, or unauthorized-access tooling is included.
+The Pass 1 social layer is local-first and does not claim a cloud multiplayer service. RF functionality remains passive/authorized analysis only.
 
-## Installation
+## Build
 
-Extract the public bundle to the DSi SD card, preserving both `apps/AetherMod` and `data/AetherMod`. Launch `AetherOS9.nds` with the DSi-compatible homebrew environment.
+The repository is built with devkitPro/devkitARM/libnds. CI must produce a real `AetherCore1.nds`, validate the DSi unit code and ARM9 payload, and package the complete SD bundle.
+
+Passes 2–5 will expand the game world, deeper system integration, persistence and multiplayer-capable architecture without removing the underlying AetherOS runtime.

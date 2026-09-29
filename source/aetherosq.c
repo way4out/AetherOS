@@ -15,6 +15,9 @@
  * stock-DSi hardware.
  */
 #define APP_COUNT 29
+#define AETHERCORE_MAJOR 1
+#define AETHERCORE_PASS 1
+#define AETHERCORE_TOTAL_PASSES 5
 #define AETHERMOD_MAJOR 9
 #define AETHERMOD_MINOR 0
 #define AETHERMOD_PASS 1
@@ -57,6 +60,8 @@ static int controlCursor=0,controlEvents=0,diagRuns=0,diagErrors=0;
 static int botCursor=0,botRuns=0,settingsCursor=0,eventCursor=0,eventCount=0;
 static int noteCursor=0,clock24=1,safetyCursor=0;
 static int visualPhase=0,energy=0,bootCount=0,diagStorage=0,diagStorageKnown=0;
+static int coreMode=0,coreCursor=0,coreZone=0,coreXp=120,coreLevel=2,coreStreak=3;
+static int coreQuest=0,coreSocial=0,corePulse=0,coreCredits=75,coreWins=0,coreSession=0;
 static char fileNames[16][48],vaultNames[12][48],eventNames[16][48];
 
 static const char *apps[APP_COUNT]={
@@ -326,6 +331,19 @@ static void modSafety(void){page("28 SAFETY CENTER");const char *n[]={"PARENTAL"
  int on=safetyCursor==0?save.parental:safetyCursor==1?save.nsfw:safetyCursor==2?save.unsafe:safetyCursor==3?save.unregulated:safetyCursor==4?save.userContent:safetyCursor==5?save.browser:safetyCursor==6?save.downloads:save.wireless;
  iprintf("CONTROL:%s  STATE:%s\n",n[safetyCursor],on?"ON":"OFF");iprintf("SAFE MODE MASTER:%s\n",safeMode?"ON":"OFF");footer("UP/DOWN CONTROL | A TOGGLE | X SAFE MODE | Y RESET SAFE | B HOME");}
 
+/* AetherCore 1 — Pass 1: gameplay/social shell around the complete AetherOS 9 runtime. */
+static const char *coreZones[]={"NEXUS","QUANTUM FIELD","CODEX GARDEN","SIGNAL RIDGE","CREATOR DECK","SYSTEMS"};
+static const char *coreQuests[]={"CALIBRATE THE CORE","SCAN A SIGNAL","OPEN THE CODEX","BUILD A BEAT","RUN A DIAGNOSTIC","VISIT THE SYSTEMS"};
+static const char *coreAvatars[]={"PIONEER","ENGINEER","SCOUT","CREATOR"};
+static void draw(void);
+static void coreHeader(const char *title){ page(title); consoleSelect(&topConsole); iprintf("\x1b[33;1mAETHERCORE 1 / PASS 1\x1b[37;1m\n"); iprintf("LEVEL %d  XP %d  STREAK %d  CREDITS %d\n",coreLevel,coreXp,coreStreak,coreCredits); }
+static void coreReward(int xp,int credits){ coreXp+=xp; coreCredits+=credits; coreWins++; coreStreak++; if(coreXp>=coreLevel*100){coreXp-=coreLevel*100;coreLevel++;} corePulse=(corePulse+1)%100; markDirty(); feedback(); }
+static void coreWorld(void){ coreHeader("AETHERCORE NEXUS"); iprintf("ZONE: %s   AVATAR: %s\n\n",coreZones[coreZone],coreAvatars[(coreLevel+coreZone)%4]); iprintf("MISSION BOARD\n"); for(int i=0;i<6;i++) iprintf("%c %d  %-22s %s\n",i==coreQuest?'>':' ',i+1,coreQuests[i],i==coreQuest?"READY":"AVAILABLE"); iprintf("\nLOCAL CREW: %d   CORE WINS: %d\n",coreSocial,coreWins); graph("WORLD ",coreZone*17+corePulse); iprintf("A=accept quest  X=crew  Y=systems  L/R=zone\n"); footer("A QUEST | X CREW | Y SYSTEMS | B NEXUS"); }
+static void coreSocialView(void){ coreHeader("AETHERCORE CREW"); iprintf("LOCAL SOCIAL DECK / NO CLOUD CLAIM\n\n"); iprintf("CREW SIGNAL: %s\n",coreSocial?"ACTIVE":"DISCOVERY"); iprintf("Players are represented locally until a supported network service is added.\n\n"); iprintf("[01] YOU      LVL %d  XP %d\n",coreLevel,coreXp); iprintf("[02] NOVA     LVL 4   READY\n[03] ORBIT    LVL 3   READY\n[04] VECTOR   LVL 5   READY\n"); iprintf("\nA=send local pulse  X=refresh crew  Y=world\n"); footer("A PULSE | X REFRESH | Y WORLD | B NEXUS"); }
+static void coreSystems(void){ coreHeader("AETHERCORE SYSTEMS GATE"); iprintf("THE COMPLETE AETHEROS 9.0 MODULE GRID REMAINS AVAILABLE.\n\n"); iprintf("29 SYSTEMS / INDIVIDUAL RUNTIMES / GENEVA 1599\n"); iprintf("QUANTUM  CODEX  ANIMAL  RF  TinySA  CALC  DAW  DSP\n"); iprintf("TELEMETRY  AI  NETWORK  PHONE  MEDIA  SENSOR  VAULT\n"); iprintf("FILES  HAPTIC  ACCESS  POWER  CONTROL  DIAGNOSTICS\n"); iprintf("BOT  SETTINGS  EVENTS  NOTES  CLOCK  ABOUT  SAFETY\n"); footer("A MODULE GRID | X WORLD | Y AETHEROS HOME | B NEXUS"); }
+static void coreInput(u32 d){ if(d&KEY_B){coreMode=0;draw();return;} if(coreMode==0){ if(d&KEY_UP){coreQuest=(coreQuest+5)%6;draw();} if(d&KEY_DOWN){coreQuest=(coreQuest+1)%6;draw();} if(d&KEY_LEFT){coreZone=(coreZone+5)%6;draw();} if(d&KEY_RIGHT){coreZone=(coreZone+1)%6;draw();} if(d&KEY_A){coreReward(20+coreQuest*5,5+coreZone);coreSession++;draw();} if(d&KEY_X){coreMode=1;draw();} if(d&KEY_Y){coreMode=2;draw();} }else if(coreMode==1){ if(d&KEY_A){coreSocial++;coreReward(5,1);draw();} if(d&KEY_X){coreSocial=(coreSocial+1)%9;draw();} if(d&KEY_Y){coreMode=0;draw();} }else{ if(d&KEY_A||d&KEY_Y){mode=0;coreMode=0;draw();} if(d&KEY_X){coreMode=0;draw();} } }
+static void coreFront(void){ if(coreMode==0)coreWorld(); else if(coreMode==1)coreSocialView(); else coreSystems(); }
+
 static void home(void){
  page("00 AETHER HOME");consoleSelect(&bottomConsole);consoleClear();
  int last=homePage*8+8; if(last>APP_COUNT) last=APP_COUNT; iprintf("PAGE %d/%d  MODULES %02d-%02d\n\n",homePage+1,HOME_PAGES,homePage*8+1,last);
@@ -342,7 +360,7 @@ static void draw(void){
  case 16:modFiles();break;case 17:modHaptic();break;case 18:modAccess();break;case 19:modPower();break;
  case 20:modControl();break;case 21:modDiagnostics();break;case 22:modBot();break;case 23:modSettings();break;
  case 24:modEvents();break;case 25:modNotes();break;case 26:modClock();break;case 27:modAbout();break;
- case 28:modSafety();break;default:mode=0;break;
+ case 28:modSafety();break;case 29:coreFront();break;default:mode=0;break;
  }
 }
 static void moduleInput(u32 d){
@@ -382,6 +400,7 @@ static void moduleInput(u32 d){
 }
 static void input(void){
  u32 d=keysDown()|keysDownRepeat();touchDown=0;touchMap(&d);
+ if(mode==29){coreInput(d);return;}
  if(mode==0){
    if(d&KEY_UP){homeSet(selected==0?APP_COUNT-1:selected-1);draw();}
    if(d&KEY_DOWN){homeSet((selected+1)%APP_COUNT);draw();}
@@ -428,6 +447,7 @@ int legacy_shell_main(void){
    consoleSelect(&bottomConsole);
    iprintf("Continuing without storage.\n");
  }
+ mode=29;
  draw();
 
  while(1){
