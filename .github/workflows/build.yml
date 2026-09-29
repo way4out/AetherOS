@@ -18,14 +18,14 @@ jobs:
         run: |
           set -eu
           echo "BLOCKSDS=$BLOCKSDS"
-          "$BLOCKSDS/tools/arm-none-eabi/bin/arm-none-eabi-gcc" --version | head -1
+          arm-none-eabi-gcc --version | head -1
           test -f "$BLOCKSDS/sys/crts/ds_arm9.ld"
           test -f "$BLOCKSDS/libs/libnds/include/nds.h"
 
       - name: Clean and build real NDS
         run: |
           set -eu
-          export PATH="$BLOCKSDS/tools/arm-none-eabi/bin:$PATH"
+          export PATH="/opt/wonderful/toolchain/gcc-arm-none-eabi/bin:/opt/wonderful/bin:$PATH"
           make clean
           make
           test -s AetherCore1.nds
