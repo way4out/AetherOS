@@ -18,3 +18,9 @@ grep -Fq '#define APP_COUNT 79' source/aetherosq.c
 grep -Fq 'mode>=30&&mode<=77' source/aetherosq.c
 grep -Fq '"CAMERA & MIC"' source/aetherosq.c
 grep -Fq 'modCamera' source/aetherosq.c
+# Front-end interaction gates: every home entry is addressable, the entrypoint is linked,
+# and the DSi touchscreen home rows use the actual bottom-screen layout.
+grep -Fq 'int legacy_shell_main(void)' source/aetherosq.c
+grep -Fq 'int r=((int)t.py-16)/12' source/aetherosq.c
+grep -Fq 'if(!touchMoved&&t.py>=16&&t.py<112)' source/aetherosq.c
+test "$(grep -o 'static void mod[A-Za-z0-9_]*' source/aetherosq.c | wc -l)" -ge 29
