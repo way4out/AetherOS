@@ -7,6 +7,7 @@
 #include <time.h>
 #include <dirent.h>
 #include "config.h"
+#include "aether_hardware.h"
 
 /* AetherOS 9.0 — DSi-native modular cockpit.
  * Every home entry maps to an independent implementation.
@@ -16,7 +17,7 @@
  */
 #define APP_COUNT 77
 #define AETHERCORE_MAJOR 1
-#define AETHERCORE_PASS 3
+#define AETHERCORE_PASS 44
 #define AETHERCORE_TOTAL_PASSES 5
 #define AETHERMOD_MAJOR 9
 #define AETHERMOD_MINOR 0
@@ -70,6 +71,7 @@ static int execMastery[48]={0};
 static int execStreak[48]={0};
 static int execReward[48]={0};
 static int execAction[48]={0};
+static int hardwareActionCount=0;
 static char fileNames[16][48],vaultNames[12][48],eventNames[16][48];
 
 static const char *apps[APP_COUNT]={
@@ -102,6 +104,14 @@ static u32 hash32(const void *p,size_t n){
  while(n--){h^=*b++;h*=16777619u;} return h;
 }
 static void markDirty(void){dirty=1;}
+static void hardwareStatusLine(void){
+ iprintf("CAM:%s/%s PREV:%d CAP:%d MIC:%s/%s PEAK:%d RMS:%d\\n",isDSiMode()?(aetherCameraAvailable()?"READY":"FAIL"):"DS-MODE",aetherCameraDevice()==CAMERA_INNER?"INNER":"OUTER",aetherCameraPreviewCount(),aetherCameraCaptureCount(),aetherMicAvailable()?"READY":"FAIL",aetherMicActive()?"LIVE":"OFF",aetherMicPeak(),aetherMicRms());
+}
+static void hardwareAction(u32 d){
+ if((d&KEY_START)&&aetherCameraAvailable()){if(aetherCameraPreview())hardwareActionCount++;}
+ if((d&KEY_SELECT)&&aetherMicAvailable()){if(aetherMicStartStop())hardwareActionCount++;}
+ if((d&KEY_L)&&(d&KEY_R)&&aetherCameraAvailable())cameraSelect(aetherCameraDevice()==CAMERA_INNER?CAMERA_OUTER:CAMERA_INNER);
+}
 static int storageOk(void){ FILE *f=fopen("fat:/data/AetherMod/.aether_test","wb"); if(!f) return 0; fputs("OK",f); fclose(f); remove("fat:/data/AetherMod/.aether_test"); return 1; }
 static void ensureDirs(void){mkdir("fat:/data",0777);mkdir("fat:/data/AetherMod",0777);}
 static void saveState(void){
@@ -473,7 +483,7 @@ static const char *coreZones[]={"NEXUS","QUANTUM FIELD","CODEX GARDEN","SIGNAL R
 static const char *coreQuests[]={"CALIBRATE THE CORE","SCAN A SIGNAL","OPEN THE CODEX","BUILD A BEAT","RUN A DIAGNOSTIC","VISIT THE SYSTEMS"};
 static const char *coreAvatars[]={"PIONEER","ENGINEER","SCOUT","CREATOR"};
 static void draw(void);
-static void coreHeader(const char *title){ page(title); consoleSelect(&topConsole); iprintf("\x1b[33;1mAETHERCORE 1 / PASS 3\x1b[37;1m\n"); iprintf("LEVEL %d  XP %d  STREAK %d  CREDITS %d\n",coreLevel,coreXp,coreStreak,coreCredits); }
+static void coreHeader(const char *title){ page(title); consoleSelect(&topConsole); iprintf("\x1b[33;1mAETHERCORE 1 / PASS 4.4\x1b[37;1m\n"); iprintf("LEVEL %d  XP %d  STREAK %d  CREDITS %d\n",coreLevel,coreXp,coreStreak,coreCredits); }
 static void coreReward(int xp,int credits){ coreXp+=xp; coreCredits+=credits; coreWins++; coreStreak++; if(coreXp>=coreLevel*100){coreXp-=coreLevel*100;coreLevel++;} corePulse=(corePulse+1)%100; markDirty(); feedback(); }
 static void coreWorld(void){
  coreHeader("AETHERCORE NEXUS");
@@ -542,8 +552,9 @@ static void draw(void){
 }
 static void moduleInput(u32 d){
  int changed=0;
- if(mode>=30&&mode<=48){execSystemInput(mode-30,d);return;}
  if(d&KEY_B){back();return;}
+ hardwareAction(d);
+ if(mode>=30&&mode<=77){execSystemInput(mode-30,d);return;}
  switch(mode){
  case 1:if(d&KEY_UP){qState=(qState+3)%4;changed=1;}if(d&KEY_DOWN){qState=(qState+1)%4;changed=1;}if(d&KEY_A){qShots++;qState=(qState+1)%4;changed=1;}if(d&KEY_X){qState=(qState+1)%4;changed=1;}if(d&KEY_Y){qState=0;changed=1;}break;
  case 2:if(d&KEY_UP){if(codexPage)codexPage--;changed=1;}if(d&KEY_DOWN){codexPage++;if(codexPage>4095)codexPage=4095;changed=1;}if(d&KEY_LEFT){codexBook=(codexBook+65)%66;codexPage=0;changed=1;}if(d&KEY_RIGHT){codexBook=(codexBook+1)%66;codexPage=0;changed=1;}if(d&KEY_A){codexSearch=!codexSearch;changed=1;}if(d&KEY_X){codexSearch=!codexSearch;changed=1;}if(d&KEY_Y){codexBook=0;codexPage=0;changed=1;}break;
@@ -578,6 +589,7 @@ static void moduleInput(u32 d){
 }
 static void input(void){
  u32 d=keysDown()|keysDownRepeat();touchDown=0;touchMap(&d);
+ hardwareAction(d);
  if(mode==29){coreInput(d);return;}
  if(mode==0){
    if(d&KEY_UP){homeSet(selected==0?APP_COUNT-1:selected-1);draw();}
@@ -596,7 +608,7 @@ int legacy_shell_main(void){
  vramDefault();
  consoleInit(&topConsole,0,BgType_Text4bpp,BgSize_T_256x256,22,3,true,true);
  consoleInit(&bottomConsole,0,BgType_Text4bpp,BgSize_T_256x256,22,3,false,true);
- soundDisable();
+ soundEnable();
 
  /* Boot-critical rule: the display must be live before any SD/FAT work.
   * A bad/slow/unmounted DSi SD must never leave the user staring at black. */
@@ -612,6 +624,7 @@ int legacy_shell_main(void){
  swiWaitForVBlank();
 
  int fatReady=fatInitDefault();
+ aetherHardwareInit();
  if(fatReady){
    loadState();
    save.launches++;
@@ -648,4 +661,4 @@ int legacy_shell_main(void){
  return 0;
 }
 
-/* AetherOS 9.0 CI release: build/header/package verification is mandatory. */
+/* AetherCore 1 Pass 4.4: DSi camera + microphone hardware integration and 77-system input coverage. */
