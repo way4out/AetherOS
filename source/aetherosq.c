@@ -560,6 +560,8 @@ static void coreInput(u32 d){
 }
 static void coreFront(void){ if(coreMode==0)coreWorld(); else if(coreMode==1)coreSocialView(); else if(coreMode==2)coreSystems(); else if(coreMode==3)coreAchievementsView(); else coreEventView(); }
 
+static void draw(void);
+
 /* Universal blank-page recovery arcade: asset-free, deterministic, and always escapable. */
 static int arcadeGame=0, arcadeX=12, arcadeY=7, arcadeScore=0, arcadeTickCount=0, arcadePaused=0;
 static int arcadeBallX=12, arcadeBallY=7, arcadeVX=1, arcadeVY=1, arcadePaddle=12;
