@@ -757,7 +757,9 @@ int legacy_shell_main(void){
  swiWaitForVBlank();
 
  int fatReady=fatInitDefault();
- aetherHardwareInit();
+ /* FIRST-FRAME SAFETY: render the home UI before optional hardware probes.
+  * A camera/microphone driver must never be allowed to prevent the display
+  * from reaching the deterministic Home screen on a real DSi. */
  if(fatReady){
    loadState();
    save.launches++;
@@ -771,14 +773,18 @@ int legacy_shell_main(void){
    consoleSelect(&bottomConsole);
    printf("Continuing without storage.\n");
  }
- /* Always land on the deterministic home renderer after boot. AetherCore remains a dedicated module. */
+ /* Always land on the deterministic home renderer after boot. AetherCore remains a dedicated module.
+  * Hardware probing is deliberately deferred until the UI has already rendered. */
  mode=0;
+ draw();
+ swiWaitForVBlank();
  draw();
 
  while(1){
    swiWaitForVBlank();
    scanKeys();
    frame++;
+   if(frame==2) aetherHardwareInit();
    aether_core3_tick();
    visualPhase=(visualPhase+1)&63;
    energy=(energy+1)%101;
