@@ -71,24 +71,24 @@ jobs:
           grep -q "emulation::init" source/core/aether_core.cpp
           grep -q "emulation::tick" source/core/aether_core.cpp
           echo "VERIFIED_PASS_4_9_EMULATION_FACADE=present"
-          grep -q "AETHERCORE_PASS 50" source/aetherosq.c
+          grep -q "AETHERCORE_PASS 60" source/aetherosq.c
           echo "VERIFIED_PASS_4_9_RUNTIME_MARKER=present"
-          echo "VERIFIED_PASS_5_BASE_PRODUCTION_DEPLOY=present"
-          grep -q "AETHERCORE_PASS 50" source/aetherosq.c
+          echo "VERIFIED_PASS_6_BASE_PRODUCTION_DEPLOY=present"
+          grep -q "AETHERCORE_PASS 60" source/aetherosq.c
           sha256sum AetherCore1.nds
-          cp AetherCore1.nds AetherOS-Pass5.nds
-          ls -lh AetherCore1.nds AetherOS-Pass5.nds
+          cp AetherCore1.nds AetherOS-Pass6.nds
+          ls -lh AetherCore1.nds AetherOS-Pass6.nds
 
       - name: Static source sanity
         run: |
           set -eu
           grep -q 'AETHERCORE_MAJOR 1' source/aetherosq.c
-          grep -q 'AETHERCORE_PASS 50' source/aetherosq.c
+          grep -q 'AETHERCORE_PASS 60' source/aetherosq.c
           grep -q 'AETHERMOD_MAJOR 9' source/aetherosq.c
           grep -q 'AETHER_SAVE_VERSION 7' source/aetherosq.c
           grep -q 'touchStartX' source/aetherosq.c
           grep -q 'diagStorageKnown' source/aetherosq.c
-          grep -q 'AETHERCORE 1 / PASS 5' source/aetherosq.c
+          grep -q 'AETHERCORE 1 / PASS 6' source/aetherosq.c
           grep -q '#define APP_COUNT 77' source/aetherosq.c
           grep -q 'execSystems\[48\]' source/aetherosq.c
           grep -q 'EXECUTIVE SYSTEM' source/aetherosq.c
@@ -97,6 +97,15 @@ jobs:
           grep -q 'soundMicRecord' source/aether_hardware.c
           grep -q 'cameraStartTransfer' source/aether_hardware.c
           grep -q 'mode>=30&&mode<=77' source/aetherosq.c
+          grep -q "PASSIVE RF" source/security/aether_security_lab.cpp
+          grep -q "LAB_SIMULATION" source/security/aether_security_lab.h
+          grep -q "jamming" source/security/aether_security_lab.cpp
+          echo "VERIFIED_PASS_6_RF_SAFETY_BOUNDARY=present"
+          grep -q "NintendoDSi" source/core/universal_fabric.h
+          grep -q "NokiaLegacy" source/core/universal_fabric.h
+          grep -q "AppleModern" source/core/universal_fabric.h
+          grep -q "XboxModern" source/core/universal_fabric.h
+          echo "VERIFIED_PASS_6_UNIVERSAL_TARGET_FABRIC=present"
 
       - name: Emulator availability check
         run: |
@@ -110,14 +119,14 @@ jobs:
           cp -r data/AetherMod/. deploy/data/AetherMod/
           cp AETHERMOD.md deploy/AETHERMOD.md
           printf '%s\n' '4GB SD INSTALL: copy apps/AetherMod and data/AetherMod to the SD root, then launch apps/AetherMod/AetherCore1.nds.' > deploy/INSTALL.txt
-          cp AetherCore1.nds deploy/AetherOS-Pass5.nds
-          tar -czf AetherCore1-Pass5-DSi-Public.tar.gz -C deploy .
+          cp AetherCore1.nds deploy/AetherOS-Pass6.nds
+          tar -czf AetherCore1-Pass6-DSi-Public.tar.gz -C deploy .
 
       - uses: actions/upload-artifact@v4
         with:
-          name: AetherCore1-Pass5-DSi-Public
+          name: AetherCore1-Pass6-DSi-Public
           if-no-files-found: error
           path: |
             AetherCore1.nds
-            AetherOS-Pass5.nds
-            AetherCore1-Pass5-DSi-Public.tar.gz
+            AetherOS-Pass6.nds
+            AetherCore1-Pass6-DSi-Public.tar.gz
