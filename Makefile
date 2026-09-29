@@ -1,54 +1,88 @@
-.SUFFIXES:
-
-ifeq ($(strip $(DEVKITARM)),)
-$(error "Please set DEVKITARM in your environment. export DEVKITARM=<path to>devkitARM")
+ifeq ($(strip $(BLOCKSDS)),)
+$(error "Environment variable BLOCKSDS not found")
 endif
 
+NAME := AetherCore1
 GAME_TITLE := AetherCore1
 GAME_SUBTITLE1 := DSi AetherCore 1
 GAME_SUBTITLE2 := AetherOS 9 Runtime
-include $(DEVKITARM)/ds_rules
 
-TARGET := AetherCore1
-BUILD := build
-SOURCES := source
-INCLUDES := include
+SOURCEDIRS := source
+INCLUDEDIRS := include
+GFXDIRS :=
+BINDIRS := data
+AUDIODIRS :=
+NITROFATDIR :=
+
+DEFINES := -D__NDS__ -DARM9
+LIBS := -lnds9 -lc
+LIBDIRS := $(BLOCKSDS)/libs/libnds $(BLOCKSDS)/libs/libc9
+
+BUILDDIR := build
+ELF := $(BUILDDIR)/$(NAME).elf
+MAP := $(BUILDDIR)/$(NAME).map
+ROM := $(NAME).nds
+
+PREFIX := arm-none-eabi-
+CC := $(PREFIX)gcc
+CXX := $(PREFIX)g++
+OBJDUMP := $(PREFIX)objdump
+MKDIR := mkdir
+RM := rm -rf
+
+ifneq ($(GFXDIRS),)
+SOURCES_PNG := $(shell find -L $(GFXDIRS) -name "*.png")
+INCLUDEDIRS += $(addprefix $(BUILDDIR)/,$(GFXDIRS))
+endif
+ifneq ($(BINDIRS),)
+SOURCES_BIN := $(shell find -L $(BINDIRS) -name "*.bin")
+INCLUDEDIRS += $(addprefix $(BUILDDIR)/,$(BINDIRS))
+endif
+SOURCES_S := $(shell find -L $(SOURCEDIRS) -name "*.s")
+SOURCES_C := $(shell find -L $(SOURCEDIRS) -name "*.c")
+SOURCES_CPP := $(shell find -L $(SOURCEDIRS) -name "*.cpp")
 
 ARCH := -march=armv5te -mtune=arm946e-s
-CFLAGS := -g -Wall -Wextra -Wno-error=implicit-function-declaration -O2 -ffunction-sections -fdata-sections $(ARCH)
-CFLAGS += $(INCLUDE) -DARM9
-CXXFLAGS := $(CFLAGS) -fno-rtti -fno-exceptions
-ASFLAGS := -g $(ARCH)
-LDFLAGS = -specs=ds_arm9.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
-
-LIBS := -lfat -ldswifi9 -lnds9
-LIBDIRS := $(LIBNDS)
-
-ifneq ($(BUILD),$(notdir $(CURDIR)))
-export OUTPUT := $(CURDIR)/$(TARGET)
-export VPATH := $(shell find $(SOURCES) -type d -print | sed "s|^|$(CURDIR)/|")
-export DEPSDIR := $(CURDIR)/$(BUILD)
-CFILES := $(shell find $(SOURCES) -type f -name '*.c' -printf '%f\n')
-CPPFILES := $(shell find $(SOURCES) -type f -name '*.cpp' -printf '%f\n')
-SFILES := $(shell find $(SOURCES) -type f -name '*.s' -printf '%f\n')
-ifeq ($(strip $(CPPFILES)),)
-export LD := $(CC)
+WARNFLAGS := -Wall
+ifeq ($(SOURCES_CPP),)
+LD := $(CC)
 else
-export LD := $(CXX)
+LD := $(CXX)
 endif
-export OFILES := $(CPPFILES:.cpp=.o) $(CFILES:.c=.o) $(SFILES:.s=.o)
-export INCLUDE := $(foreach dir,$(INCLUDES),-iquote $(CURDIR)/$(dir)) $(foreach dir,$(LIBDIRS),-I$(dir)/include) -I$(CURDIR)/$(BUILD)
-export LIBPATHS := $(foreach dir,$(LIBDIRS),-L$(dir)/lib)
-.PHONY: $(BUILD) clean
-$(BUILD):
-	@mkdir -p $@
-	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
+
+INCLUDEFLAGS := $(foreach path,$(INCLUDEDIRS),-I$(path)) $(foreach path,$(LIBDIRS),-I$(path)/include)
+LIBDIRSFLAGS := $(foreach path,$(LIBDIRS),-L$(path)/lib)
+CFLAGS := -std=gnu11 $(WARNFLAGS) $(DEFINES) $(ARCH) -mthumb -mthumb-interwork $(INCLUDEFLAGS) -O2 -ffunction-sections -fdata-sections -fomit-frame-pointer
+CXXFLAGS := -std=gnu++14 $(WARNFLAGS) $(DEFINES) $(ARCH) -mthumb -mthumb-interwork $(INCLUDEFLAGS) -O2 -ffunction-sections -fdata-sections -fno-exceptions -fno-rtti -fomit-frame-pointer
+LDFLAGS := -mthumb -mthumb-interwork $(LIBDIRSFLAGS) -Wl,-Map,$(MAP) -Wl,--gc-sections -nostdlib -T$(BLOCKSDS)/sys/crts/ds_arm9.mem -T$(BLOCKSDS)/sys/crts/ds_arm9.ld -Wl,--start-group $(LIBS) -lgcc -Wl,--end-group
+
+OBJS_SOURCES := $(addsuffix .o,$(addprefix $(BUILDDIR)/,$(SOURCES_S))) $(addsuffix .o,$(addprefix $(BUILDDIR)/,$(SOURCES_C))) $(addsuffix .o,$(addprefix $(BUILDDIR)/,$(SOURCES_CPP)))
+DEPS := $(OBJS_SOURCES:.o=.d)
+
+.PHONY: all clean
+all: $(ROM)
+
+$(ROM): $(ELF)
+	@echo "  NDSTOOL $@"
+	$(V)$(BLOCKSDS)/tools/ndstool/ndstool -c $@ -7 $(BLOCKSDS)/sys/default_arm7/arm7.elf -9 $(ELF) "$(GAME_TITLE);$(GAME_SUBTITLE1);$(GAME_SUBTITLE2)"
+
+$(ELF): $(OBJS_SOURCES)
+	@echo "  LD      $@"
+	$(V)$(LD) -o $@ $(OBJS_SOURCES) $(BLOCKSDS)/sys/crts/ds_arm9_crt0.o $(LDFLAGS)
+
+$(BUILDDIR)/%.s.o: %.s
+	@$(MKDIR) -p $(@D)
+	$(V)$(CC) $(CFLAGS) -MMD -MP -c -o $@ $<
+
+$(BUILDDIR)/%.c.o: %.c
+	@$(MKDIR) -p $(@D)
+	$(V)$(CC) $(CFLAGS) -MMD -MP -c -o $@ $<
+
+$(BUILDDIR)/%.cpp.o: %.cpp
+	@$(MKDIR) -p $(@D)
+	$(V)$(CXX) $(CXXFLAGS) -MMD -MP -c -o $@ $<
+
 clean:
-	@echo clean ...
-	@rm -fr $(BUILD) $(TARGET).elf $(TARGET).nds $(TARGET).ds.gba
-else
-DEPENDS := $(OFILES:.o=.d)
-$(OUTPUT).nds: $(OUTPUT).elf
-$(OUTPUT).elf: $(OFILES)
--include $(DEPENDS)
-endif
+	@$(RM) $(ROM) $(BUILDDIR)
+
+-include $(DEPS)
