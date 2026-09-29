@@ -22,6 +22,7 @@ BUILDDIR := build
 ELF := $(BUILDDIR)/$(NAME).elf
 MAP := $(BUILDDIR)/$(NAME).map
 ROM := $(NAME).nds
+GAME_ICON := $(shell find $(BLOCKSDS) -type f \( -name "default_icon.bmp" -o -name "icon.bmp" \) | head -1)
 ARM7ELF := $(BLOCKSDS)/sys/arm7/main_core/arm7_dswifi.elf
 
 PREFIX := arm-none-eabi-
@@ -65,7 +66,7 @@ all: $(ROM)
 
 $(ROM): $(ELF)
 	@echo "  NDSTOOL $@"
-	$(V)$(BLOCKSDS)/tools/ndstool/ndstool -c $@ -7 $(ARM7ELF) -9 $(ELF) -b $(BLOCKSDS)/sys/default_icon.bmp "$(GAME_TITLE);$(GAME_SUBTITLE1);$(GAME_SUBTITLE2)"
+	$(V)$(BLOCKSDS)/tools/ndstool/ndstool -c $@ -7 $(ARM7ELF) -9 $(ELF) -b $(GAME_ICON) "$(GAME_TITLE);$(GAME_SUBTITLE1);$(GAME_SUBTITLE2)"
 
 $(ELF): $(OBJS_SOURCES)
 	@echo "  LD      $@"
