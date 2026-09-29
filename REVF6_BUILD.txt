@@ -1,1 +1,2 @@
 AETHEROS Rev:F6 build verification marker.
+Revalidated build trigger: 2026-09-29T21:03Z
