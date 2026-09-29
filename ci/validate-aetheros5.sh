@@ -29,6 +29,8 @@ test "$(grep -o 'static void mod[A-Za-z0-9_]*' source/aetherosq.c | wc -l)" -ge 
 # AetherCore7 messaging gates
 grep -Fq 'aether_messaging_init' source/aetherosq.c
 grep -Fq 'aether_messaging_send' source/aetherosq.c
+grep -Fq 'MEDIA / GLOBAL HUB' source/aetherosq.c
+grep -Fq 'mediaLegalOnly' source/aetherosq.c
 grep -Fq 'mode==77' source/aetherosq.c
 test -s source/messaging/aether_messaging.cpp
 test -s source/messaging/aether_messaging.h
