@@ -582,7 +582,7 @@ static void arcadeHeader(const char *name){
 static void arcadeRender(void){
   arcadeHeader(arcadeGame==0?"ESCAPE RUNNER":arcadeGame==1?"STAR DODGE":arcadeGame==2?"SNAKE GRID":arcadeGame==3?"PADDLE BOUNCE":"BRICK FIELD");
   if(arcadeGame==0){
-    for(int y=0;y<12;y++){for(int x=0;x<24;x++)printf(x==arcadeX&&y==arcadeY?"@":((x+y+arcadeTickCount)%11==0?"*":".") ;printf("\n");}
+    for(int y=0;y<12;y++){for(int x=0;x<24;x++)printf("%s",x==arcadeX&&y==arcadeY?"@":((x+y+arcadeTickCount)%11==0?"*":"."));printf("\n");}
   }else if(arcadeGame==1){
     for(int y=0;y<12;y++){for(int x=0;x<24;x++){char c='.';if(x==arcadeX&&y==arcadeY)c='A';else if(((x*7+y*13+arcadeTickCount*3)%37)==0)c='*';printf("%c",c);}printf("\n");}
   }else if(arcadeGame==2){
