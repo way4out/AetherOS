@@ -15,7 +15,7 @@
  * capabilities are represented as software workspaces/gateways, not invented
  * stock-DSi hardware.
  */
-#define APP_COUNT 77
+#define APP_COUNT 78
 #define AETHERCORE_MAJOR 3
 #define AETHERCORE_PASS 70
 #define AETHERCORE_TOTAL_PASSES 7
@@ -91,7 +91,7 @@ static const char *apps[APP_COUNT]={
  "COMMUNITY COMMAND","PARTNERSHIP DESK","SERVICE COMMAND","SUPPORT COMMAND","LOGISTICS COMMAND",
  "ASSET COMMAND","DATA COMMAND","INSIGHTS DESK","PERFORMANCE COMMAND","COMPLIANCE DESK",
  "POLICY CENTER","CHANGE COMMAND","RELEASE COMMAND","TEST COMMAND","RELIABILITY CENTER",
- "CONTINUITY DESK","GROWTH COMMAND","IMPACT CENTER","AETHERCORE CONTROL"
+ "CONTINUITY DESK","GROWTH COMMAND","IMPACT CENTER","AETHERCORE CONTROL","CAMERA & MIC"
 };
 static const char *animalNames[]={"Horse","Dog","Cat","Cow","Bison","Camel","Zebra","Ostrich","Bird","Wolf","Fox","Deer","Bear","Big Cat","Other"};
 static const char *codexBooks[66]={
@@ -148,7 +148,12 @@ static void page(const char *title){
  printf("DSi:%s  SAFE:%s  AI:%s  WIFI:%s\n",isDSiMode()?"YES":"DS",safeMode?"ON":"OFF",save.ai?"ON":"OFF",save.wireless?"ON":"OFF");
  printf("FRAME:%d  ENERGY:%d%%  ACTIONS:%d\n\n",frame,energy,actionCount);
 }
-static void footer(const char *s){consoleSelect(&bottomConsole);printf("\n%s\n",s);}
+static void footer(const char *s){
+ consoleSelect(&bottomConsole);
+ printf("\nTOUCH: tap corners=A/B/X/Y | edges=L/R | center=UP/DOWN | swipe=navigate\n");
+ printf("START=CAM PREVIEW | SELECT=MIC | L+R=CAMERA SWITCH\n");
+ printf("%s\n",s);
+}
 static void feedback(void){actionCount++;energy=(energy+17)%101;if(save.sound)soundPlayPSG(DutyCycle_50,440,80,64);}
 static void saveIfDirty(void){if(dirty && (frame%30)==0)saveState();}
 static void graph(const char *label,int seed){
@@ -355,6 +360,22 @@ static void modClock(void){page("26 CLOCK / TIME");time_t now=time(NULL);struct 
 /* 27 — About */
 static void modAbout(void){page("27 ABOUT");printf("AETHEROS 9.0 / DSi BOOT-SAFE\n");printf("29 INDIVIDUAL MODULE IMPLEMENTATIONS\n");printf("Geneva 1599 corpus: SD/OFFLINE\n");printf("Universal touch: TAP / SWIPE / DRAG\n");printf("Local-first, bounded, recoverable runtime.\n");footer("B HOME");}
 
+/* 29 — DSi Camera & Microphone */
+static void modCamera(void){
+ page("29 DSi CAMERA / MICROPHONE");
+ printf("DSi CAMERA:%s  DEVICE:%s  PREV:%d  CAP:%d\n",
+        isDSiMode()?(aetherCameraAvailable()?"READY":"UNAVAILABLE"):"DS MODE",
+        aetherCameraDevice()==CAMERA_INNER?"INNER":"OUTER",
+        aetherCameraPreviewCount(),aetherCameraCaptureCount());
+ printf("MIC:%s  STATE:%s  PEAK:%d  RMS:%d\n",
+        aetherMicAvailable()?"READY":"UNAVAILABLE",
+        aetherMicActive()?"LIVE":"OFF",aetherMicPeak(),aetherMicRms());
+ printf("\nA PREVIEW   X FULL CAPTURE   Y MIC ON/OFF\n");
+ printf("L/R SELECT CAMERA   START PREVIEW   SELECT MIC\n");
+ printf("Images require writable SD storage. Hardware is DSi-only.\n");
+ footer("A PREVIEW | X CAPTURE | Y MIC | L/R CAMERA | B HOME");
+}
+
 /* 28 — Safety Center */
 static void modSafety(void){page("28 SAFETY CENTER");const char *n[]={"PARENTAL","NSFW FILTER","UNSAFE FILTER","UNREGULATED","USER CONTENT","BROWSER","DOWNLOADS","WIRELESS"};
  int on=safetyCursor==0?save.parental:safetyCursor==1?save.nsfw:safetyCursor==2?save.unsafe:safetyCursor==3?save.unregulated:safetyCursor==4?save.userContent:safetyCursor==5?save.browser:safetyCursor==6?save.downloads:save.wireless;
@@ -490,7 +511,7 @@ static const char *coreZones[]={"NEXUS","QUANTUM FIELD","CODEX GARDEN","SIGNAL R
 static const char *coreQuests[]={"CALIBRATE THE CORE","SCAN A SIGNAL","OPEN THE CODEX","BUILD A BEAT","RUN A DIAGNOSTIC","VISIT THE SYSTEMS"};
 static const char *coreAvatars[]={"PIONEER","ENGINEER","SCOUT","CREATOR"};
 static void draw(void);
-static void coreHeader(const char *title){ page(title); consoleSelect(&topConsole); printf("\x1b[33;1mAETHERCORE 1 / PASS 5\x1b[37;1m\n"); printf("LEVEL %d  XP %d  STREAK %d  CREDITS %d\n",coreLevel,coreXp,coreStreak,coreCredits); }
+static void coreHeader(const char *title){ page(title); consoleSelect(&topConsole); printf("\x1b[33;1mAETHERCORE 4 / DSi\x1b[37;1m\n"); printf("LEVEL %d  XP %d  STREAK %d  CREDITS %d\n",coreLevel,coreXp,coreStreak,coreCredits); }
 static void coreReward(int xp,int credits){ coreXp+=xp; coreCredits+=credits; coreWins++; coreStreak++; if(coreXp>=coreLevel*100){coreXp-=coreLevel*100;coreLevel++;} corePulse=(corePulse+1)%100; markDirty(); feedback(); }
 static void coreWorld(void){
  coreHeader("AETHERCORE NEXUS");
@@ -554,15 +575,22 @@ static void draw(void){
  case 16:modFiles();break;case 17:modHaptic();break;case 18:modAccess();break;case 19:modPower();break;
  case 20:modControl();break;case 21:modDiagnostics();break;case 22:modBot();break;case 23:modSettings();break;
  case 24:modEvents();break;case 25:modNotes();break;case 26:modClock();break;case 27:modAbout();break;
- case 28:modSafety();break;case 29:coreFront();break;case 30:execSystemView(0);break;case 31:execSystemView(1);break;case 32:execSystemView(2);break;case 33:execSystemView(3);break;case 34:execSystemView(4);break;case 35:execSystemView(5);break;case 36:execSystemView(6);break;case 37:execSystemView(7);break;case 38:execSystemView(8);break;case 39:execSystemView(9);break;case 40:execSystemView(10);break;case 41:execSystemView(11);break;case 42:execSystemView(12);break;case 43:execSystemView(13);break;case 44:execSystemView(14);break;case 45:execSystemView(15);break;case 46:execSystemView(16);break;case 47:execSystemView(17);break;case 48:execSystemView(18);break;case 49:execSystemView(19);break;case 50:execSystemView(20);break;case 51:execSystemView(21);break;case 52:execSystemView(22);break;case 53:execSystemView(23);break;case 54:execSystemView(24);break;case 55:execSystemView(25);break;case 56:execSystemView(26);break;case 57:execSystemView(27);break;case 58:execSystemView(28);break;case 59:execSystemView(29);break;case 60:execSystemView(30);break;case 61:execSystemView(31);break;case 62:execSystemView(32);break;case 63:execSystemView(33);break;case 64:execSystemView(34);break;case 65:execSystemView(35);break;case 66:execSystemView(36);break;case 67:execSystemView(37);break;case 68:execSystemView(38);break;case 69:execSystemView(39);break;case 70:execSystemView(40);break;case 71:execSystemView(41);break;case 72:execSystemView(42);break;case 73:execSystemView(43);break;case 74:execSystemView(44);break;case 75:execSystemView(45);break;case 76:execSystemView(46);break;case 77:execSystemView(47);break;default:mode=0;break;
+ case 28:modSafety();break;case 29:modCamera();break;case 30:coreFront();break;case 30:execSystemView(0);break;case 31:execSystemView(1);break;case 32:execSystemView(2);break;case 33:execSystemView(3);break;case 34:execSystemView(4);break;case 35:execSystemView(5);break;case 36:execSystemView(6);break;case 37:execSystemView(7);break;case 38:execSystemView(8);break;case 39:execSystemView(9);break;case 40:execSystemView(10);break;case 41:execSystemView(11);break;case 42:execSystemView(12);break;case 43:execSystemView(13);break;case 44:execSystemView(14);break;case 45:execSystemView(15);break;case 46:execSystemView(16);break;case 47:execSystemView(17);break;case 48:execSystemView(18);break;case 49:execSystemView(19);break;case 50:execSystemView(20);break;case 51:execSystemView(21);break;case 52:execSystemView(22);break;case 53:execSystemView(23);break;case 54:execSystemView(24);break;case 55:execSystemView(25);break;case 56:execSystemView(26);break;case 57:execSystemView(27);break;case 58:execSystemView(28);break;case 59:execSystemView(29);break;case 60:execSystemView(30);break;case 61:execSystemView(31);break;case 62:execSystemView(32);break;case 63:execSystemView(33);break;case 64:execSystemView(34);break;case 65:execSystemView(35);break;case 66:execSystemView(36);break;case 67:execSystemView(37);break;case 68:execSystemView(38);break;case 69:execSystemView(39);break;case 70:execSystemView(40);break;case 71:execSystemView(41);break;case 72:execSystemView(42);break;case 73:execSystemView(43);break;case 74:execSystemView(44);break;case 75:execSystemView(45);break;case 76:execSystemView(46);break;case 77:execSystemView(47);break;case 78:modCamera();break;default:mode=0;break;
  }
 }
 static void moduleInput(u32 d){
  int changed=0;
  if(d&KEY_B){back();return;}
  /* hardwareAction is dispatched once per frame by input(); avoid duplicate camera/mic actions. */
- if(mode>=30&&mode<=77){execSystemInput(mode-30,d);return;}
+ if(mode>=31&&mode<=78){if(mode==78){ /* camera module handled below */ } else {execSystemInput(mode-31,d);return;}}
  switch(mode){
+ case 29:
+   if(d&KEY_A){if(aetherCameraPreview())hardwareActionCount++;changed=1;}
+   if(d&KEY_X){if(aetherCameraCapture())hardwareActionCount++;changed=1;}
+   if(d&KEY_Y){if(aetherMicStartStop())hardwareActionCount++;changed=1;}
+   if(d&KEY_LEFT){if(aetherCameraSelectInner())changed=1;}
+   if(d&KEY_RIGHT){if(aetherCameraSelectOuter())changed=1;}
+   break;
  case 1:if(d&KEY_UP){qState=(qState+3)%4;changed=1;}if(d&KEY_DOWN){qState=(qState+1)%4;changed=1;}if(d&KEY_A){qShots++;qState=(qState+1)%4;changed=1;}if(d&KEY_X){qState=(qState+1)%4;changed=1;}if(d&KEY_Y){qState=0;changed=1;}break;
  case 2:if(d&KEY_UP){if(codexPage)codexPage--;changed=1;}if(d&KEY_DOWN){codexPage++;if(codexPage>4095)codexPage=4095;changed=1;}if(d&KEY_LEFT){codexBook=(codexBook+65)%66;codexPage=0;changed=1;}if(d&KEY_RIGHT){codexBook=(codexBook+1)%66;codexPage=0;changed=1;}if(d&KEY_A){codexSearch=!codexSearch;changed=1;}if(d&KEY_X){codexSearch=!codexSearch;changed=1;}if(d&KEY_Y){codexBook=0;codexPage=0;changed=1;}break;
  case 3:if(d&KEY_UP){animal=(animal+14)%15;changed=1;}if(d&KEY_DOWN){animal=(animal+1)%15;changed=1;}if(d&KEY_LEFT){animalFeature=(animalFeature+4)%5;changed=1;}if(d&KEY_RIGHT){animalFeature=(animalFeature+1)%5;changed=1;}if(d&KEY_A||d&KEY_X){animalLive=1;animalEvents++;changed=1;}if(d&KEY_Y){animalLive=0;changed=1;}break;
@@ -597,7 +625,7 @@ static void moduleInput(u32 d){
 static void input(void){
  u32 d=keysDown()|keysDownRepeat();touchDown=0;touchMap(&d);
  hardwareAction(d);
- if(mode==29){coreInput(d);return;}
+ if(mode==30){coreInput(d);return;}
  if(mode==0){
    if(d&KEY_UP){homeSet(selected==0?APP_COUNT-1:selected-1);draw();}
    if(d&KEY_DOWN){homeSet((selected+1)%APP_COUNT);draw();}
@@ -645,7 +673,7 @@ int legacy_shell_main(void){
    consoleSelect(&bottomConsole);
    printf("Continuing without storage.\n");
  }
- /* Always land on the deterministic home renderer after boot. AetherCore remains module 29. */
+ /* Always land on the deterministic home renderer after boot. AetherCore remains a dedicated module. */
  mode=0;
  draw();
 
@@ -663,7 +691,7 @@ int legacy_shell_main(void){
          soundPlayPSG(DutyCycle_50,220+t*90,70,64);
    }
    input();
-   if(mode==29) coreTick();
+   if(mode==30) coreTick();
    saveIfDirty();
    if((frame&3)==0)draw();
  }
