@@ -1,58 +1,41 @@
-# AetherCore 1 — Pass 7 / Nintendo DSi
+# AetherOS — AetherCore 2 / Nintendo DSi
 
-AetherCore 1 Pass 7 is the current DSi production line for the AetherOS universal, gated runtime.
+AetherCore 2 is the current production integration line for the AetherOS DSi runtime.
 
-## ⬇️ One-click DSi download
+## One-click build
 
-**[DOWNLOAD AetherCore1.nds — current verified build](https://api.github.com/repos/way4out/AetherOS/actions/artifacts/11061760262/zip)**
+The official build is produced by GitHub Actions from the repository source using BlocksDS/libnds. The pipeline validates the NDS header, DSi unit code, payload size, source integration gates, and complete SD bundle before publishing the artifact.
 
-The download is the current GitHub Actions artifact **AetherCore1-Pass6-DSi-Public**. Open the downloaded ZIP and copy **AetherCore1.nds** to the DSi SD card.
+## AetherCore 2 integration
 
-**Build:** GitHub Actions run #756  
-**Commit:** `88bd8c31f8e1850a7f82d42dd90bdb2313eb7960`  
-**NDS size:** 197,120 bytes  
-**Artifact SHA-256:** `8d06a764d235189b46bb4cd96be37d5c54e173e68f815fcb88736ab815814fd6`
-
-> GitHub Actions artifacts expire after their retention period. This link points to the current published artifact; future builds should replace it with the newest artifact.
-
-## Latest DSi build
-
-The latest successful GitHub Actions build is **run #756** from commit `88bd8c31f8e1850a7f82d42dd90bdb2313eb7960`.
-
-**Included NDS files:**
-- `AetherCore1.nds`
-- `AetherOS-Pass6.nds`
-- `AetherCore1-Pass6-DSi-Public.tar.gz`
-
-[Open GitHub Actions run #756](https://github.com/way4out/AetherOS/actions/runs/36628512880)
-
-## Pass 6 goals
-
-- Deterministic DSi boot-safe startup with the display initialized before optional SD/FAT work.
-- Dual-screen libnds UI with touch, D-pad navigation, scrolling, module paging, and safe-mode fallback.
-- 77 addressable home systems: 29 core/runtime surfaces plus 48 executive systems.
-- Universal platform fabric with explicit adapters for DSi/3DS/Wii/N64/Game Boy, later Nintendo, Sony legacy/modern, Xbox legacy/modern, Apple legacy/modern, Nokia legacy, and generic adapters.
-- Emulator/frontend and web-gateway expansion points are capability-gated rather than pretending that one .nds binary can natively execute every foreign operating system.
-- On-device rule-based diagnostics/self-heal hooks for boot/runtime faults; recovery remains deterministic and bounded on DSi hardware.
-- RF/security surfaces are limited to passive/authorized observation and lab simulation. Active jamming, covert interception, credential theft, and unauthorized access remain locked.
-- External capabilities such as modern cellular, satellite, SDR/TinySA, cloud AI, QPU hardware, and holographic projection are exposed as adapters/workspaces when hardware actually exists.
+- Boot-safe display initialization before optional SD/FAT access.
+- Storage-optional operation with deterministic safe mode.
+- Dual-screen UI, DSi touch input, D-pad navigation, paging and scrolling.
+- 77 addressable runtime/home systems.
+- Core 2 supervisor coordinating health, recovery, capability gating and offline operation.
+- Existing universal platform/cross-generation/emulation fabrics remain capability-gated adapters rather than false claims of native foreign hardware.
+- Self-heal hooks are bounded and deterministic.
+- RF/security surfaces remain passive/authorized analysis and lab simulation only.
+- External camera, microphone, network, TinySA, satellite, modern cellular, AI, QPU and projection capabilities are exposed only where compatible hardware/backend support actually exists.
 
 ## Hardware truth
 
-A stock Nintendo DSi cannot become an Xbox, PlayStation, Apple device, modern Nokia, SDR, satellite modem, or physical quantum computer through software alone. Pass 6 therefore uses a portable capability/adapter architecture: the DSi binary is the local control plane, while platform-specific backends can be added on devices that support them.
+A stock Nintendo DSi cannot become modern Xbox, PlayStation, Apple, satellite, SDR, holographic or quantum hardware through software alone. AetherCore 2 therefore treats those systems as adapters/workspaces and keeps unsupported capabilities explicitly gated.
 
-“Universal” means the architecture is designed to represent and route supported capabilities across generations; it does not claim access to secret, hidden, banned, or undocumented operating systems.
+## Production package
 
-## RF/security boundary
+The Actions artifact contains:
+- AetherCore2.nds
+- AetherOS-AetherCore2.nds
+- complete SD deployment archive
 
-The AetherOS security lab supports passive telemetry, authorized test workflows, and deterministic RF/network lab simulation. It does not transmit interference or provide covert interception. This keeps the DSi build suitable for lawful laboratory use while preserving an expansion interface for future, explicitly authorized hardware.
+Copy the NDS to the DSi SD card. For the complete deployment, extract the accompanying SD bundle and preserve its directory structure.
 
-## Build artifact
+## Safety boundary
 
-GitHub Actions builds a real DSi-compatible NDS using BlocksDS/libnds and validates the NDS header/payload before publishing.
+The project does not enable active RF interference, covert interception, credential theft, or unauthorized access. Security/RF functions are limited to passive telemetry, authorized workflows and local simulation.
 
-Copy the published NDS file to the DSi SD card. For the complete package, use the accompanying archive from the same Actions run.
+## Status
 
-## Project
+A successful CI build means the source compiled and passed automated structural gates. It does not constitute a guarantee of flawless behavior on every physical DSi; hardware runtime validation still requires a real device or compatible emulator.
 
-AetherOS is developed as a faith-inspired engineering project, with the stated aim of building for God.
