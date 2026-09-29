@@ -575,16 +575,16 @@ static void draw(void){
  case 16:modFiles();break;case 17:modHaptic();break;case 18:modAccess();break;case 19:modPower();break;
  case 20:modControl();break;case 21:modDiagnostics();break;case 22:modBot();break;case 23:modSettings();break;
  case 24:modEvents();break;case 25:modNotes();break;case 26:modClock();break;case 27:modAbout();break;
- case 28:modSafety();break;case 29:modCamera();break;case 30:coreFront();break;case 30:execSystemView(0);break;case 31:execSystemView(1);break;case 32:execSystemView(2);break;case 33:execSystemView(3);break;case 34:execSystemView(4);break;case 35:execSystemView(5);break;case 36:execSystemView(6);break;case 37:execSystemView(7);break;case 38:execSystemView(8);break;case 39:execSystemView(9);break;case 40:execSystemView(10);break;case 41:execSystemView(11);break;case 42:execSystemView(12);break;case 43:execSystemView(13);break;case 44:execSystemView(14);break;case 45:execSystemView(15);break;case 46:execSystemView(16);break;case 47:execSystemView(17);break;case 48:execSystemView(18);break;case 49:execSystemView(19);break;case 50:execSystemView(20);break;case 51:execSystemView(21);break;case 52:execSystemView(22);break;case 53:execSystemView(23);break;case 54:execSystemView(24);break;case 55:execSystemView(25);break;case 56:execSystemView(26);break;case 57:execSystemView(27);break;case 58:execSystemView(28);break;case 59:execSystemView(29);break;case 60:execSystemView(30);break;case 61:execSystemView(31);break;case 62:execSystemView(32);break;case 63:execSystemView(33);break;case 64:execSystemView(34);break;case 65:execSystemView(35);break;case 66:execSystemView(36);break;case 67:execSystemView(37);break;case 68:execSystemView(38);break;case 69:execSystemView(39);break;case 70:execSystemView(40);break;case 71:execSystemView(41);break;case 72:execSystemView(42);break;case 73:execSystemView(43);break;case 74:execSystemView(44);break;case 75:execSystemView(45);break;case 76:execSystemView(46);break;case 77:execSystemView(47);break;case 78:modCamera();break;default:mode=0;break;
+ case 28:modSafety();break;case 29:coreFront();break;case 30:execSystemView(0);break;case 31:execSystemView(1);break;case 32:execSystemView(2);break;case 33:execSystemView(3);break;case 34:execSystemView(4);break;case 35:execSystemView(5);break;case 36:execSystemView(6);break;case 37:execSystemView(7);break;case 38:execSystemView(8);break;case 39:execSystemView(9);break;case 40:execSystemView(10);break;case 41:execSystemView(11);break;case 42:execSystemView(12);break;case 43:execSystemView(13);break;case 44:execSystemView(14);break;case 45:execSystemView(15);break;case 46:execSystemView(16);break;case 47:execSystemView(17);break;case 48:execSystemView(18);break;case 49:execSystemView(19);break;case 50:execSystemView(20);break;case 51:execSystemView(21);break;case 52:execSystemView(22);break;case 53:execSystemView(23);break;case 54:execSystemView(24);break;case 55:execSystemView(25);break;case 56:execSystemView(26);break;case 57:execSystemView(27);break;case 58:execSystemView(28);break;case 59:execSystemView(29);break;case 60:execSystemView(30);break;case 61:execSystemView(31);break;case 62:execSystemView(32);break;case 63:execSystemView(33);break;case 64:execSystemView(34);break;case 65:execSystemView(35);break;case 66:execSystemView(36);break;case 67:execSystemView(37);break;case 68:execSystemView(38);break;case 69:execSystemView(39);break;case 70:execSystemView(40);break;case 71:execSystemView(41);break;case 72:execSystemView(42);break;case 73:execSystemView(43);break;case 74:execSystemView(44);break;case 75:execSystemView(45);break;case 76:execSystemView(46);break;case 77:execSystemView(47);break;case 78:modCamera();break;default:mode=0;break;
  }
 }
 static void moduleInput(u32 d){
  int changed=0;
  if(d&KEY_B){back();return;}
  /* hardwareAction is dispatched once per frame by input(); avoid duplicate camera/mic actions. */
- if(mode>=31&&mode<=78){if(mode==78){ /* camera module handled below */ } else {execSystemInput(mode-31,d);return;}}
+ if(mode>=30&&mode<=77){execSystemInput(mode-30,d);return;}
  switch(mode){
- case 29:
+ case 78:
    if(d&KEY_A){if(aetherCameraPreview())hardwareActionCount++;changed=1;}
    if(d&KEY_X){if(aetherCameraCapture())hardwareActionCount++;changed=1;}
    if(d&KEY_Y){if(aetherMicStartStop())hardwareActionCount++;changed=1;}
@@ -625,7 +625,7 @@ static void moduleInput(u32 d){
 static void input(void){
  u32 d=keysDown()|keysDownRepeat();touchDown=0;touchMap(&d);
  hardwareAction(d);
- if(mode==30){coreInput(d);return;}
+ if(mode==29){coreInput(d);return;}
  if(mode==0){
    if(d&KEY_UP){homeSet(selected==0?APP_COUNT-1:selected-1);draw();}
    if(d&KEY_DOWN){homeSet((selected+1)%APP_COUNT);draw();}
@@ -691,7 +691,7 @@ int legacy_shell_main(void){
          soundPlayPSG(DutyCycle_50,220+t*90,70,64);
    }
    input();
-   if(mode==30) coreTick();
+   if(mode==29) coreTick();
    saveIfDirty();
    if((frame&3)==0)draw();
  }
