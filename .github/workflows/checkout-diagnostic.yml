@@ -17,4 +17,4 @@ jobs:
         run: |
           set -eux
           docker --version
-          docker run --rm -v "$GITHUB_WORKSPACE:/work" -w /work alpine:3.20 sh -lc 'ls -l Makefile'
+          docker run --rm -v "$GITHUB_WORKSPACE:/work" -w /work skylyrac/blocksds:slim-latest sh -lc 'echo BLOCKSDS_IMAGE_OK'
