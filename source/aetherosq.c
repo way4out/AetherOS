@@ -559,7 +559,7 @@ static void draw(void){
 static void moduleInput(u32 d){
  int changed=0;
  if(d&KEY_B){back();return;}
- hardwareAction(d);
+ /* hardwareAction is dispatched once per frame by input(); avoid duplicate camera/mic actions. */
  if(mode>=30&&mode<=77){execSystemInput(mode-30,d);return;}
  switch(mode){
  case 1:if(d&KEY_UP){qState=(qState+3)%4;changed=1;}if(d&KEY_DOWN){qState=(qState+1)%4;changed=1;}if(d&KEY_A){qShots++;qState=(qState+1)%4;changed=1;}if(d&KEY_X){qState=(qState+1)%4;changed=1;}if(d&KEY_Y){qState=0;changed=1;}break;
