@@ -349,7 +349,7 @@ static void draw(void);
 static const char *execSystems[48]={
  "EXECUTIVE HUB","MISSION CONTROL","RESOURCE COMMAND","SECURITY COMMAND","COMMS COMMAND","OPERATIONS CENTER","DEVELOPMENT CENTER","CREATOR ECONOMY","KNOWLEDGE CENTER","HEALTH & WELLNESS","ACCESS COMMAND","FINANCE LEDGER","INVENTORY COMMAND","FIELD COMMAND","AUTOMATION DESK","ANALYTICS CENTER","ARCHIVE COMMAND","USER PROFILE","SYSTEMS MONITOR","STRATEGY DESK","PROJECT COMMAND","TASK COMMAND","SCHEDULE CENTER","RESOURCE PLANNER","RISK DESK","QUALITY COMMAND","RESEARCH DESK","DESIGN COMMAND","CONTENT COMMAND","COMMUNITY COMMAND","PARTNERSHIP DESK","SERVICE COMMAND","SUPPORT COMMAND","LOGISTICS COMMAND","ASSET COMMAND","DATA COMMAND","INSIGHTS DESK","PERFORMANCE COMMAND","COMPLIANCE DESK","POLICY CENTER","CHANGE COMMAND","RELEASE COMMAND","TEST COMMAND","RELIABILITY CENTER","CONTINUITY DESK","GROWTH COMMAND","IMPACT CENTER","AETHERCORE CONTROL"
 };
-static const char *execGameplay[10]={"COMMANDER","STRATEGIST","QUARTERMASTER","WARDEN","OPERATOR","DIRECTOR","ENGINEER","MERCHANT","SCHOLAR","STEWARD"};
+static const char *execGameplay[20]={"COMMANDER","STRATEGIST","QUARTERMASTER","WARDEN","OPERATOR","DIRECTOR","ENGINEER","MERCHANT","SCHOLAR","STEWARD","ACCESS ARCHITECT","TREASURER","CURATOR","RANGER","AUTOMATOR","ANALYST","ARCHIVIST","IDENTITY STEWARD","SYSTEMS ENGINEER","MONITOR"};
 static const char *execModes[48]={
  "COMMAND","QUESTS","RESOURCES","GUARD","SIGNALS","OPS","BUILD","MARKET","LIBRARY","WELLNESS",
  "ACCESS","LEDGER","ASSETS","FIELD","AUTOMATION","METRICS","ARCHIVE","PROFILE","MONITOR","STRATEGY","PROJECT","TASK","SCHEDULE","PLAN","RISK","QUALITY","RESEARCH","DESIGN","CONTENT","COMMUNITY","PARTNERS","SERVICE","SUPPORT","LOGISTICS","ASSETS","DATA","INSIGHTS","PERFORMANCE","COMPLIANCE","POLICY","CHANGE","RELEASE","TEST","RELIABILITY","CONTINUITY","GROWTH","IMPACT","CONTROL"
@@ -358,7 +358,7 @@ static void execExecutivePlay(int id){
  int v=execState[id],m=execMastery[id],s=execStreak[id];
  const char *role=execGameplay[id];
  page(execSystems[id]);
- iprintf("AETHERCORE GAMEPLAY // EXECUTIVE 01-10\\n");
+ iprintf("AETHERCORE GAMEPLAY // EXECUTIVE %02d-20\\n",id+1);
  iprintf("ROLE:%s  MASTERY:%d  STREAK:%d  REWARD:%d\\n",role,m,s,execReward[id]);
  iprintf("CORE LV:%d XP:%d ENERGY:%d COINS:%d CREDITS:%d\\n",coreLevel,coreXp,coreEnergy,coreCoins,coreCredits);
  iprintf("QUEST:%d  ZONE:%d  CREW:%d  DAY:%d\\n",coreQuest,coreZone,coreSocial,coreDay);
@@ -373,6 +373,16 @@ static void execExecutivePlay(int id){
   case 7: iprintf("MISSION: manage creator economy progression.\\n"); break;
   case 8: iprintf("MISSION: discover and record knowledge.\\n"); break;
   case 9: iprintf("MISSION: maintain sustainable player resources.\\n"); break;
+  case 10: iprintf("MISSION: configure accessible controls and inclusive navigation.\\n"); break;
+  case 11: iprintf("MISSION: manage credits, coins and transaction progression.\\n"); break;
+  case 12: iprintf("MISSION: curate inventory, files and knowledge assets.\\n"); break;
+  case 13: iprintf("MISSION: coordinate field zones, animal events and authorized RF observations.\\n"); break;
+  case 14: iprintf("MISSION: execute bounded local automation and bot workflows.\\n"); break;
+  case 15: iprintf("MISSION: inspect telemetry and turn runtime signals into decisions.\\n"); break;
+  case 16: iprintf("MISSION: preserve event, file and vault history.\\n"); break;
+  case 17: iprintf("MISSION: develop the player identity, progression and social profile.\\n"); break;
+  case 18: iprintf("MISSION: monitor DSi, battery, safety and runtime health.\\n"); break;
+  case 19: iprintf("MISSION: observe and stabilize the complete AetherCore system.\\n"); break;
  }
  iprintf("\\nA EXECUTE ACTION   X RESET   UP/DOWN MASTERY   L/R EXECUTIVE\\n");
  iprintf("B RETURN   Y SYSTEMS GATE\\n");
@@ -382,7 +392,7 @@ static void execSystemView(int id){
  page(execSystems[id]);
  iprintf("AETHERCORE EXECUTIVE SYSTEM %02d/19  MODE:%s\\n",id+1,execModes[id]);
  iprintf("STATE:%d  ACTIONS:%d  CORE LVL:%d  XP:%d\\n",v,a,coreLevel,coreXp);
-  if(id>=19){
+  if(id>=20){
     static const char *focus[29]={"strategy","projects","tasks","schedule","planning","risk","quality","research","design","content","community","partnerships","service","support","logistics","assets","data","insights","performance","compliance","policy","change","release","testing","reliability","continuity","growth","impact","core control"};
     iprintf("FOCUS:%s  STATE:%d  ACTIONS:%d\\n",focus[id-19],v,a);
     iprintf("CORE LVL:%d XP:%d ENERGY:%d COINS:%d CREDITS:%d\\n",coreLevel,coreXp,coreEnergy,coreCoins,coreCredits);
@@ -442,15 +452,16 @@ static void execSystemInput(int id,u32 d){
    if(id==7)coreCredits+=3;
    if(id==8)codexPage++;
    if(id==9){coreEnergy=coreEnergy<100?coreEnergy+1:100;}
-   if(id==10)accessScroll=(accessScroll%3)+1;
-   if(id==11)coreCredits++;
-   if(id==12)coreInventory++;
-   if(id==13)coreZone=(coreZone+1)%6;
-   if(id==14)botRuns++; 
-   if(id==15)telemetryPage=(telemetryPage+1)%3;
-   if(id==16)eventCount=(eventCount+1)%17;
-   if(id==17)coreStreak++;
-   if(id==18)diagRuns++;
+   if(id==10){accessScroll=(accessScroll%3)+1;accessContrast=!accessContrast;}
+   if(id==11){coreCredits+=2;coreCoins+=2;}
+   if(id==12){coreInventory++;vaultCount=(vaultCount+1)%13;}
+   if(id==13){coreZone=(coreZone+1)%6;animalEvents++;rfEvents++;}
+   if(id==14){botRuns++;diagRuns++;}
+   if(id==15){telemetryPage=(telemetryPage+1)%3;dspFrames++;}
+   if(id==16){eventCount=(eventCount+1)%17;vaultCount=(vaultCount+1)%13;}
+   if(id==17){coreStreak++;coreSocial=(coreSocial+1)%10;}
+   if(id==18){diagRuns++;sensorSamples++;}
+   if(id==19){diagRuns++;actionCount++;}
    changed=1;
  }
  if(d&KEY_X){execState[id]=0;execMastery[id]=0;execStreak[id]=0;execReward[id]=0;changed=1;}

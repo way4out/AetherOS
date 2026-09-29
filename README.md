@@ -46,3 +46,8 @@ The Pass 1 social layer is local-first and does not claim a cloud multiplayer se
 The repository is built with devkitPro/devkitARM/libnds. CI must produce a real `AetherCore1.nds`, validate the DSi unit code and ARM9 payload, and package the complete SD bundle.
 
 Pass 4 is reserved for deeper social/network architecture and cross-system orchestration; Pass 5 is release hardening and QA.
+
+
+## Pass 4.2 — Executive Gameplay 11–20
+
+Executive systems 11–20 now have dedicated AetherCore gameplay roles, objectives, mastery/streak/reward state, progression effects and live runtime links: Access Command, Finance Ledger, Inventory Command, Field Command, Automation Desk, Analytics Center, Archive Command, User Profile, Systems Monitor, and AetherCore Control.
