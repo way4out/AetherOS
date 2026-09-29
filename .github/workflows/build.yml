@@ -45,6 +45,8 @@ jobs:
           echo "VERIFIED_NDS_SIZE=$NDS_SIZE"
           echo "VERIFIED_DSI_UNIT_CODE=$UNIT_CODE"
           echo "VERIFIED_ARM9_HEADER=present"
+          grep -R "web_fabric\|device_fabric" source >/dev/null
+          echo "VERIFIED_PASS_4_5_FABRICS=present"
           sha256sum AetherCore1.nds
           ls -lh AetherCore1.nds
 
