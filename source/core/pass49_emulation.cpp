@@ -26,7 +26,7 @@ void init(State& s) {
     s.ready = true;
     s.authenticated = false;
     s.sessionLive = false;
-    s.jamReady = false;
+    s.gatewayReady = false;
     s.frames = 0;
     s.packets = 0;
     s.dropped = 0;
@@ -58,7 +58,7 @@ void tick(State& s, u32 frame) {
     if ((frame & 63u) == 0u) {
         s.ready = true;
         if (s.mode != Mode::LocalProfile)
-            s.jamReady = true;
+            s.gatewayReady = true;
     }
 
     if (s.dropped > s.packets)
@@ -73,7 +73,7 @@ void cycleTarget(State& s) {
     s.target = static_cast<crossgen::Target>(n);
     s.authenticated = false;
     s.sessionLive = false;
-    s.jamReady = false;
+    s.gatewayReady = false;
     s.renderedTarget = renderClass(s.target);
     s.renderEpoch = 0;
     if (isRemoteTarget(s.target) && s.mode == Mode::LocalProfile)
@@ -87,7 +87,7 @@ void cycleMode(State& s) {
     s.mode = static_cast<Mode>(n);
     s.authenticated = false;
     s.sessionLive = false;
-    s.jamReady = false;
+    s.gatewayReady = false;
     gState = s;
 }
 
@@ -107,7 +107,7 @@ void acknowledgeRemote(State& s) {
         return;
     s.authenticated = true;
     s.sessionLive = true;
-    s.jamReady = true;
+    s.gatewayReady = true;
     gState = s;
 }
 
@@ -126,7 +126,7 @@ bool targetIsRemoteOnly(crossgen::Target t) {
 bool productionReady(const State& s) {
     if (!s.ready) return false;
     if (!isRemoteTarget(s.target)) return s.sessionLive;
-    return s.authenticated && s.sessionLive && s.jamReady;
+    return s.authenticated && s.sessionLive && s.gatewayReady;
 }
 
 const State& state() { return gState; }
