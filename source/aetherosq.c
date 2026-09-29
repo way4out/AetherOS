@@ -321,6 +321,95 @@ static void modPhone(void){
  printf("B HOME   QUEUE:%u   SENT:%u   RECEIVED:%u\\n",aether_messaging_queued(),aether_messaging_sent(),aether_messaging_received());
 }
 
+/* 13 — Media Studio */
+static void modMedia(void){page("13 MEDIA STUDIO");printf("MODE:%s TRACK:%d PLAY:%s VOL:%d\n",mediaMode?"MIXER":"PLAYER",mediaTrack+1,mediaPlaying?"YES":"NO",mediaVolume);
+ graph("WAVE ",mediaTrack*17);printf("LOCAL SD MEDIA CONTROL SURFACE\n");footer("UP/DOWN TRACK | L/R VOLUME | A PLAY | X MODE | Y NEXT | B HOME");}
+
+/* 14 — Sensor Hub */
+static void modSensor(void){page("14 SENSOR HUB");sensorSamples++;sensorPeak=(sensorPeak+frame)%100;
+ printf("SOURCE:%s SAMPLES:%d PEAK:%d\n",sensorMode?"EXTERNAL GATE":"DSi LOCAL",sensorSamples,sensorPeak);
+ printf("TOUCH:%d BAT:%d%% FRAME:%d\n",touchDown,getBatteryLevel(),frame);graph("SENS ",sensorMode*23);
+ footer("UP/DOWN SOURCE | A SAMPLE | X RESET | Y PEAK | B HOME");}
+
+/* 15 — Data Vault */
+static void scanVault(void){vaultCount=0;DIR *d=opendir("fat:/data/AetherMod");if(!d&&isDSiMode())d=opendir("sd:/data/AetherMod");if(!d)return;struct dirent *e;
+ while((e=readdir(d))&&vaultCount<12){if(e->d_name[0]=='.')continue;strncpy(vaultNames[vaultCount++],e->d_name,47);}closedir(d);}
+static void modVault(void){page("15 DATA VAULT");if(vaultCount==0)scanVault();printf("SD DATA/AetherMod  ITEMS:%d\n",vaultCount);
+ for(int i=0;i<vaultCount&&i<8;i++)printf("%c %02d %s\n",i==vaultCursor?'>':' ',i+1,vaultNames[i]);footer("UP/DOWN SELECT | A/X RESCAN | B HOME");}
+
+/* 16 — File Browser */
+static void scanFiles(void){fileCount=0;DIR *d=opendir("fat:/");if(!d&&isDSiMode())d=opendir("sd:/");if(!d)return;struct dirent *e;
+ while((e=readdir(d))&&fileCount<16){if(e->d_name[0]=='.')continue;strncpy(fileNames[fileCount++],e->d_name,47);}closedir(d);}
+static void modFiles(void){page("16 FILE BROWSER");if(fileCount==0)scanFiles();printf("ROOT:%s ITEMS:%d\n",root,fileCount);
+ for(int i=0;i<fileCount&&i<8;i++)printf("%c %02d %s\n",i==fileCursor?'>':' ',i+1,fileNames[i]);printf("READ-ONLY NAVIGATION; no destructive delete action.\n");footer("UP/DOWN SELECT | A REFRESH | X VAULT | B HOME");}
+
+/* 17 — Haptic */
+static void modHaptic(void){page("17 HAPTIC LAB");printf("LEVEL:%d/3 PULSES:%d\n",hapticLevel,actionCount);printf("ACTIONS -> VISUAL:%d SOUND:%s\n",energy,save.sound?"ON":"OFF");
+ printf("DSi physical rumble hardware is not claimed; feedback is UI/audio.\n");footer("L/R LEVEL | A TEST | X SOUND | Y VISUAL | B HOME");}
+
+/* 18 — Accessibility */
+static void modAccess(void){page("18 ACCESSIBILITY");printf("SCALE:%d CONTRAST:%s SCROLL:%d\n",accessScale,accessContrast?"HIGH":"NORMAL",accessScroll);
+ printf("TOUCH TARGETS: LARGE  |  NAVIGATION: D-PAD + TOUCH\n");printf("VISUAL FEEDBACK:%s  AUDIO:%s\n",accessContrast?"HIGH":"STANDARD",save.sound?"ON":"OFF");
+ footer("UP/DOWN SCALE | A CONTRAST | X SCROLL | Y SOUND | B HOME");}
+
+/* 19 — Power */
+static void modPower(void){page("19 POWER LAB");int bat=getBatteryLevel();printf("BATTERY:%d%% MODE:%s SAVER:%s CYCLES:%d\n",bat,powerMode?"LOW POWER":"NORMAL",powerSaver?"ON":"OFF",powerCycles);
+ printf("BACKLIGHT:%u/4  FRAME RATE CONTROL: SOFTWARE\n",save.brightness);printf("STOCK DSi POWER RAILS ARE NOT MODIFIED.\n");footer("UP/DOWN MODE | A SAVER | X BRIGHT | Y CYCLE | B HOME");}
+
+/* 20 — Control */
+static void modControl(void){page("20 CONTROL LAB");printf("CURSOR:%d EVENTS:%d\n",controlCursor,controlEvents);printf("TOUCH X:%d Y:%d DOWN:%d\n",touchX,touchY,touchDown);
+ printf("INPUT MATRIX: A B X Y / D-PAD / L R / START SELECT\n");footer("UP/DOWN CURSOR | A EVENT | X CLEAR | L/R MODE | B HOME");}
+
+/* 21 — Diagnostics */
+static void modDiagnostics(void){page("21 DIAGNOSTICS");
+ diagErrors=0;if(!isDSiMode())diagErrors++;if(!save.magic)diagErrors++;if(diagStorageKnown&&!diagStorage)diagErrors++;
+ printf("RUN:%d ERRORS:%d STATUS:%s\n",diagRuns,diagErrors,diagErrors?"CHECK":"PASS");
+ printf("FAT:%s  SAVE:%s  TOUCH:%s\n",diagStorageKnown?(diagStorage?"PASS":"FAIL"):"NOT TESTED",save.magic?"VALID":"FAIL",touchDown?"LIVE":"READY");
+ printf("APP COUNT:%d  BUILD:%d.%d PASS:%d/%d\n",APP_COUNT,AETHERMOD_MAJOR,AETHERMOD_MINOR,AETHERMOD_PASS,AETHERMOD_TOTAL_PASSES);
+ footer("A RUN TEST | X RESET | B HOME");}
+
+/* 22 — Aether Bot */
+static void modBot(void){page("22 AETHER BOT");const char *jobs[]={"HOME","DIAGNOSTICS","FILES","VAULT","POWER","CONTROL","SETTINGS","SAFETY"};
+ printf("JOB:%s RUNS:%d\n",jobs[botCursor%8],botRuns);printf("LOCAL ORCHESTRATION / NO AUTONOMOUS EXTERNAL ACTIONS\n");
+ footer("UP/DOWN JOB | A EXECUTE | X RESET | Y HOME | B HOME");}
+
+/* 23 — General Settings */
+static void modSettings(void){page("23 GENERAL SETTINGS");const char *s[]={"AI","ONLINE AI","PRIVACY","BROWSER","DOWNLOADS","WIFI","SOUND","THEME"};
+ printf("SELECT:%s = %s\n",s[settingsCursor],(settingsCursor==0?save.ai:settingsCursor==1?save.onlineAI:settingsCursor==2?save.privacy:settingsCursor==3?save.browser:settingsCursor==4?save.downloads:settingsCursor==5?save.wireless:settingsCursor==6?save.sound:save.theme)?"ON":"OFF");
+ printf("BRIGHTNESS:%u  BPM:%u  LANGUAGE:%u\n",save.brightness,save.bpm,save.language);footer("UP/DOWN SELECT | A TOGGLE | X SAFE MODE | Y BRIGHT | B HOME");}
+
+/* 24 — Event Log */
+static void modEvents(void){page("24 EVENT LOG");eventCount=actionCount<16?actionCount:16;printf("EVENTS:%d\n",eventCount);
+ for(int i=0;i<eventCount;i++)printf("%c EVENT %02d FRAME %d\n",i==eventCursor?'>':' ',i+1,(frame-i*7));footer("UP/DOWN SELECT | X REFRESH | Y CLEAR | B HOME");}
+
+/* 25 — Notes */
+static void modNotes(void){static const char *n[]={"Build priorities","DSi local-first workspace","Geneva corpus","Module QA","Animal signal lab","Rescue notes","Power notes","Release notes"};page("25 NOTES");
+ printf("NOTE %d/8\n%s\n\nA writes selected note to SD.\n",noteCursor+1,n[noteCursor]);footer("UP/DOWN NOTE | A SAVE | X NEXT | B HOME");}
+
+/* 26 — Clock */
+static void modClock(void){page("26 CLOCK / TIME");time_t now=time(NULL);struct tm *t=localtime(&now);if(!t)printf("RTC UNAVAILABLE\n");else{
+ int h=t->tm_hour;if(!clock24){int hh=h%12;if(hh==0)hh=12;printf("%02d:%02d:%02d %s\n",hh,t->tm_min,t->tm_sec,h>=12?"PM":"AM");}else printf("%02d:%02d:%02d\n",h,t->tm_min,t->tm_sec);
+ printf("%04d-%02d-%02d\n",t->tm_year+1900,t->tm_mon+1,t->tm_mday);}footer("A 12/24H | B HOME");}
+
+/* 27 — About */
+static void modAbout(void){page("27 ABOUT");printf("AETHEROS 9.0 / DSi BOOT-SAFE\n");printf("29 INDIVIDUAL MODULE IMPLEMENTATIONS\n");printf("Geneva 1599 corpus: SD/OFFLINE\n");printf("Universal touch: TAP / SWIPE / DRAG\n");printf("Local-first, bounded, recoverable runtime.\n");footer("B HOME");}
+
+/* 29 — DSi Camera & Microphone */
+static void modCamera(void){
+ page("29 DSi CAMERA / MICROPHONE");
+ printf("DSi CAMERA:%s  DEVICE:%s  PREV:%d  CAP:%d\n",
+        isDSiMode()?(aetherCameraAvailable()?"READY":"UNAVAILABLE"):"DS MODE",
+        aetherCameraDevice()==CAMERA_INNER?"INNER":"OUTER",
+        aetherCameraPreviewCount(),aetherCameraCaptureCount());
+ printf("MIC:%s  STATE:%s  PEAK:%d  RMS:%d\n",
+        aetherMicAvailable()?"READY":"UNAVAILABLE",
+        aetherMicActive()?"LIVE":"OFF",aetherMicPeak(),aetherMicRms());
+ printf("\nA PREVIEW   X FULL CAPTURE   Y MIC ON/OFF\n");
+ printf("L/R SELECT CAMERA   START PREVIEW   SELECT MIC\n");
+ printf("Images require writable SD storage. Hardware is DSi-only.\n");
+ footer("A PREVIEW | X CAPTURE | Y MIC | L/R CAMERA | B HOME");
+}
+
 /* 28 — Safety Center */
 static void modSafety(void){page("28 SAFETY CENTER");const char *n[]={"PARENTAL","NSFW FILTER","UNSAFE FILTER","UNREGULATED","USER CONTENT","BROWSER","DOWNLOADS","WIRELESS"};
  int on=safetyCursor==0?save.parental:safetyCursor==1?save.nsfw:safetyCursor==2?save.unsafe:safetyCursor==3?save.unregulated:safetyCursor==4?save.userContent:safetyCursor==5?save.browser:safetyCursor==6?save.downloads:save.wireless;
@@ -619,7 +708,7 @@ static void moduleInput(u32 d){
  int changed=0;
  if(d&KEY_B){back();return;}
  /* hardwareAction is dispatched once per frame by input(); avoid duplicate camera/mic actions. */
- if(mode>=30&&mode<=77){execSystemInput(mode-30,d);return;}
+ if(mode>=30&&mode<=76){execSystemInput(mode-30,d);return;}
  switch(mode){
  case 77:
    if(d&KEY_UP){aether_messaging_cursor_up();changed=1;}
