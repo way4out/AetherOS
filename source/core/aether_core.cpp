@@ -24,6 +24,7 @@
 #include "hil.h"
 #include "mission_control.h"
 #include "capacity_engine.h"
+#include "pass46_runtime.h"
 #include "../studio/aether_studio.h"
 #include "../settings/aether_settings.h"
 #include "../theme/aether_theme.h"
@@ -44,10 +45,15 @@ int touchStartScreen=0,touchStartModule=0;
 u8 touchRawFrames=0;
 u8 touchReleaseFrames=0;
 u8 touchLockFrames=0;
+aether::pass46::Health runtimeHealth;
 }
 
 namespace aether {
 void init(SystemState&s){
+    servicesStarted=false;
+    touchWasDown=false; touchGestureConsumed=false;
+    touchStartX=-1; touchStartY=-1; touchRawFrames=0; touchReleaseFrames=0; touchLockFrames=0;
+    pass46::init(runtimeHealth);
     s={false,false,false,false,false,false,false,false,0,0,0,false,false,0,0,0,0,0,0,0,0,0,0,0};
     videoSetMode(MODE_0_2D); videoSetModeSub(MODE_0_2D);
     vramSetBankA(VRAM_A_MAIN_BG); vramSetBankC(VRAM_C_SUB_BG);
@@ -79,6 +85,7 @@ static void doAction(SystemState&s){
 }
 void update(SystemState&s){
     scanKeys(); ++s.frame;
+    pass46::tick(runtimeHealth, s.frame);
     if(s.frame==30) startDeferredServices(s);
     const u16 down=keysDown();
     const bool touchRaw=(keysHeld()&KEY_TOUCH)!=0;
