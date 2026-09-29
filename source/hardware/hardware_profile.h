@@ -17,4 +17,8 @@ bool cameraSelectInner();
 bool cameraSelectOuter();
 void cameraShutdown();
 void hardwareTick();
+// DSi retail RAM is 16 MiB; the 44 MiB rollout tier is therefore SD-backed storage, not RAM.
+// This creates the cache container lazily so the runtime can use a larger resource budget safely.
+bool ensure44MiBCache();
+
 }
