@@ -99,9 +99,12 @@ jobs:
           test -s source/core/self_heal.cpp
           test -s source/security/aether_security_lab.cpp
           grep -Fq 'AETHERCORE_PASS 70' source/aetherosq.c
-          grep -Fq '#define APP_COUNT 77' source/aetherosq.c
+          grep -Fq '#define APP_COUNT 78' source/aetherosq.c
           grep -Fq 'mode>=30&&mode<=77' source/aetherosq.c
-          echo "VERIFIED_AETHERCORE3_SOURCE_SANITY=present"
+          grep -Fq '"CAMERA & MIC"' source/aetherosq.c
+          grep -Fq "modCamera" source/aetherosq.c
+          echo "VERIFIED_AETHERCORE4_CAMERA_TOUCH_SOURCE=present"
+          echo "VERIFIED_AETHERCORE4_SOURCE_SANITY=present"
 
       - name: Emulator availability check
         run: |
