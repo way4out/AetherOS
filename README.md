@@ -241,3 +241,39 @@ The $1T+ figure is the **north-star valuation target** for the business thesis. 
 - **Evidence required:** real customers, revenue, contracts, retention, margins, deployments and independent valuation evidence.
 
 This preserves a bullish product thesis while making the value proposition investable only through evidence rather than a fabricated present valuation.
+
+
+## Pass 6 — Ecosystem-scale value architecture
+
+The $1T+ north-star is supported by a multi-sided platform model. AetherOS/AetherCore is structured to create value simultaneously for device owners, developers, gateway providers, commercial deployers and enterprise customers.
+
+**Expansion loops**
+1. One deployed client creates reusable demand for modules and support.
+2. More modules increase the utility of each deployment.
+3. More utility increases the addressable gateway and integration surface.
+4. More integrations improve developer and enterprise use cases.
+5. Successful deployments create referenceable, measurable outcomes.
+6. Those outcomes support recurring commercial relationships and further ecosystem investment.
+
+**Commercial packaging**
+- Free/local DSi runtime
+- Pro support and deployment services
+- Developer/integration packages
+- Gateway partner programs
+- Enterprise fleet deployments
+- Hardware/software licensing
+- Authorized marketplace or transaction infrastructure where legally applicable
+
+No revenue, customer, partnership or valuation is counted until independently verifiable.
+
+## Pass 7 — Evidence-first $1T+ execution framework
+
+The $1T+ target now has an evidence ladder:
+
+**Product proof → usage proof → retention proof → revenue proof → margin proof → ecosystem proof → scale proof → independent valuation evidence.**
+
+Every claimed value increase should be traceable to measurable operating evidence. The project will not substitute downloads, social attention, speculative projections or token/asset appreciation for revenue quality, customer value or enterprise fundamentals.
+
+**Release rule:** new features should improve at least one measurable dimension—utility, reliability, retention, interoperability, deployment efficiency, monetization capability or verified customer outcome—without compromising the DSi-first offline experience.
+
+**North-star:** build a platform capable of supporting $1T+ enterprise value if real-world adoption and economics ultimately justify it. The target itself is not evidence that the valuation has been achieved.
