@@ -1,5 +1,5 @@
 #include <nds.h>
-#include <nds/arm9/camera.h>
+#include <nds/camera.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
