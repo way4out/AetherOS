@@ -28,6 +28,7 @@
 #include "platform_profile.h"
 #include "crossgen_fabric.h"
 #include "pass49_emulation.h"
+#include "aether_core2.h"
 #include "../studio/aether_studio.h"
 #include "../settings/aether_settings.h"
 #include "../theme/aether_theme.h"
@@ -52,6 +53,7 @@ aether::pass46::Health runtimeHealth;
 aether::platform::Capabilities platformCaps;
 aether::crossgen::FabricState crossgenState;
 aether::emulation::State emulationState;
+aether::core2::State core2State;
 }
 
 namespace aether {
@@ -63,6 +65,7 @@ void init(SystemState&s){
     platformCaps = platform::detect();
     crossgen::init(crossgenState);
     emulation::init(emulationState);
+    core2::init(core2State);
     s={false,false,false,false,false,false,false,false,0,0,0,false,false,0,0,0,0,0,0,0,0,0,0,0};
     videoSetMode(MODE_0_2D); videoSetModeSub(MODE_0_2D);
     vramSetBankA(VRAM_A_MAIN_BG); vramSetBankC(VRAM_C_SUB_BG);
@@ -95,6 +98,7 @@ static void doAction(SystemState&s){
 void update(SystemState&s){
     scanKeys(); ++s.frame;
     pass46::tick(runtimeHealth, s.frame);
+    core2::tick(core2State, s.frame, s.sdReady, s.safeMode, s.touchReady, s.networkReady);
     crossgen::tick(crossgenState, s.frame);
     emulation::tick(emulationState, s.frame);
     if(s.frame==30) startDeferredServices(s);
