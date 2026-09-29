@@ -10,14 +10,14 @@
 #include "aether_hardware.h"
 #include "messaging/aether_messaging.h"
 
-/* AetherOS / AetherCore5 — DSi-native modular cockpit. Production pass 70.
+/* AetherOS / AetherCore708 — DSi-native modular cockpit. Production pass 70.
  * Every home entry maps to an independent implementation.
  * Hardware claims remain honest: external RF/TinySA/camera/AI/phone/QPU
  * capabilities are represented as software workspaces/gateways, not invented
  * stock-DSi hardware.
  */
 #define APP_COUNT 79
-#define AETHERCORE_MAJOR 707
+#define AETHERCORE_MAJOR 708
 #define AETHERCORE_PASS 1
 #define AETHERCORE_TOTAL_PASSES 7
 #define AETHERMOD_MAJOR 9
@@ -80,7 +80,7 @@ static char fileNames[16][48],vaultNames[12][48],eventNames[16][48];
 static const char *apps[APP_COUNT]={
  "AETHER HOME","QUANTUM CORE","YHWH CODEX","ANIMAL AI","PASSIVE INTERCEPT",
  "TinySA LAB","CALCULATOR","JAM STUDIO","DSP/FFT","TELEMETRY","AI HOME",
- "NETWORK GATEWAY","PHONE LINK","MEDIA STUDIO","SENSOR HUB","DATA VAULT",
+ "NETWORK GATEWAY","FREE PHONE HUB","MEDIA STUDIO","SENSOR HUB","DATA VAULT",
  "FILE BROWSER","HAPTIC LAB","ACCESSIBILITY","POWER LAB","CONTROL LAB",
  "DIAGNOSTICS","AETHER BOT","GENERAL SETTINGS","EVENT LOG","NOTES","CLOCK",
  "ABOUT","SAFETY CENTER",
@@ -144,7 +144,7 @@ static void persistSelection(void){save.selected=(u16)selected;markDirty();}
 static void homeSet(int n){if(n<0)n=APP_COUNT-1;if(n>=APP_COUNT)n=0;selected=n;cursor=n;homePage=n/8;persistSelection();}
 static void page(const char *title){
  consoleSelect(&topConsole);consoleClear();
- printf("\x1b[36;1mAETHERCORE 5 / DSi BOOT-SAFE\x1b[37;1m\n");
+ printf("\x1b[36;1mAETHERCORE 708 / DSi BOOT-SAFE\x1b[37;1m\n");
  printf("\x1b[35;1m==============================\x1b[37;1m\n");
  printf("%s\n",title);
  printf("DSi:%s  SAFE:%s  AI:%s  WIFI:%s\n",isDSiMode()?"YES":"DS",safeMode?"ON":"OFF",save.ai?"ON":"OFF",save.wireless?"ON":"OFF");
@@ -300,26 +300,29 @@ static void modNetwork(void){page("11 NETWORK GATEWAY");printf("WIFI:%s SELFTEST
 
 /* 12 — Phone Link */
 static void modPhone(void){
- page("12 PHONE LINK / MESSAGING");
- printf("FREE-TEXT MESSAGING WORKSPACE\\n");
- printf("CONTACT: %s\\n",aether_messaging_contact());
- printf("PLATFORM: %s  ACCENT: %s\\n",aether_messaging_platform(),aether_messaging_color_name());
- printf("CONNECTION: %s  SENT:%u  RX:%u  QUEUE:%u\\n",
-        aether_messaging_connected()?"READY":"OFFLINE",aether_messaging_sent(),
-        aether_messaging_received(),aether_messaging_queued());
+ page("12 FREE PHONE HUB / UNIVERSAL COMMS");
+ printf("DSi-FIRST PERSONAL COMMUNICATION CONSOLE\\n");
+ printf("CONTACT: %s   PLATFORM: %s\\n",aether_messaging_contact(),aether_messaging_platform());
+ printf("LINK: %s  SENT:%u  RX:%u  QUEUE:%u\\n",
+        aether_messaging_connected()?"LIVE GATEWAY":"OFFLINE",
+        aether_messaging_sent(),aether_messaging_received(),aether_messaging_queued());
+ printf("RECEIPT: %s\\n",aether_messaging_connected()?"GATEWAY ACK CAPABLE":"NO REMOTE RECEIPT");
  printf("TEXT[%u/160]: %s\\n",aether_messaging_text_len(),aether_messaging_text());
- printf("KEY:%c  [touch keyboard / D-PAD character select]\\n",
+ printf("CONTACT ACCENT: %s   KEY:%c\\n",aether_messaging_color_name(),
         " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,!?'-_@:/"
         [aether_messaging_cursor()]);
- printf("APPLE/ANDROID: COLOR IS A LOCAL CONTACT ACCENT; ACTUAL iMessage/RCS/SMS DELIVERY REQUIRES A COMPATIBLE INTERNET/CARRIER GATEWAY.\\n");
+ printf("FREE CORE: contacts + local drafts + queued messages + test RX + receipts.\\n");
+ printf("REAL SMS/RCS/iMessage/voice/cellular service needs an authorized compatible gateway/device.\\n");
  consoleSelect(&bottomConsole); consoleClear();
- printf("MESSAGING KEYBOARD  | CONTACT: %s\\n",aether_messaging_contact());
+ printf("FREE PHONE HUB  |  DSi MODE / GATEWAY MODE\\n");
  printf("ABCDEFGHIJKLMNOPQRSTUVWXYZ\\n");
  printf("abcdefghijklmnopqrstuvwxyz\\n");
  printf("0123456789 . , ! ? ' - _ @ : /\\n");
- printf("TAP A KEY TO TYPE   SWIPE/D-PAD = SELECT   X SEND\\n");
- printf("Y BACKSPACE   L/R CONTACT/PLATFORM   SELECT TEST RX\\n");
- printf("B HOME   QUEUE:%u   SENT:%u   RECEIVED:%u\\n",aether_messaging_queued(),aether_messaging_sent(),aether_messaging_received());
+ printf("TAP TYPE   SWIPE/D-PAD SELECT   X SEND   Y BACKSPACE\\n");
+ printf("L/R CONTACT/PLATFORM   SELECT TEST RX   B HOME\\n");
+ printf("STATE: %s   RECEIPTS: %s\\n",
+        aether_messaging_connected()?"LIVE":"OFFLINE",
+        aether_messaging_connected()?"ACK WHEN GATEWAY CONFIRMS":"NOT AVAILABLE OFFLINE");
 }
 
 /* 13 — Media Studio */
@@ -801,7 +804,7 @@ int legacy_shell_main(void){
   * A bad/slow/unmounted DSi SD must never leave the user staring at black. */
  consoleSelect(&topConsole);
  consoleClear();
- printf("\x1b[36;1mAETHERCORE 5 / DSi\x1b[37;1m\n");
+ printf("\x1b[36;1mAETHERCORE 708 / DSi\x1b[37;1m\n");
  printf("\x1b[35;1mBOOT-SAFE INITIALIZATION\x1b[37;1m\n");
  printf("DISPLAY: ONLINE\n");
  consoleSelect(&bottomConsole);
