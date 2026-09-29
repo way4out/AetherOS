@@ -105,12 +105,12 @@ static u32 hash32(const void *p,size_t n){
 }
 static void markDirty(void){dirty=1;}
 static void hardwareStatusLine(void){
- iprintf("CAM:%s/%s PREV:%d CAP:%d MIC:%s/%s PEAK:%d RMS:%d\\n",isDSiMode()?(aetherCameraAvailable()?"READY":"FAIL"):"DS-MODE",aetherCameraDevice()==CAMERA_INNER?"INNER":"OUTER",aetherCameraPreviewCount(),aetherCameraCaptureCount(),aetherMicAvailable()?"READY":"FAIL",aetherMicActive()?"LIVE":"OFF",aetherMicPeak(),aetherMicRms());
+ iprintf("CAM:%s/%s PREV:%d CAP:%d MIC:%s/%s PEAK:%d RMS:%d\\n",isDSiMode()?(aetherCameraAvailable()?"READY":"FAIL"):"DS-MODE",aetherCameraDevice()==0?"INNER":"OUTER",aetherCameraPreviewCount(),aetherCameraCaptureCount(),aetherMicAvailable()?"READY":"FAIL",aetherMicActive()?"LIVE":"OFF",aetherMicPeak(),aetherMicRms());
 }
 static void hardwareAction(u32 d){
  if((d&KEY_START)&&aetherCameraAvailable()){if(aetherCameraPreview())hardwareActionCount++;}
  if((d&KEY_SELECT)&&aetherMicAvailable()){if(aetherMicStartStop())hardwareActionCount++;}
- if((d&KEY_L)&&(d&KEY_R)&&aetherCameraAvailable())cameraSelect(aetherCameraDevice()==CAMERA_INNER?CAMERA_OUTER:CAMERA_INNER);
+ if((d&KEY_L)&&(d&KEY_R)&&aetherCameraAvailable())aetherCameraToggle();
 }
 static int storageOk(void){ FILE *f=fopen("fat:/data/AetherMod/.aether_test","wb"); if(!f) return 0; fputs("OK",f); fclose(f); remove("fat:/data/AetherMod/.aether_test"); return 1; }
 static void ensureDirs(void){mkdir("fat:/data",0777);mkdir("fat:/data/AetherMod",0777);}
