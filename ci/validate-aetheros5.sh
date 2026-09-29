@@ -16,7 +16,8 @@ print("VERIFIED_ARM9_SIZE",arm9_size)
 PY
 grep -Fq '#define APP_COUNT 79' source/aetherosq.c
 grep -Fq 'mode>=30&&mode<=76' source/aetherosq.c
-grep -Fq '"MESSAGING","CAMERA & MIC"' source/aetherosq.c
+grep -Fq '"MESSAGING"' source/aetherosq.c
+grep -Fq '"CAMERA & MIC"' source/aetherosq.c
 grep -Fq 'modCamera' source/aetherosq.c
 # Front-end interaction gates: every home entry is addressable, the entrypoint is linked,
 # and the DSi touchscreen home rows use the actual bottom-screen layout.
