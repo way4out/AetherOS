@@ -56,3 +56,5 @@ The production workflow now emits AetherCore4.nds and AetherOS-AetherCore4.nds. 
 
 
 <!-- CI: AetherOS 5 direct-build validation -->
+
+<!-- build validation pulse -->
