@@ -41,6 +41,7 @@ static const char *root="fat:/";
 static int mode=0,selected=0,homePage=0,cursor=0;
 static int dirty=0, safeMode=0, frame=0, actionCount=0;
 static int touchX=0,touchY=0,touchDown=0,touchStartX=-1,touchStartY=-1,touchPrevY=-1,touchMoved=0;
+static void draw(void);
 static int pageCursor=0, subCursor=0, moduleValue=0, touchActionLatch=0, msgTouchKey=-1;
 static int qState=0,qShots=0,qFidelity=0;
 static int codexBook=0,codexPage=0,codexSearch=0;
