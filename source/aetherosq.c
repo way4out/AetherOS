@@ -62,6 +62,8 @@ static int noteCursor=0,clock24=1,safetyCursor=0;
 static int visualPhase=0,energy=0,bootCount=0,diagStorage=0,diagStorageKnown=0;
 static int coreMode=0,coreCursor=0,coreZone=0,coreXp=120,coreLevel=2,coreStreak=3;
 static int coreQuest=0,coreSocial=0,corePulse=0,coreCredits=75,coreWins=0,coreSession=0;
+static int coreDay=1,coreEnergy=100,coreCoins=40,coreInventory=0,coreAchievements=0,coreEvent=0,coreNpc=0;
+static int coreQuestDone[6]={0,0,0,0,0,0},coreAchDone[6]={0,0,0,0,0,0};
 static char fileNames[16][48],vaultNames[12][48],eventNames[16][48];
 
 static const char *apps[APP_COUNT]={
@@ -338,11 +340,51 @@ static const char *coreAvatars[]={"PIONEER","ENGINEER","SCOUT","CREATOR"};
 static void draw(void);
 static void coreHeader(const char *title){ page(title); consoleSelect(&topConsole); iprintf("\x1b[33;1mAETHERCORE 1 / PASS 1\x1b[37;1m\n"); iprintf("LEVEL %d  XP %d  STREAK %d  CREDITS %d\n",coreLevel,coreXp,coreStreak,coreCredits); }
 static void coreReward(int xp,int credits){ coreXp+=xp; coreCredits+=credits; coreWins++; coreStreak++; if(coreXp>=coreLevel*100){coreXp-=coreLevel*100;coreLevel++;} corePulse=(corePulse+1)%100; markDirty(); feedback(); }
-static void coreWorld(void){ coreHeader("AETHERCORE NEXUS"); iprintf("ZONE: %s   AVATAR: %s\n\n",coreZones[coreZone],coreAvatars[(coreLevel+coreZone)%4]); iprintf("MISSION BOARD\n"); for(int i=0;i<6;i++) iprintf("%c %d  %-22s %s\n",i==coreQuest?'>':' ',i+1,coreQuests[i],i==coreQuest?"READY":"AVAILABLE"); iprintf("\nLOCAL CREW: %d   CORE WINS: %d\n",coreSocial,coreWins); graph("WORLD ",coreZone*17+corePulse); iprintf("A=accept quest  X=crew  Y=systems  L/R=zone\n"); footer("A QUEST | X CREW | Y SYSTEMS | B NEXUS"); }
+static void coreWorld(void){
+ coreHeader("AETHERCORE NEXUS");
+ iprintf("ZONE: %s  AVATAR:%s  DAY:%d\\n",coreZones[coreZone],coreAvatars[(coreLevel+coreZone)%4],coreDay);
+ iprintf("ENERGY:%d  COINS:%d  INVENTORY:%d\\n\\n",coreEnergy,coreCoins,coreInventory);
+ iprintf("MISSION BOARD\\n");
+ for(int i=0;i<6;i++) iprintf("%c %d %-21s %s\\n",i==coreQuest?'>':' ',i+1,coreQuests[i],coreQuestDone[i]?"DONE":"READY");
+ iprintf("\\nNPC: %s\\n",coreNpc==0?"NOVA / ARCHIVIST":coreNpc==1?"ORBIT / SCOUT":coreNpc==2?"VECTOR / BUILDER":"LYRA / TRADER");
+ iprintf("CREW:%d  WINS:%d  ACHIEVEMENTS:%d\\n",coreSocial,coreWins,coreAchievements);
+ graph("WORLD ",coreZone*17+corePulse);
+ iprintf("A QUEST  X CREW  Y SYSTEMS  L/R ZONE\\n");
+ footer("TOUCH: TAP WORLD AREAS | SWIPE ZONES | L/R SPECIAL");
+}
+static void coreWorld_legacy(void){ coreHeader("AETHERCORE NEXUS"); iprintf("ZONE: %s   AVATAR: %s\n\n",coreZones[coreZone],coreAvatars[(coreLevel+coreZone)%4]); iprintf("MISSION BOARD\n"); for(int i=0;i<6;i++) iprintf("%c %d  %-22s %s\n",i==coreQuest?'>':' ',i+1,coreQuests[i],i==coreQuest?"READY":"AVAILABLE"); iprintf("\nLOCAL CREW: %d   CORE WINS: %d\n",coreSocial,coreWins); graph("WORLD ",coreZone*17+corePulse); iprintf("A=accept quest  X=crew  Y=systems  L/R=zone\n"); footer("A QUEST | X CREW | Y SYSTEMS | B NEXUS"); }
+static void coreAchievementsView(void){
+ coreHeader("AETHERCORE ACHIEVEMENTS");
+ const char *a[]={"FIRST CONTACT","CORE EXPLORER","QUEST RUNNER","SYSTEMS PILOT","CREATOR","SOCIAL SIGNAL"};
+ for(int i=0;i<6;i++) iprintf("%c %-18s %s\\n",coreAchDone[i]?'*':' ',a[i],coreAchDone[i]?"UNLOCKED":"LOCKED");
+ footer("X NEXUS | B BACK");
+}
+static void coreEventView(void){
+ coreHeader("AETHERCORE LIVE EVENT");
+ iprintf("EVENT %d: %s\\n\\n",coreEvent+1,coreEvent==0?"QUANTUM STORM":coreEvent==1?"SIGNAL HUNT":coreEvent==2?"CREATOR JAM":"NEXUS FESTIVAL");
+ iprintf("Participate to earn XP, coins and achievements.\\n");
+ iprintf("EVENT ENERGY: %d\\n",coreEnergy);
+ footer("A PARTICIPATE | X ACHIEVEMENTS | Y NEXUS | B BACK");
+}
+static void coreTick(void){
+ if((frame%120)==0){corePulse=(corePulse+1)%100;coreNpc=(coreNpc+1)%4;if(coreEnergy<100)coreEnergy++;}
+}
 static void coreSocialView(void){ coreHeader("AETHERCORE CREW"); iprintf("LOCAL SOCIAL DECK / NO CLOUD CLAIM\n\n"); iprintf("CREW SIGNAL: %s\n",coreSocial?"ACTIVE":"DISCOVERY"); iprintf("Players are represented locally until a supported network service is added.\n\n"); iprintf("[01] YOU      LVL %d  XP %d\n",coreLevel,coreXp); iprintf("[02] NOVA     LVL 4   READY\n[03] ORBIT    LVL 3   READY\n[04] VECTOR   LVL 5   READY\n"); iprintf("\nA=send local pulse  X=refresh crew  Y=world\n"); footer("A PULSE | X REFRESH | Y WORLD | B NEXUS"); }
 static void coreSystems(void){ coreHeader("AETHERCORE SYSTEMS GATE"); iprintf("THE COMPLETE AETHEROS 9.0 MODULE GRID REMAINS AVAILABLE.\n\n"); iprintf("29 SYSTEMS / INDIVIDUAL RUNTIMES / GENEVA 1599\n"); iprintf("QUANTUM  CODEX  ANIMAL  RF  TinySA  CALC  DAW  DSP\n"); iprintf("TELEMETRY  AI  NETWORK  PHONE  MEDIA  SENSOR  VAULT\n"); iprintf("FILES  HAPTIC  ACCESS  POWER  CONTROL  DIAGNOSTICS\n"); iprintf("BOT  SETTINGS  EVENTS  NOTES  CLOCK  ABOUT  SAFETY\n"); footer("A MODULE GRID | X WORLD | Y AETHEROS HOME | B NEXUS"); }
-static void coreInput(u32 d){ if(d&KEY_B){coreMode=0;draw();return;} if(coreMode==0){ if(d&KEY_UP){coreQuest=(coreQuest+5)%6;draw();} if(d&KEY_DOWN){coreQuest=(coreQuest+1)%6;draw();} if(d&KEY_LEFT){coreZone=(coreZone+5)%6;draw();} if(d&KEY_RIGHT){coreZone=(coreZone+1)%6;draw();} if(d&KEY_A){coreReward(20+coreQuest*5,5+coreZone);coreSession++;draw();} if(d&KEY_X){coreMode=1;draw();} if(d&KEY_Y){coreMode=2;draw();} }else if(coreMode==1){ if(d&KEY_A){coreSocial++;coreReward(5,1);draw();} if(d&KEY_X){coreSocial=(coreSocial+1)%9;draw();} if(d&KEY_Y){coreMode=0;draw();} }else{ if(d&KEY_A||d&KEY_Y){mode=0;coreMode=0;draw();} if(d&KEY_X){coreMode=0;draw();} } }
-static void coreFront(void){ if(coreMode==0)coreWorld(); else if(coreMode==1)coreSocialView(); else coreSystems(); }
+static void coreInput(u32 d){
+ if(d&KEY_B){coreMode=0;draw();return;}
+ if(coreMode==0){
+  if(d&KEY_UP){coreQuest=(coreQuest+5)%6;draw();} if(d&KEY_DOWN){coreQuest=(coreQuest+1)%6;draw();}
+  if(d&KEY_LEFT){coreZone=(coreZone+5)%6;coreDay++;draw();} if(d&KEY_RIGHT){coreZone=(coreZone+1)%6;coreDay++;draw();}
+  if(d&KEY_A&&coreEnergy>=10){coreEnergy-=10;coreReward(20+coreQuest*5,5+coreZone);coreCoins+=8+coreQuest;coreInventory++;coreQuestDone[coreQuest]=1;coreAchDone[0]=1;if(coreZone>=2)coreAchDone[1]=1;if(coreInventory>=3)coreAchDone[2]=1;coreAchievements=0;for(int i=0;i<6;i++)coreAchievements+=coreAchDone[i];coreSession++;draw();}
+  if(d&KEY_X){coreMode=1;draw();} if(d&KEY_Y){coreMode=2;draw();} if(d&KEY_L){coreMode=3;draw();} if(d&KEY_R){coreMode=4;draw();}
+ }else if(coreMode==1){
+  if(d&KEY_A){coreSocial++;coreReward(5,1);if(!coreAchDone[5]){coreAchDone[5]=1;coreAchievements++;}draw();} if(d&KEY_X){coreSocial=(coreSocial+1)%9;draw();} if(d&KEY_Y){coreMode=0;draw();}
+ }else if(coreMode==2){if(d&KEY_A||d&KEY_Y){mode=0;coreMode=0;draw();}if(d&KEY_X){coreMode=0;draw();}}
+ else if(coreMode==3){if(d&KEY_X||d&KEY_Y){coreMode=0;draw();}}
+ else {if(d&KEY_A&&coreEnergy>=15){coreEnergy-=15;coreReward(35,15);coreCoins+=15;coreAchDone[4]=1;if(coreAchievements<6)coreAchievements++;draw();}if(d&KEY_X){coreMode=3;draw();}if(d&KEY_Y){coreMode=0;draw();}}
+}
+static void coreFront(void){ if(coreMode==0)coreWorld(); else if(coreMode==1)coreSocialView(); else if(coreMode==2)coreSystems(); else if(coreMode==3)coreAchievementsView(); else coreEventView(); }
 
 static void home(void){
  page("00 AETHER HOME");consoleSelect(&bottomConsole);consoleClear();
@@ -463,6 +505,7 @@ int legacy_shell_main(void){
          soundPlayPSG(DutyCycle_50,220+t*90,70,64);
    }
    input();
+   if(mode==29) coreTick();
    saveIfDirty();
    if((frame&3)==0)draw();
  }
