@@ -311,7 +311,14 @@ static void modPhone(void){
         " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,!?'-_@:/"
         [aether_messaging_cursor()]);
  printf("APPLE/ANDROID: COLOR IS A LOCAL CONTACT ACCENT; ACTUAL iMessage/RCS/SMS DELIVERY REQUIRES A COMPATIBLE INTERNET/CARRIER GATEWAY.\\n");
- footer("UP/DOWN KEY | L/R CONTACT | A APPEND | X SEND | Y BACKSPACE | SELECT TEST RX | B HOME");
+ consoleSelect(&bottomConsole); consoleClear();
+ printf("MESSAGING KEYBOARD  | CONTACT: %s\\n",aether_messaging_contact());
+ printf("ABCDEFGHIJKLMNOPQRSTUVWXYZ\\n");
+ printf("abcdefghijklmnopqrstuvwxyz\\n");
+ printf("0123456789 . , ! ? ' - _ @ : /\\n");
+ printf("TAP A KEY TO TYPE   SWIPE/D-PAD = SELECT   X SEND\\n");
+ printf("Y BACKSPACE   L/R CONTACT/PLATFORM   SELECT TEST RX\\n");
+ printf("B HOME   QUEUE:%u   SENT:%u   RECEIVED:%u\\n",aether_messaging_queued(),aether_messaging_sent(),aether_messaging_received());
 }
 
 /* 28 — Safety Center */
