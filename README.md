@@ -277,3 +277,38 @@ Every claimed value increase should be traceable to measurable operating evidenc
 **Release rule:** new features should improve at least one measurable dimension—utility, reliability, retention, interoperability, deployment efficiency, monetization capability or verified customer outcome—without compromising the DSi-first offline experience.
 
 **North-star:** build a platform capable of supporting $1T+ enterprise value if real-world adoption and economics ultimately justify it. The target itself is not evidence that the valuation has been achieved.
+
+
+## North Star — Public Business & Exit Readiness
+
+AetherOS/AetherCore's public business objective is to make the complete technology, documentation, deployment system and commercial rights **sale-ready under the legal ownership structure actually established by StellarNet LLC**. Public materials may identify the company as the owner/operator only to the extent supported by executed corporate and IP documents.
+
+### Full-business sale package
+
+The implementation target is a diligence-ready package containing:
+- complete source repository and reproducible build system
+- verified DSi artifacts and CI history
+- product architecture, module inventory and capability matrix
+- technical documentation and deployment instructions
+- trademarks, domains and brand-asset inventory
+- third-party/open-source license inventory
+- IP assignment and chain-of-title records
+- customer, contractor and partner agreements where applicable
+- financial model, revenue records and expense records
+- security, privacy and compliance documentation
+- asset/liability schedule and transfer checklist
+- buyer data room and transition plan
+
+**Ownership rule:** repository authorship, credit and legal ownership are separate concepts. A public record showing an LLC exists does not by itself establish that every AetherOS copyright, patent, trademark, domain, contract or other asset is owned by that LLC. Those rights should be documented by signed assignments and corporate records before marketing a sale.
+
+### Legacy and future recognition
+
+The product can preserve a permanent creator/heritage acknowledgment in its documentation while keeping the public commercial brand focused on the company and product. The long-term vision is that the value created by the project can benefit present and future generations through lawful ownership, succession, licensing, estate planning and other documented arrangements.
+
+**North-star:** build an independently verifiable, transferable technology business whose economic value could support an eventual $1T+ outcome if customers, revenue, margins, ecosystem scale and market evidence ultimately justify it.
+
+### Public launch standard
+
+Only verified facts are presented as facts. Current valuation, ownership, customer counts, revenue, contracts and acquisition offers are not inflated. Unsupported capabilities remain labeled as planned, gateway-dependent or unavailable.
+
+For Arizona corporate records, the Arizona Corporation Commission is the authoritative public-record starting point for Arizona corporations and LLCs; its public database provides access to filed business records. citeturn0search2turn0search3
