@@ -123,6 +123,23 @@ void cameraShutdown() {
 // microphone during boot. Those services are started only by a module that
 // explicitly requests them. This keeps the same .nds binary usable on both
 // original NDS and DSi/TWL hardware.
+bool ensure44MiBCache() {
+    if (!sdAvailable() || !dirExists("REVF/CACHE")) return false;
+    FILE* f = fopen("REVF/CACHE/AETHER44.BIN", "rb");
+    if (f) { fclose(f); return true; }
+    f = fopen("REVF/CACHE/AETHER44.BIN", "wb");
+    if (!f) return false;
+    // Allocate a real 44 MiB SD-backed container once; never reserve that amount in DSi RAM.
+    static const u32 k44MiB = 44u * 1024u * 1024u;
+    if (fseek(f, (long)k44MiB - 1L, SEEK_SET) != 0 || fputc(0, f) == EOF) {
+        fclose(f);
+        remove("REVF/CACHE/AETHER44.BIN");
+        return false;
+    }
+    fclose(f);
+    return true;
+}
+
 void hardwareTick() {
     (void)dsiMode();
 }
