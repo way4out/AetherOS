@@ -37,8 +37,7 @@ The project does not enable active RF interference, covert interception, credent
 
 ## Status
 
-A successful CI build means the source compiled and passed automated structural gates. It does not constitute a guarantee of flawless behavior on every physical DSi; hardware runtime validation still requires a real device or compatible emulator.
-
+CI verification is required for each public release artifact; this repository does not label an unbuilt or untested binary as verified.
 
 ## Human DSi instructions
 
