@@ -15,13 +15,14 @@ AUDIODIRS :=
 NITROFATDIR :=
 
 DEFINES := -D__NDS__ -DARM9
-LIBS := -lnds9 -lc
-LIBDIRS := $(BLOCKSDS)/libs/libnds $(BLOCKSDS)/libs/libc9
+LIBS := -ldswifi9 -lnds9 -lc
+LIBDIRS := $(BLOCKSDS)/libs/dswifi $(BLOCKSDS)/libs/libnds $(BLOCKSDS)/libs/libc9
 
 BUILDDIR := build
 ELF := $(BUILDDIR)/$(NAME).elf
 MAP := $(BUILDDIR)/$(NAME).map
 ROM := $(NAME).nds
+ARM7ELF := $(BLOCKSDS)/sys/arm7/main_core/arm7_dswifi.elf
 
 PREFIX := arm-none-eabi-
 CC := $(PREFIX)gcc
@@ -64,7 +65,7 @@ all: $(ROM)
 
 $(ROM): $(ELF)
 	@echo "  NDSTOOL $@"
-	$(V)$(BLOCKSDS)/tools/ndstool/ndstool -c $@ -7 $(BLOCKSDS)/sys/default_arm7/arm7.elf -9 $(ELF) "$(GAME_TITLE);$(GAME_SUBTITLE1);$(GAME_SUBTITLE2)"
+	$(V)$(BLOCKSDS)/tools/ndstool/ndstool -c $@ -7 $(ARM7ELF) -9 $(ELF) "$(GAME_TITLE);$(GAME_SUBTITLE1);$(GAME_SUBTITLE2)"
 
 $(ELF): $(OBJS_SOURCES)
 	@echo "  LD      $@"
