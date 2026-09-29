@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euxo pipefail
-test -s AetherCore7.nds
+test -s AetherCore707.nds
 python3 - <<'PY'
 from pathlib import Path
-p=Path("AetherCore7.nds").read_bytes()
+p=Path("AetherCore707.nds").read_bytes()
 assert len(p) > 0
 assert len(p) <= 64*1024*1024
 assert p[0x12] == 2, f"DSi unit code={p[0x12]}"
@@ -26,7 +26,7 @@ grep -Fq 'int r=((int)t.py-16)/12' source/aetherosq.c
 grep -Fq 'if(!touchMoved&&t.py>=16&&t.py<112)' source/aetherosq.c
 test "$(grep -o 'static void mod[A-Za-z0-9_]*' source/aetherosq.c | wc -l)" -ge 29
 
-# AetherCore7 messaging gates
+# AetherCore707 messaging gates
 grep -Fq 'aether_messaging_init' source/aetherosq.c
 grep -Fq 'aether_messaging_send' source/aetherosq.c
 grep -Fq 'MEDIA / GLOBAL HUB' source/aetherosq.c
