@@ -231,7 +231,8 @@ extern "C" int universe_frontend(void){
     if(d&KEY_B) break;
     if(d&KEY_A){
       if(cursor==0){quantum_screen(top,bottom);continue;}
-      if(cursor==1){hardware_scan_screen(top,bottom);continue;}\n      if(cursor==3){io_screen(top,bottom);continue;}
+      if(cursor==1){hardware_scan_screen(top,bottom);continue;}
+      if(cursor==3){io_screen(top,bottom);continue;}
       if(cursor==5){vault_screen(top,bottom);continue;}
       break;
     }
