@@ -3,6 +3,9 @@
 #include "hardware/hardware_profile.h"
 #include "storage/resource_store.h"
 #include "storage/module_registry.h"
+#include "core/universe_boot.h"
+#include "core/capacity_engine.h"
+#include "core/diagnostics.h"
 
 extern "C" int legacy_shell_main(void);
 
@@ -82,6 +85,12 @@ static void diagnostics(PrintConsole &top, PrintConsole &bottom){
   printf("SD MEDIA       512 GB TARGET PROFILE\n");
   printf("USABLE TARGET  400 GB APPLICATION CAPACITY\n");
   printf("External HW    CAPABILITY-GATED\n");
+  auto cp=aether::capacity::report();
+  auto dr=aether::diag::report();
+  printf("BOOT SERVICES  %s\n",aether::boot::ready()?"READY":"CHECK");
+  printf("WORKSPACE      %u MB CLASS\n",cp.workspaceMB);
+  printf("INDEXED ASSETS  %u\n",cp.indexedAssets);
+  printf("DIAG SCORE      %u\n",dr.score);
   printf("\nA / B = RETURN\n");
 
   consoleSelect(&bottom); consoleClear();
@@ -116,6 +125,7 @@ extern "C" int universe_frontend(void){
     consoleSelect(&bottom); draw_bottom(cursor);
 
     swiWaitForVBlank();
+    aether::boot::tick(0);
     scanKeys();
     u32 d=keysDown();
 
