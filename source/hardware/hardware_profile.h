@@ -20,5 +20,10 @@ void hardwareTick();
 // DSi retail RAM is 16 MiB; the 44 MiB rollout tier is therefore SD-backed storage, not RAM.
 // This creates the cache container lazily so the runtime can use a larger resource budget safely.
 bool ensure44MiBCache();
+// Storage policy: profile a 512 GB SD media target with 400 GB usable application capacity.
+// These are policy values; actual accessibility is determined by the DSi/libfat runtime.
+u64 sdMediaProfileBytes();
+u64 sdUsableTargetBytes();
+bool ensureStorageProfile();
 
 }
