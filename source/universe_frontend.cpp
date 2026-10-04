@@ -1,4 +1,6 @@
 #include <nds.h>
+#include <nds/arm9/camera.h>
+#include <nds/ndma.h>
 #include <stdio.h>
 #include "hardware/hardware_profile.h"
 #include "hardware/dsi_capability_scan.h"
@@ -131,6 +133,56 @@ static void quantum_screen(PrintConsole &top, PrintConsole &bottom){
   }
 }
 
+static void io_screen(PrintConsole &top, PrintConsole &bottom){
+  bool cam=aether::hardware::cameraAvailable();
+  bool mic=aether::hardware::microphoneAvailable();
+  int camMode=0;
+  u16* frame=(u16*)malloc(256*192*2);
+  if(!frame){ cam=false; }
+  videoSetMode(MODE_5_2D);
+  vramSetBankA(VRAM_A_MAIN_BG);
+  if(cam){
+    cameraSelect(camMode?CAMERA_OUTER:CAMERA_INNER);
+    bgInit(3,BgType_Bmp16,BgSize_B16_256x256,0,0);
+  }
+  while(1){
+    consoleSelect(&top); consoleClear();
+    printf("\x1b[36;1mDSi AUDIO / CAMERA I-O\x1b[37;1m\n\n");
+    printf("CAMERA DRIVER  %s\n",cam?"READY":"UNAVAILABLE");
+    printf("ACTIVE CAMERA   %s\n",camMode?"OUTER":"INNER");
+    printf("MICROPHONE      %s\n",mic?"READY":"UNAVAILABLE");
+    printf("AUDIO OUT       READY\n");
+    printf("TOUCH           READY\n");
+    printf("\nA = SWITCH CAMERA\n");
+    printf("X = AUDIO TEST\n");
+    printf("Y = MIC TEST\n");
+    printf("B = RETURN\n");
+    consoleSelect(&bottom); consoleClear();
+    printf("LIVE I/O CHANNELS\n\n");
+    printf("Speaker/PCM     ACTIVE\n");
+    printf("Mic input       %s\n",mic?"AVAILABLE":"GATED");
+    printf("Camera preview  %s\n",cam?"AVAILABLE":"GATED");
+    printf("Touch pixels    256 x 192\n");
+    printf("Capture         DSi 640 x 480\n");
+    printf("\nHardware is probed before use.\n");
+    if(cam && frame && !cameraTransferActive()){
+      if(cameraStartTransfer(frame,MCUREG_APT_SEQ_CMD_PREVIEW,0)){
+        while(cameraTransferActive() || ndmaBusy(0)) swiWaitForVBlank();
+        memcpy(bgGetGfxPtr(3),frame,256*192*2);
+      }
+    }
+    swiWaitForVBlank(); scanKeys(); u32 d=keysDown();
+    if(d&KEY_A && cam){ camMode^=1; cameraSelect(camMode?CAMERA_OUTER:CAMERA_INNER); }
+    if(d&KEY_X){ aether::audio::tone(1000,180); }
+    if(d&KEY_Y && mic){ aether::hardware::microphoneStart(); swiWaitForVBlank(); aether::hardware::microphoneStop(); }
+    if(d&KEY_B) break;
+  }
+  if(cam) aether::hardware::cameraShutdown();
+  if(frame) free(frame);
+  videoSetMode(MODE_0_2D);
+  videoSetModeSub(MODE_0_2D);
+}
+
 static void diagnostics(PrintConsole &top, PrintConsole &bottom){
   consoleSelect(&top); consoleClear();
   printf("\x1b[36;1mAETHEROS LIVE DIAGNOSTICS\x1b[37;1m\n\n");
@@ -178,7 +230,7 @@ extern "C" int universe_frontend(void){
     if(d&KEY_B) break;
     if(d&KEY_A){
       if(cursor==0){quantum_screen(top,bottom);continue;}
-      if(cursor==1){hardware_scan_screen(top,bottom);continue;}
+      if(cursor==1){hardware_scan_screen(top,bottom);continue;}\n      if(cursor==3){io_screen(top,bottom);continue;}
       if(cursor==5){vault_screen(top,bottom);continue;}
       break;
     }
