@@ -45,3 +45,6 @@ grep -Fq 'AETHEROS_STORAGE_PROFILE=500GB' source/hardware/hardware_profile.cpp
 grep -Fq 'AETHEROS_USABLE_TARGET=500GB' source/hardware/hardware_profile.cpp
 test -s source/hardware/dsi_capability_scan.cpp
 test -s source/quantum/quantum_scan.cpp
+
+grep -Fq 'gate::init();' source/core/universe_boot.cpp
+grep -Fq 'gate::tick();' source/core/universe_boot.cpp
