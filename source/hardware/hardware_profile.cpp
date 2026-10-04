@@ -13,6 +13,8 @@ static bool gMicReady = false;
 static bool gMicRunning = false;
 static bool gCameraReady = false;
 static bool gCameraSelected = false;
+static const u64 kSdMediaProfileBytes = 512ULL * 1000ULL * 1000ULL * 1000ULL;
+static const u64 kSdUsableTargetBytes = 400ULL * 1000ULL * 1000ULL * 1000ULL;
 
 alignas(32) static s16 gMicBuffer[2048];
 
@@ -43,10 +45,26 @@ bool ensureDirectories() {
     const char* dirs[] = {
         "REVF","REVF/CORE","REVF/QUANTUM","REVF/SOUND","REVF/DSP","REVF/LAB",
         "REVF/AI","REVF/NETWORK","REVF/PROJECTS","REVF/SAMPLES","REVF/PRESETS",
+        "REVF/STORAGE",
         "REVF/CIRCUITS","REVF/PLUGINS","REVF/CACHE","REVF/BENCH","REVF/LOGS","REVF/RECOVERY"
     };
     for (unsigned i=0;i<sizeof(dirs)/sizeof(dirs[0]);++i)
         if (!makeDir(dirs[i])) return false;
+    return true;
+}
+
+ u64 sdMediaProfileBytes() { return kSdMediaProfileBytes; }
+ u64 sdUsableTargetBytes() { return kSdUsableTargetBytes; }
+
+bool ensureStorageProfile() {
+    if (!sdAvailable() || !ensureDirectories()) return false;
+    FILE* f=fopen("REVF/STORAGE/CAPACITY.CFG","w");
+    if(!f) return false;
+    fprintf(f,"AETHEROS_STORAGE_PROFILE=512GB\n");
+    fprintf(f,"AETHEROS_USABLE_TARGET=400GB\n");
+    fprintf(f,"POLICY=APPLICATION_STORAGE_TARGET_ONLY\n");
+    fprintf(f,"RUNTIME=DSI_LIBFAT_DETERMINED\n");
+    fclose(f);
     return true;
 }
 
