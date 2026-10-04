@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "hardware/hardware_profile.h"
 #include "storage/resource_store.h"
+#include "storage/module_registry.h"
 
 extern "C" int legacy_shell_main(void);
 
@@ -48,6 +49,24 @@ static void draw_bottom(int cursor){
   printf("D-PAD SELECTS WITHOUT TOUCH\n");
   printf("\nSAFE HANDOFF: AETHEROS RUNTIME\n");
   printf("Unsupported hardware stays gated.\n");
+}
+
+static void vault_screen(PrintConsole &top, PrintConsole &bottom){
+  consoleSelect(&top); consoleClear();
+  printf("\x1b[36;1mRESOURCE VAULT\x1b[37;1m\\n\\n");
+  printf("SD PROFILE     512 GB\\n");
+  printf("APP TARGET     400 GB\\n");
+  printf("CACHE         %u MiB\\n",aether::storage::cacheMiB());
+  printf("CACHE STATUS   %s\\n",aether::storage::vaultReady()?"READY":"UNAVAILABLE");
+  printf("MODULES        %d\\n",aether::storage::moduleCount());
+  printf("\\nA/B = RETURN");
+  consoleSelect(&bottom); consoleClear();
+  printf("MODULE REGISTRY\\n\\n");
+  for(int i=0;i<aether::storage::moduleCount() && i<14;++i)
+    printf("%02d %-18s\\n",i+1,aether::storage::moduleName(i));
+  printf("\\nAdditional modules are listed\\n");
+  printf("in REVF/STORAGE/MANIFEST.\\n");
+  while(1){ swiWaitForVBlank(); scanKeys(); if(keysDown()&(KEY_A|KEY_B)) return; }
 }
 
 static void diagnostics(PrintConsole &top, PrintConsole &bottom){
@@ -109,7 +128,11 @@ extern "C" int universe_frontend(void){
       continue;
     }
 
-    if(d&KEY_B || d&KEY_A) break;
+    if(d&KEY_B) break;
+    if(d&KEY_A){
+      if(cursor==5){ vault_screen(top,bottom); continue; }
+      break;
+    }
 
     if(keysDown()&KEY_TOUCH){
       touchPosition t; touchRead(&t);
