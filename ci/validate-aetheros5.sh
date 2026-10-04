@@ -24,9 +24,9 @@ grep -Fq 'modCamera' source/aetherosq.c
 grep -Fq 'int legacy_shell_main(void)' source/aetherosq.c
 # 500 GB media profile is compiled and exposed; actual filesystem capacity remains runtime-dependent.
 grep -Fq 'DAETHER_SD_MEDIA_GB=500' Makefile
-grep -Fq 'DAETHER_SD_USABLE_GB=400' Makefile
+grep -Fq 'DAETHER_SD_USABLE_GB=500' Makefile
 grep -Fq 'AETHEROS_STORAGE_PROFILE=500GB' source/hardware/hardware_profile.cpp
-grep -Fq 'AETHEROS_USABLE_TARGET=400GB' source/hardware/hardware_profile.cpp
+grep -Fq 'AETHEROS_USABLE_TARGET=500GB' source/hardware/hardware_profile.cpp
 grep -Fq 'SD MEDIA PROFILE 500 GB' source/universe_frontend.cpp
 test "$(grep -o 'static void mod[A-Za-z0-9_]*' source/aetherosq.c | wc -l)" -ge 29
 
@@ -38,4 +38,10 @@ grep -Fq 'mediaLegalOnly' source/aetherosq.c
 grep -Fq 'mode==77' source/aetherosq.c
 test -s source/messaging/aether_messaging.cpp
 test -s source/messaging/aether_messaging.h
-\ngrep -Fq 'DSi CAPABILITY SCAN' source/universe_frontend.cpp\ngrep -Fq 'QUANTUM REAL-TIME SIMULATOR' source/universe_frontend.cpp\ngrep -Fq 'AETHEROS_STORAGE_PROFILE=500GB' source/hardware/hardware_profile.cpp\ntest -s source/hardware/dsi_capability_scan.cpp\ntest -s source/quantum/quantum_scan.cpp\n
+
+grep -Fq 'DSi CAPABILITY SCAN' source/universe_frontend.cpp
+grep -Fq 'QUANTUM REAL-TIME SIMULATOR' source/universe_frontend.cpp
+grep -Fq 'AETHEROS_STORAGE_PROFILE=500GB' source/hardware/hardware_profile.cpp
+grep -Fq 'AETHEROS_USABLE_TARGET=500GB' source/hardware/hardware_profile.cpp
+test -s source/hardware/dsi_capability_scan.cpp
+test -s source/quantum/quantum_scan.cpp
