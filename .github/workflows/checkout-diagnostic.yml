@@ -21,6 +21,7 @@ jobs:
       - name: Expand ROM
         run: |
           set -eux
+          sudo chown "$USER":"$USER" UniverseSimulatorPlus.nds
           truncate -s 268435456 UniverseSimulatorPlus.nds
           python3 -c 'from pathlib import Path; p=Path("UniverseSimulatorPlus.nds"); b=bytearray(p.read_bytes()); b[0x14]=11; p.write_bytes(b)'
           cp UniverseSimulatorPlus.nds AetherOS-UniverseSimulatorPlus.nds
