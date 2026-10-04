@@ -22,8 +22,22 @@ jobs:
         run: |
           bash ci/validate-aetheros5.sh
           test -s UniverseSimulatorPlus.nds
+          python3 - <<'PY'
+from pathlib import Path
+p=Path("UniverseSimulatorPlus.nds")
+target=256*1024*1024
+b=bytearray(p.read_bytes())
+if len(b) > target:
+    raise SystemExit(f"ROM already exceeds target: {len(b)}")
+b[0x14] = 11
+b.extend(b"\x00" * (target-len(b)))
+p.write_bytes(b)
+Path("AetherOS-UniverseSimulatorPlus.nds").write_bytes(b)
+print("EXPANDED_ROM_BYTES", len(b))
+PY
           cp UniverseSimulatorPlus.nds AetherOS-UniverseSimulatorPlus.nds
           test -s AetherOS-UniverseSimulatorPlus.nds
+          test "$(stat -c%s UniverseSimulatorPlus.nds)" -ge 268435456
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
