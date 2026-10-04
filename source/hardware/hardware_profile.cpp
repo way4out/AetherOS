@@ -13,8 +13,8 @@ static bool gMicReady = false;
 static bool gMicRunning = false;
 static bool gCameraReady = false;
 static bool gCameraSelected = false;
-static const u64 kSdMediaProfileBytes = 500ULL * 1000ULL * 1000ULL * 1000ULL;
-static const u64 kSdUsableTargetBytes = 500ULL * 1000ULL * 1000ULL * 1000ULL;
+static const u64 kSdMediaProfileBytes = 505404132170ULL;
+static const u64 kSdUsableTargetBytes = 505404132170ULL;
 
 alignas(32) static s16 gMicBuffer[2048];
 
