@@ -60,8 +60,8 @@ bool ensureStorageProfile() {
     if (!sdAvailable() || !ensureDirectories()) return false;
     FILE* f=fopen("REVF/STORAGE/CAPACITY.CFG","w");
     if(!f) return false;
-    fprintf(f,"AETHEROS_STORAGE_PROFILE=500GB\n");
-    fprintf(f,"AETHEROS_USABLE_TARGET=500GB\n");
+    fprintf(f,"AETHEROS_STORAGE_PROFILE=505.40413217GB\n");
+    fprintf(f,"AETHEROS_USABLE_TARGET=505.40413217GB\n");
     fprintf(f,"POLICY=APPLICATION_STORAGE_TARGET_ONLY\n");
     fprintf(f,"RUNTIME=DSI_LIBFAT_DETERMINED\n");
     fclose(f);
