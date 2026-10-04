@@ -1,15 +1,44 @@
 #include <nds.h>
 #include <stdio.h>
-#include <stdint.h>
-#include <stdlib.h>
-typedef struct{int x,y,vx,vy,mass,r,alive;u16 color;}Body;
-static Body b[24];static int paused=0,selected=1,speed=1,frameNo=0;static u16*fb;
-static u16 rgb(int r,int g,int bl){return RGB15((r>>3)&31,(g>>3)&31,(bl>>3)&31)|BIT(15);}
+typedef struct { int x,y,vx,vy,mass,r,alive; u16 color; } Body;
+static Body b[24]; static int paused=0,selected=1,speed=1,frameNo=0; static u16 *fb;
+static u16 color15(int r,int g,int bl){return RGB15((r>>3)&31,(g>>3)&31,(bl>>3)&31)|BIT(15);}
 static int clampi(int v,int lo,int hi){return v<lo?lo:v>hi?hi:v;}
-static void reset_sim(void){for(int i=0;i<24;i++)b[i].alive=0;b[0]=(Body){128,96,0,0,1200,8,1,rgb(255,210,60)};for(int i=1;i<24;i++){int ring=18+(i*9)%65,side=(i&1)?1:-1;b[i]=(Body){128+side*ring,96+(i*17)%31-15,0,side*(38+(i%5)*5),4+i%5,2+i%3,1,rgb(50+(i*31)%190,80+(i*47)%150,150+(i*17)%100)};}selected=1;frameNo=0;speed=1;}
+static void reset_sim(void){
+ for(int i=0;i<24;i++) b[i].alive=0;
+ b[0].x=128;b[0].y=96;b[0].vx=0;b[0].vy=0;b[0].mass=1200;b[0].r=8;b[0].alive=1;b[0].color=color15(255,210,60);
+ for(int i=1;i<24;i++){int ring=18+(i*9)%65,side=(i&1)?1:-1;b[i].x=128+side*ring;b[i].y=96+(i*17)%31-15;b[i].vx=0;b[i].vy=side*(38+(i%5)*5);b[i].mass=4+i%5;b[i].r=2+i%3;b[i].alive=1;b[i].color=color15(50+(i*31)%190,80+(i*47)%150,150+(i*17)%100);}
+ selected=1;frameNo=0;speed=1;
+}
 static void clear_fb(u16 c){for(int i=0;i<256*192;i++)fb[i]=c;}
 static void dot(int x,int y,int r,u16 c){if(x<0||x>=256||y<0||y>=192)return;for(int yy=-r;yy<=r;yy++)for(int xx=-r;xx<=r;xx++)if(xx*xx+yy*yy<=r*r){int X=x+xx,Y=y+yy;if(X>=0&&X<256&&Y>=0&&Y<192)fb[Y*256+X]=c;}}
-static void starfield(void){for(int i=0;i<90;i++){int x=(i*73+frameNo/3)%256,y=(i*47+i*i)%192;fb[y*256+x]=(i%7==0)?rgb(120,170,255):rgb(40,70,120);}}
-static void draw_sim(void){clear_fb(rgb(2,4,18));starfield();for(int step=0;step<8&&step<speed;step++)for(int i=1;i<24;i++)if(b[i].alive){int ax=0,ay=0;for(int j=0;j<24;j++)if(i!=j&&b[j].alive){int dx=b[j].x-b[i].x,dy=b[j].y-b[i].y,d2=dx*dx+dy*dy+20,p=(b[j].mass*5)/d2;ax+=dx*p/8;ay+=dy*p/8;}b[i].vx=clampi(b[i].vx+ax,-70,70);b[i].vy=clampi(b[i].vy+ay,-70,70);b[i].x+=b[i].vx/24;b[i].y+=b[i].vy/24;if(b[i].x<4||b[i].x>251){b[i].vx=-b[i].vx;b[i].x=clampi(b[i].x,4,251);}if(b[i].y<4||b[i].y>187){b[i].vy=-b[i].vy;b[i].y=clampi(b[i].y,4,187);}}for(int i=0;i<24;i++)if(b[i].alive){if(i==0){dot(b[i].x,b[i].y,11,rgb(255,130,20));dot(b[i].x,b[i].y,7,b[i].color);}else{dot(b[i].x,b[i].y,b[i].r,b[i].color);if(i==selected)dot(b[i].x,b[i].y,b[i].r+3,rgb(255,255,255));}}frameNo++;}
+static void starfield(void){for(int i=0;i<90;i++){int x=(i*73+frameNo/3)%256,y=(i*47+i*i)%192;fb[y*256+x]=(i%7==0)?color15(120,170,255):color15(40,70,120);}}
+static void draw_sim(void){
+ clear_fb(color15(2,4,18));starfield();
+ for(int step=0;step<speed;step++) for(int i=1;i<24;i++) if(b[i].alive){
+  int ax=0,ay=0;
+  for(int j=0;j<24;j++) if(i!=j&&b[j].alive){int dx=b[j].x-b[i].x,dy=b[j].y-b[i].y,d2=dx*dx+dy*dy+20,p=(b[j].mass*5)/d2;ax+=dx*p/8;ay+=dy*p/8;}
+  b[i].vx=clampi(b[i].vx+ax,-70,70);b[i].vy=clampi(b[i].vy+ay,-70,70);
+  b[i].x+=b[i].vx/24;b[i].y+=b[i].vy/24;
+  if(b[i].x<4||b[i].x>251){b[i].vx=-b[i].vx;b[i].x=clampi(b[i].x,4,251);}
+  if(b[i].y<4||b[i].y>187){b[i].vy=-b[i].vy;b[i].y=clampi(b[i].y,4,187);}
+ }
+ for(int i=0;i<24;i++)if(b[i].alive){if(i==0){dot(b[i].x,b[i].y,11,color15(255,130,20));dot(b[i].x,b[i].y,7,b[i].color);}else{dot(b[i].x,b[i].y,b[i].r,b[i].color);if(i==selected)dot(b[i].x,b[i].y,b[i].r+3,color15(255,255,255));}}
+ frameNo++;
+}
 static void status(void){consoleClear();printf("\x1b[36;1mUNIVERSE SIMULATOR+\x1b[37;1m\nLIVE DSi N-BODY SIMULATION\n\nBodies: 24   Frame: %d\nSelected: %d   Speed: %dx\nState: %s\n\nD-PAD select / perturb orbit\nA add orbital impulse\nX pause / resume\nY reset universe\nL/R simulation speed\nTOUCH select body on top screen\n\nColor + motion + gravity render\nlocally on the DSi every frame.\n",frameNo,selected,speed,paused?"PAUSED":"RUNNING");}
-extern "C" int universe_simulator_main(void){powerOn(POWER_ALL_2D);videoSetMode(MODE_5_2D);videoSetModeSub(MODE_0_2D);vramSetBankA(VRAM_A_MAIN_BG);int bg=bgInit(2,BgType_Bmp16,BgSize_B16_256x256,0,0);fb=(u16*)bgGetGfxPtr(bg);PrintConsole sub;consoleInit(&sub,0,BgType_Text4bpp,BgSize_T_256x256,30,0,false,true);consoleSelect(&sub);reset_sim();status();swiWaitForVBlank();draw_sim();while(1){swiWaitForVBlank();scanKeys();u32 d=keysDown();touchPosition t;touchRead(&t);if(d&KEY_X){paused=!paused;status();}if(d&KEY_Y){reset_sim();status();}if(d&KEY_L){if(speed>1)speed--;status();}if(d&KEY_R){if(speed<8)speed++;status();}if(d&KEY_LEFT){selected=(selected+22)%23+1;b[selected].vx-=8;}if(d&KEY_RIGHT){selected=selected%23+1;b[selected].vx+=8;}if(d&KEY_UP)b[selected].vy-=8;if(d&KEY_DOWN)b[selected].vy+=8;if(d&KEY_A){b[selected].vx+=b[selected].x<128?10:-10;b[selected].vy+=b[selected].y<96?8:-8;}if(d&KEY_TOUCH){int best=999,bi=selected;for(int i=1;i<24;i++){int dx=b[i].x-(int)t.px,dy=b[i].y-(int)t.py,ds=dx*dx+dy*dy;if(ds<best){best=ds;bi=i;}}if(best<400)selected=bi;status();}if(!paused)draw_sim();}}
+extern "C" int universe_simulator_main(void){
+ powerOn(POWER_ALL_2D);videoSetMode(MODE_5_2D);videoSetModeSub(MODE_0_2D);vramSetBankA(VRAM_A_MAIN_BG);
+ int bg=bgInit(2,BgType_Bmp16,BgSize_B16_256x256,0,0);fb=(u16*)bgGetGfxPtr(bg);
+ PrintConsole sub;consoleInit(&sub,0,BgType_Text4bpp,BgSize_T_256x256,30,0,false,true);consoleSelect(&sub);
+ reset_sim();status();swiWaitForVBlank();draw_sim();
+ while(1){swiWaitForVBlank();scanKeys();u32 d=keysDown();touchPosition t;touchRead(&t);
+  if(d&KEY_X){paused=!paused;status();}if(d&KEY_Y){reset_sim();status();}
+  if(d&KEY_L){if(speed>1)speed--;status();}if(d&KEY_R){if(speed<8)speed++;status();}
+  if(d&KEY_LEFT){selected=(selected+21)%23+1;b[selected].vx-=8;}if(d&KEY_RIGHT){selected=selected%23+1;b[selected].vx+=8;}
+  if(d&KEY_UP)b[selected].vy-=8;if(d&KEY_DOWN)b[selected].vy+=8;
+  if(d&KEY_A){b[selected].vx+=b[selected].x<128?10:-10;b[selected].vy+=b[selected].y<96?8:-8;}
+  if(d&KEY_TOUCH){int best=999,bi=selected;for(int i=1;i<24;i++){int dx=b[i].x-(int)t.px,dy=b[i].y-(int)t.py,ds=dx*dx+dy*dy;if(ds<best){best=ds;bi=i;}}if(best<400)selected=bi;status();}
+  if(!paused)draw_sim();
+ }
+}
