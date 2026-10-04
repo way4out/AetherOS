@@ -1,4 +1,4 @@
-# AetherOS — AetherCore 708 / Nintendo DSi
+# AetherOS — Universe Simulator+ / Nintendo DSi\n\n**Current DSi release front end:** Universe Simulator+ — a deterministic, touch/D-pad navigable launcher for the full AetherOS/AetherCore runtime. The launcher is local-first and hands off to the existing hardware-safe runtime after role selection.\n\n**Release artifact:** `UniverseSimulatorPlus.nds` (with `AetherOS-UniverseSimulatorPlus.nds` as the companion name).\n\nThe DSi runtime keeps unsupported modern capabilities explicitly gated to compatible external hardware or authorized gateways; no software-only claim turns a stock DSi into quantum, cellular, satellite, SDR, or other unavailable hardware.\n\n# AetherOS — AetherCore 708 / Nintendo DSi
 
 AetherCore 708 is the current DSi-first product line: a local-first operating environment, universal capability contract, communications hub, media/info workspace, and non-custodial digital-asset interface.
 
