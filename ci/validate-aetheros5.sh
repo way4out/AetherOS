@@ -5,9 +5,8 @@ python3 - <<'PY'
 from pathlib import Path
 p=Path("UniverseSimulatorPlus.nds").read_bytes()
 assert len(p) > 0
-assert len(p) >= 256*1024*1024
-assert len(p) < 512*1024*1024
-assert p[0x14] == 11, f"ROM capacity code={p[0x14]}"
+assert len(p) == 512*1024*1024
+assert p[0x14] == 12, f"ROM capacity code={p[0x14]}"
 assert p[0x12] == 2, f"DSi unit code={p[0x12]}"
 arm9_off=int.from_bytes(p[0x20:0x24],"little")
 arm9_size=int.from_bytes(p[0x2c:0x30],"little")
@@ -58,3 +57,6 @@ grep -Fq 'gate::tick();' source/core/universe_boot.cpp
 grep -Fq 'DSi AUDIO / CAMERA I-O' source/universe_frontend.cpp
 grep -Fq 'cameraStartTransfer' source/universe_frontend.cpp
 grep -Fq 'soundCaptureStart' source/audio/aether_audio.cpp || true
+
+grep -Fq "QUANTUM VISUAL FIELD" source/quantum/quantum_visuals.cpp
+grep -Fq "aether::quantum::visuals::draw" source/universe_frontend.cpp

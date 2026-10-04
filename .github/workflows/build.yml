@@ -22,8 +22,8 @@ jobs:
         run: |
           set -eux
           sudo chown "$USER":"$USER" UniverseSimulatorPlus.nds
-          truncate -s 268435456 UniverseSimulatorPlus.nds
-          python3 -c 'from pathlib import Path; p=Path("UniverseSimulatorPlus.nds"); b=bytearray(p.read_bytes()); b[0x14]=11; p.write_bytes(b)'
+          truncate -s 536870912 UniverseSimulatorPlus.nds
+          python3 -c 'from pathlib import Path; p=Path("UniverseSimulatorPlus.nds"); b=bytearray(p.read_bytes()); b[0x14]=12; p.write_bytes(b)'
           cp UniverseSimulatorPlus.nds AetherOS-UniverseSimulatorPlus.nds
           stat -c "%n %s bytes" UniverseSimulatorPlus.nds AetherOS-UniverseSimulatorPlus.nds
       - name: Validate
@@ -31,11 +31,11 @@ jobs:
           bash ci/validate-aetheros5.sh
           test -s UniverseSimulatorPlus.nds
           test -s AetherOS-UniverseSimulatorPlus.nds
-          test "$(stat -c%s UniverseSimulatorPlus.nds)" -ge 268435456
+          test "$(stat -c%s UniverseSimulatorPlus.nds)" -eq 536870912
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: UniverseSimulatorPlus-DSi-Verified
+          name: UniverseSimulatorPlus-DSi-QuantumMax-Verified
           if-no-files-found: error
           path: |
             UniverseSimulatorPlus.nds
