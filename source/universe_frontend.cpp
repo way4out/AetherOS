@@ -1,5 +1,6 @@
 #include <nds.h>
 #include <stdio.h>
+#include "hardware/hardware_profile.h"
 
 extern "C" int legacy_shell_main(void);
 
@@ -56,7 +57,10 @@ static void diagnostics(PrintConsole &top, PrintConsole &bottom){
   printf("Buttons        READY\n");
   printf("Dual screens   READY\n");
   printf("Boot handoff   ARMED\n");
-  printf("Storage        RUNTIME-DEPENDENT\n");
+  bool storageProfile=aether::hardware::ensureStorageProfile();
+  printf("Storage        %s\n",storageProfile?"PROFILE READY":"RUNTIME-DEPENDENT");
+  printf("SD MEDIA       512 GB TARGET PROFILE\n");
+  printf("USABLE TARGET  400 GB APPLICATION CAPACITY\n");
   printf("External HW    CAPABILITY-GATED\n");
   printf("\nA / B = RETURN\n");
 
@@ -118,5 +122,7 @@ extern "C" int universe_frontend(void){
     }
   }
 
+  // Prepare the storage policy lazily; failure never blocks the DSi boot path.
+  (void)aether::hardware::ensureStorageProfile();
   return legacy_shell_main();
 }
