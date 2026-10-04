@@ -1,6 +1,7 @@
 #include <nds.h>
 #include <stdio.h>
 #include "hardware/hardware_profile.h"
+#include "storage/resource_store.h"
 
 extern "C" int legacy_shell_main(void);
 
@@ -10,9 +11,9 @@ extern "C" int legacy_shell_main(void);
  */
 static const char *roles[]={
   "QUANTUM CORE","SYSTEMS OPERATIONS","CREATOR / LAB",
-  "COMMS / GATEWAYS","RECOVERY / DIAGNOSTICS"
+  "COMMS / GATEWAYS","RECOVERY / DIAGNOSTICS","STORAGE / RESOURCE VAULT"
 };
-static const int ROLE_COUNT=5;
+static const int ROLE_COUNT=6;
 
 static void draw_top(int cursor, bool help){
   consoleClear();
