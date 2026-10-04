@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euxo pipefail
-test -s AetherCore708.nds
+test -s UniverseSimulatorPlus.nds
 python3 - <<'PY'
 from pathlib import Path
-p=Path("AetherCore708.nds").read_bytes()
+p=Path("UniverseSimulatorPlus.nds").read_bytes()
 assert len(p) > 0
 assert len(p) <= 64*1024*1024
 assert p[0x12] == 2, f"DSi unit code={p[0x12]}"
