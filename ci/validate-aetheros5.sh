@@ -7,7 +7,6 @@ p=Path("UniverseSimulatorPlus.nds").read_bytes()
 assert len(p) > 0
 assert len(p) == 512*1024*1024
 assert p[0x14] == 12, f"ROM capacity code={p[0x14]}"
-assert p[0x14] == 12, f"ROM capacity code={p[0x14]}"
 assert p[0x12] == 2, f"DSi unit code={p[0x12]}"
 arm9_off=int.from_bytes(p[0x20:0x24],"little")
 arm9_size=int.from_bytes(p[0x2c:0x30],"little")
