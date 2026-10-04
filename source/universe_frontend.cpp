@@ -12,6 +12,7 @@
 #include "core/diagnostics.h"
 #include "quantum/quantum_core.h"
 #include "quantum/quantum_scan.h"
+#include "quantum/quantum_visuals.h"
 #include "audio/aether_audio.h"
 
 extern "C" int legacy_shell_main(void);
@@ -108,8 +109,9 @@ static void quantum_screen(PrintConsole &top, PrintConsole &bottom){
     else if(mode==2){ aether::quantum::runDeutschJozsa(q); }
     else if(mode==3){ aether::quantum::runQFT2(q); }
     else { aether::quantum::runTeleportation(q); }
-    consoleSelect(&top); consoleClear();
-    printf("\x1b[36;1mQUANTUM REAL-TIME SIMULATOR\x1b[37;1m\n\n");
+    aether::quantum::visuals::draw(top,bottom,q,quantumRescanPassed,quantumRescanTotal,(unsigned)q.shots);
+    consoleSelect(&top);
+    printf("\n\x1b[36;1mQUANTUM REAL-TIME SIMULATOR\x1b[37;1m\n");
     printf("BACKEND: LOCAL STATE VECTOR\n");
     printf("QUBITS:  %d\n",q.qubits);
     printf("ALGORITHM: %d/5\n",mode+1);
