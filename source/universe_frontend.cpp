@@ -2,6 +2,7 @@
 #include <nds/arm9/camera.h>
 #include <nds/ndma.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "hardware/hardware_profile.h"
 #include "hardware/dsi_capability_scan.h"
 #include "storage/resource_store.h"
