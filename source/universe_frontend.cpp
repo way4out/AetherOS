@@ -119,13 +119,14 @@ extern "C" int universe_frontend(void){
 
   int cursor=0;
   bool help=false;
+  unsigned frame=0;
 
   while(1){
     consoleSelect(&top); draw_top(cursor,help);
     consoleSelect(&bottom); draw_bottom(cursor);
 
     swiWaitForVBlank();
-    aether::boot::tick(0);
+    aether::boot::tick(++frame);
     scanKeys();
     u32 d=keysDown();
 
