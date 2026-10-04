@@ -22,6 +22,12 @@ grep -Fq 'modCamera' source/aetherosq.c
 # Front-end interaction gates: every home entry is addressable, the entrypoint is linked,
 # and the DSi touchscreen home rows use the actual bottom-screen layout.
 grep -Fq 'int legacy_shell_main(void)' source/aetherosq.c
+# 512 GB media / 400 GB application-storage policy is compiled and exposed in the DSi runtime.
+grep -Fq 'DAETHER_SD_MEDIA_GB=512' Makefile
+grep -Fq 'DAETHER_SD_USABLE_GB=400' Makefile
+grep -Fq 'AETHEROS_STORAGE_PROFILE=512GB' source/hardware/hardware_profile.cpp
+grep -Fq 'AETHEROS_USABLE_TARGET=400GB' source/hardware/hardware_profile.cpp
+grep -Fq 'USABLE TARGET  400 GB APPLICATION CAPACITY' source/universe_frontend.cpp
 grep -Fq 'int r=((int)t.py-16)/12' source/aetherosq.c
 grep -Fq 'if(!touchMoved&&t.py>=16&&t.py<112)' source/aetherosq.c
 test "$(grep -o 'static void mod[A-Za-z0-9_]*' source/aetherosq.c | wc -l)" -ge 29
