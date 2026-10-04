@@ -21,13 +21,13 @@ jobs:
       - name: Validate
         run: |
           bash ci/validate-aetheros5.sh
-          test -s AetherCore5.nds
-          cp AetherCore5.nds AetherOS-AetherCore5.nds
+          test -s UniverseSimulatorPlus.nds
+          cp AetherCore5.nds AetherOS-UniverseSimulatorPlus.nds
           test -s AetherOS-AetherCore5.nds
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: AetherCore5-DSi-Verified-Diagnostic
+          name: UniverseSimulatorPlus-DSi-Verified-Diagnostic
           if-no-files-found: error
           path: |
             AetherCore5.nds
