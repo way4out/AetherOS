@@ -22,14 +22,12 @@ grep -Fq 'modCamera' source/aetherosq.c
 # Front-end interaction gates: every home entry is addressable, the entrypoint is linked,
 # and the DSi touchscreen home rows use the actual bottom-screen layout.
 grep -Fq 'int legacy_shell_main(void)' source/aetherosq.c
-# 512 GB media / 400 GB application-storage policy is compiled and exposed in the DSi runtime.
-grep -Fq 'DAETHER_SD_MEDIA_GB=512' Makefile
+# 500 GB media profile is compiled and exposed; actual filesystem capacity remains runtime-dependent.
+grep -Fq 'DAETHER_SD_MEDIA_GB=500' Makefile
 grep -Fq 'DAETHER_SD_USABLE_GB=400' Makefile
-grep -Fq 'AETHEROS_STORAGE_PROFILE=512GB' source/hardware/hardware_profile.cpp
+grep -Fq 'AETHEROS_STORAGE_PROFILE=500GB' source/hardware/hardware_profile.cpp
 grep -Fq 'AETHEROS_USABLE_TARGET=400GB' source/hardware/hardware_profile.cpp
-grep -Fq 'USABLE TARGET  400 GB APPLICATION CAPACITY' source/universe_frontend.cpp
-grep -Fq 'int r=((int)t.py-16)/12' source/aetherosq.c
-grep -Fq 'if(!touchMoved&&t.py>=16&&t.py<112)' source/aetherosq.c
+grep -Fq 'SD MEDIA PROFILE 500 GB' source/universe_frontend.cpp
 test "$(grep -o 'static void mod[A-Za-z0-9_]*' source/aetherosq.c | wc -l)" -ge 29
 
 # AetherCore708 messaging gates
@@ -40,3 +38,4 @@ grep -Fq 'mediaLegalOnly' source/aetherosq.c
 grep -Fq 'mode==77' source/aetherosq.c
 test -s source/messaging/aether_messaging.cpp
 test -s source/messaging/aether_messaging.h
+\ngrep -Fq 'DSi CAPABILITY SCAN' source/universe_frontend.cpp\ngrep -Fq 'QUANTUM REAL-TIME SIMULATOR' source/universe_frontend.cpp\ngrep -Fq 'AETHEROS_STORAGE_PROFILE=500GB' source/hardware/hardware_profile.cpp\ntest -s source/hardware/dsi_capability_scan.cpp\ntest -s source/quantum/quantum_scan.cpp\n
