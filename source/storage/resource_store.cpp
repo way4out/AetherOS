@@ -28,7 +28,7 @@ bool writeManifest(){
     if(!f) return false;
     fprintf(f,"AETHER RESOURCE VAULT\n");
     fprintf(f,"FORMAT=1\n");
-    fprintf(f,"MEDIA_PROFILE=512GB\n");
+    fprintf(f,"MEDIA_PROFILE=500GB\n");
     fprintf(f,"APPLICATION_TARGET=400GB\n");
     fprintf(f,"CACHE=44MiB\n");
     fprintf(f,"DIRECTORIES=CORE,QUANTUM,SOUND,DSP,LAB,AI,NETWORK,PROJECTS,SAMPLES,PRESETS,PLUGINS,BENCH,LOGS,RECOVERY\n");
