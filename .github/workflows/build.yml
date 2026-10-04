@@ -1,4 +1,4 @@
-name: AetherCore708 Production Build
+name: UniverseSimulatorPlus Production Build
 
 on:
   push:
@@ -21,14 +21,14 @@ jobs:
       - name: Validate
         run: |
           bash ci/validate-aetheros5.sh
-          test -s AetherCore708.nds
-          cp AetherCore708.nds AetherOS-AetherCore708.nds
-          test -s AetherOS-AetherCore708.nds
+          test -s UniverseSimulatorPlus.nds
+          cp UniverseSimulatorPlus.nds AetherOS-UniverseSimulatorPlus.nds
+          test -s AetherOS-UniverseSimulatorPlus.nds
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: AetherCore708-DSi-Verified
+          name: UniverseSimulatorPlus-DSi-Verified
           if-no-files-found: error
           path: |
-            AetherCore708.nds
-            AetherOS-AetherCore708.nds
+            UniverseSimulatorPlus.nds
+            AetherOS-UniverseSimulatorPlus.nds
