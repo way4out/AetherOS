@@ -12,5 +12,4 @@ struct ScanReport {
     unsigned total;
 };
 ScanReport selfTest(Simulator&);
-ScanReport tripleSelfTest(Simulator&);
 }
