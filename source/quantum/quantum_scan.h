@@ -11,5 +11,5 @@ struct ScanReport {
     unsigned passed;
     unsigned total;
 };
-ScanReport selfTest(Simulator&);
+ScanReport selfTest(Simulator&);\nScanReport tripleSelfTest(Simulator&);
 }
