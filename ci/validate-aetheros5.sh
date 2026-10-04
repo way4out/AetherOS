@@ -48,3 +48,7 @@ test -s source/quantum/quantum_scan.cpp
 
 grep -Fq 'gate::init();' source/core/universe_boot.cpp
 grep -Fq 'gate::tick();' source/core/universe_boot.cpp
+
+grep -Fq 'DSi AUDIO / CAMERA I-O' source/universe_frontend.cpp
+grep -Fq 'cameraStartTransfer' source/universe_frontend.cpp
+grep -Fq 'soundCaptureStart' source/audio/aether_audio.cpp || true
