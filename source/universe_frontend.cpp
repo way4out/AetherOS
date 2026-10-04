@@ -101,7 +101,7 @@ static void quantum_screen(PrintConsole &top, PrintConsole &bottom){
   aether::quantum::Simulator q{};
   aether::quantum::init(q);
   auto t=aether::quantum::selfTest(q);
-  int mode=0;
+  int mode=0; unsigned quantumRescanPassed=0; unsigned quantumRescanTotal=0;
   while(1){
     if(mode==0){ aether::quantum::runBell(q); }
     else if(mode==1){ aether::quantum::runGrover2(q); }
@@ -113,7 +113,7 @@ static void quantum_screen(PrintConsole &top, PrintConsole &bottom){
     printf("BACKEND: LOCAL STATE VECTOR\n");
     printf("QUBITS:  %d\n",q.qubits);
     printf("ALGORITHM: %d/5\n",mode+1);
-    printf("TEST: %u/%u PASS\n",t.passed,t.total);
+    printf("TEST: %u/%u PASS\n",t.passed,t.total);\n    printf("3X RESCAN: %u/%u\n",quantumRescanPassed,quantumRescanTotal);
     printf("SHOTS: %d LAST: %d\n\n",q.shots,q.lastMeasurement);
     for(int i=0;i<(1<<q.qubits) && i<8;i++)
       printf("|%d>  P=%0.3f\n",i,q.probability[i]);
@@ -129,7 +129,7 @@ static void quantum_screen(PrintConsole &top, PrintConsole &bottom){
     swiWaitForVBlank(); aether::boot::tick((unsigned)q.shots+1); scanKeys();
     u32 d=keysDown();
     if(d&KEY_A){mode=(mode+1)%5; aether::audio::tone(1200,40);}
-    if(d&KEY_X){t=aether::quantum::selfTest(q); aether::audio::tone(1600,50);}
+    if(d&KEY_X){ quantumRescanPassed=0; quantumRescanTotal=0; for(int pass=0;pass<3;++pass){ t=aether::quantum::selfTest(q); quantumRescanPassed+=t.passed; quantumRescanTotal+=t.total; } aether::audio::tone(1600,50); }
     if(d&KEY_B) return;
   }
 }
