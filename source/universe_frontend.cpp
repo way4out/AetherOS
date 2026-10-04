@@ -53,19 +53,19 @@ static void draw_bottom(int cursor){
 
 static void vault_screen(PrintConsole &top, PrintConsole &bottom){
   consoleSelect(&top); consoleClear();
-  printf("\x1b[36;1mRESOURCE VAULT\x1b[37;1m\\n\\n");
-  printf("SD PROFILE     512 GB\\n");
-  printf("APP TARGET     400 GB\\n");
-  printf("CACHE         %u MiB\\n",aether::storage::cacheMiB());
-  printf("CACHE STATUS   %s\\n",aether::storage::vaultReady()?"READY":"UNAVAILABLE");
-  printf("MODULES        %d\\n",aether::storage::moduleCount());
-  printf("\\nA/B = RETURN");
+  printf("\x1b[36;1mRESOURCE VAULT\x1b[37;1m\n\n");
+  printf("SD PROFILE     512 GB\n");
+  printf("APP TARGET     400 GB\n");
+  printf("CACHE         %u MiB\n",aether::storage::cacheMiB());
+  printf("CACHE STATUS   %s\n",aether::storage::vaultReady()?"READY":"UNAVAILABLE");
+  printf("MODULES        %d\n",aether::storage::moduleCount());
+  printf("\nA/B = RETURN");
   consoleSelect(&bottom); consoleClear();
-  printf("MODULE REGISTRY\\n\\n");
+  printf("MODULE REGISTRY\n\n");
   for(int i=0;i<aether::storage::moduleCount() && i<14;++i)
-    printf("%02d %-18s\\n",i+1,aether::storage::moduleName(i));
-  printf("\\nAdditional modules are listed\\n");
-  printf("in REVF/STORAGE/MANIFEST.\\n");
+    printf("%02d %-18s\n",i+1,aether::storage::moduleName(i));
+  printf("\nAdditional modules are listed\n");
+  printf("in REVF/STORAGE/MANIFEST.\n");
   while(1){ swiWaitForVBlank(); scanKeys(); if(keysDown()&(KEY_A|KEY_B)) return; }
 }
 
