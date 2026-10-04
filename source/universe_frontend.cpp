@@ -113,7 +113,8 @@ static void quantum_screen(PrintConsole &top, PrintConsole &bottom){
     printf("BACKEND: LOCAL STATE VECTOR\n");
     printf("QUBITS:  %d\n",q.qubits);
     printf("ALGORITHM: %d/5\n",mode+1);
-    printf("TEST: %u/%u PASS\n",t.passed,t.total);\n    printf("3X RESCAN: %u/%u\n",quantumRescanPassed,quantumRescanTotal);
+    printf("TEST: %u/%u PASS\n",t.passed,t.total);
+    printf("3X RESCAN: %u/%u\n",quantumRescanPassed,quantumRescanTotal);
     printf("SHOTS: %d LAST: %d\n\n",q.shots,q.lastMeasurement);
     for(int i=0;i<(1<<q.qubits) && i<8;i++)
       printf("|%d>  P=%0.3f\n",i,q.probability[i]);
