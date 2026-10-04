@@ -56,7 +56,7 @@ static void draw_bottom(int cursor){
 static void vault_screen(PrintConsole &top, PrintConsole &bottom){
   consoleSelect(&top); consoleClear();
   printf("\x1b[36;1mRESOURCE VAULT\x1b[37;1m\n\n");
-  printf("SD MEDIA PROFILE 500 GB\n");
+  printf("SD MEDIA PROFILE 505.40413217 GB\n");
   printf("APP CAPACITY     RUNTIME-DEPENDENT\n");
   printf("CACHE           %lu MiB\n",(unsigned long)aether::storage::cacheMiB());
   printf("CACHE STATUS     %s\n",aether::storage::vaultReady()?"READY":"UNAVAILABLE");
@@ -193,7 +193,7 @@ static void diagnostics(PrintConsole &top, PrintConsole &bottom){
   printf("Dual screens    READY\n");
   printf("Boot services   %s\n",aether::boot::ready()?"READY":"CHECK");
   printf("Storage profile %s\n",storageProfile?"READY":"RUNTIME");
-  printf("SD MEDIA        500 GB PROFILE\n");
+  printf("SD MEDIA        505.40413217 GB PROFILE\n");
   printf("Capacity        RUNTIME-DEPENDENT\n");
   auto cp=aether::capacity::report();
   auto dr=aether::diag::report();
