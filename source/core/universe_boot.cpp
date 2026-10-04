@@ -12,6 +12,7 @@
 #include "../lab/aether_lab.h"
 #include "../ai/aether_ai.h"
 #include "../audio/aether_audio.h"
+#include "../network/gateway_manager.h"
 
 namespace {
 bool gReady=false;
@@ -35,6 +36,7 @@ void initialize(){
     lab::init();
     ai::init();
     audio::init();
+    gate::init();
     gReady=true;
     selfheal::tick(gHealth,0,recovery::safeMode());
 }
@@ -48,6 +50,7 @@ void tick(unsigned frame){
     studio::tick();
     lab::tick();
     ai::tick();
+    gate::tick();
     selfheal::tick(gHealth,frame,recovery::safeMode());
 }
 bool ready(){return gReady && selfheal::bootSafe();}
