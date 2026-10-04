@@ -58,7 +58,7 @@ static void vault_screen(PrintConsole &top, PrintConsole &bottom){
   printf("\x1b[36;1mRESOURCE VAULT\x1b[37;1m\n\n");
   printf("SD MEDIA PROFILE 500 GB\n");
   printf("APP CAPACITY     RUNTIME-DEPENDENT\n");
-  printf("CACHE           %u MiB\n",aether::storage::cacheMiB());
+  printf("CACHE           %lu MiB\n",(unsigned long)aether::storage::cacheMiB());
   printf("CACHE STATUS     %s\n",aether::storage::vaultReady()?"READY":"UNAVAILABLE");
   printf("MODULES          %d\n",aether::storage::moduleCount());
   printf("\nA/B = RETURN");
@@ -197,8 +197,8 @@ static void diagnostics(PrintConsole &top, PrintConsole &bottom){
   printf("Capacity        RUNTIME-DEPENDENT\n");
   auto cp=aether::capacity::report();
   auto dr=aether::diag::report();
-  printf("WORKSPACE       %u MB CLASS\n",cp.workspaceMB);
-  printf("INDEXED ASSETS   %u\n",cp.indexedAssets);
+  printf("WORKSPACE       %lu MB CLASS\n",(unsigned long)cp.workspaceMB);
+  printf("INDEXED ASSETS   %lu\n",(unsigned long)cp.indexedAssets);
   printf("DIAG SCORE       %u\n",dr.score);
   consoleSelect(&bottom); consoleClear();
   printf("LIVE HEALTH\n\n");
