@@ -61,7 +61,7 @@ bool ensureStorageProfile() {
     FILE* f=fopen("REVF/STORAGE/CAPACITY.CFG","w");
     if(!f) return false;
     fprintf(f,"AETHEROS_STORAGE_PROFILE=4GB_DSi_SD\n");
-    fprintf(f,"AETHEROS_USABLE_TARGET=4GB_DSi_SD\n");
+    fprintf(f,"AETHEROS_USABLE_TARGET=3GB_SAFE_USABLE\n");
     fprintf(f,"POLICY=APPLICATION_STORAGE_TARGET_ONLY\n");
     fprintf(f,"RUNTIME=DSI_LIBFAT_DETERMINED\n");
     fclose(f);
