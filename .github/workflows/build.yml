@@ -35,6 +35,9 @@ jobs:
       - name: Seven-angle artifact scan
         run: |
           python3 ci/seven_angle_scan.py UniverseSimulatorPlus.nds
+      - name: Seven-angle artifact scan
+        run: |
+          python3 ci/seven_angle_scan.py UniverseSimulatorPlus.nds
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
