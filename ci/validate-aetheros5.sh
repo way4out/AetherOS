@@ -29,7 +29,7 @@ grep -Fq 'DAETHER_SD_MEDIA_GB=4' Makefile
 grep -Fq 'DAETHER_SD_USABLE_GB=3' Makefile
 grep -Fq 'AETHEROS_STORAGE_PROFILE=4GB_DSi_SD' source/hardware/hardware_profile.cpp
 grep -Fq 'AETHEROS_USABLE_TARGET=3GB_SAFE_USABLE' source/hardware/hardware_profile.cpp
-grep -Fq '3984588800ULL' source/hardware/hardware_profile.cpp
+grep -Fq 'kSdMediaProfileBytes = 3984588800ULL' source/hardware/hardware_profile.cpp
 grep -Fq 'SD MEDIA PROFILE 4 GB' source/universe_frontend.cpp
 test "$(grep -o 'static void mod[A-Za-z0-9_]*' source/aetherosq.c | wc -l)" -ge 29
 
