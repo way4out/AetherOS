@@ -13,8 +13,8 @@ static bool gMicReady = false;
 static bool gMicRunning = false;
 static bool gCameraReady = false;
 static bool gCameraSelected = false;
-static const u64 kSdMediaProfileBytes = 505404132170ULL;
-static const u64 kSdUsableTargetBytes = 505404132170ULL;
+static const u64 kSdMediaProfileBytes = 3984588800ULL;
+static const u64 kSdUsableTargetBytes = 3984588800ULL;
 
 alignas(32) static s16 gMicBuffer[2048];
 
@@ -60,8 +60,8 @@ bool ensureStorageProfile() {
     if (!sdAvailable() || !ensureDirectories()) return false;
     FILE* f=fopen("REVF/STORAGE/CAPACITY.CFG","w");
     if(!f) return false;
-    fprintf(f,"AETHEROS_STORAGE_PROFILE=505.40413217GB\n");
-    fprintf(f,"AETHEROS_USABLE_TARGET=505.40413217GB\n");
+    fprintf(f,"AETHEROS_STORAGE_PROFILE=4GB_DSi_SD\n");
+    fprintf(f,"AETHEROS_USABLE_TARGET=4GB_DSi_SD\n");
     fprintf(f,"POLICY=APPLICATION_STORAGE_TARGET_ONLY\n");
     fprintf(f,"RUNTIME=DSI_LIBFAT_DETERMINED\n");
     fclose(f);
