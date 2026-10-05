@@ -25,12 +25,12 @@ grep -Fq 'modCamera' source/aetherosq.c
 # and the DSi touchscreen home rows use the actual bottom-screen layout.
 grep -Fq 'int legacy_shell_main(void)' source/aetherosq.c
 # 500 GB media profile is compiled and exposed; actual filesystem capacity remains runtime-dependent.
-grep -Fq 'DAETHER_SD_MEDIA_GB=505' Makefile
-grep -Fq 'DAETHER_SD_USABLE_GB=505' Makefile
-grep -Fq 'AETHEROS_STORAGE_PROFILE=505.40413217GB' source/hardware/hardware_profile.cpp
-grep -Fq 'AETHEROS_USABLE_TARGET=505.40413217GB' source/hardware/hardware_profile.cpp
-grep -Fq '505404132170ULL' source/hardware/hardware_profile.cpp
-grep -Fq 'SD MEDIA PROFILE 505.40413217 GB' source/universe_frontend.cpp
+grep -Fq 'DAETHER_SD_MEDIA_GB=4' Makefile
+grep -Fq 'DAETHER_SD_USABLE_GB=3' Makefile
+grep -Fq 'AETHEROS_STORAGE_PROFILE=4GB_DSi_SD' source/hardware/hardware_profile.cpp
+grep -Fq 'AETHEROS_USABLE_TARGET=3GB_SAFE_USABLE' source/hardware/hardware_profile.cpp
+grep -Fq '3984588800ULL' source/hardware/hardware_profile.cpp
+grep -Fq 'SD MEDIA PROFILE 4 GB' source/universe_frontend.cpp
 test "$(grep -o 'static void mod[A-Za-z0-9_]*' source/aetherosq.c | wc -l)" -ge 29
 
 # AetherCore708 messaging gates
@@ -46,8 +46,8 @@ grep -Fq 'DSi CAPABILITY SCAN' source/universe_frontend.cpp
 grep -Fq 'QUANTUM REAL-TIME SIMULATOR' source/universe_frontend.cpp
 grep -Fq 'quantumRescanPassed' source/universe_frontend.cpp
 grep -Fq 'pass<3' source/universe_frontend.cpp
-grep -Fq 'AETHEROS_STORAGE_PROFILE=505.40413217GB' source/hardware/hardware_profile.cpp
-grep -Fq 'AETHEROS_USABLE_TARGET=505.40413217GB' source/hardware/hardware_profile.cpp
+grep -Fq 'AETHEROS_STORAGE_PROFILE=4GB_DSi_SD' source/hardware/hardware_profile.cpp
+grep -Fq 'AETHEROS_USABLE_TARGET=3GB_SAFE_USABLE' source/hardware/hardware_profile.cpp
 test -s source/hardware/dsi_capability_scan.cpp
 test -s source/quantum/quantum_scan.cpp
 
